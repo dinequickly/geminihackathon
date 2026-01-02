@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export interface User {
   id: string;
@@ -95,14 +95,21 @@ class ApiClient {
     linkedin_url?: string;
     job_description: string;
   }): Promise<{ user_id: string; status: string; message: string }> {
-    return this.request('/users/onboard', {
+    return this.request('/api/users/onboard', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
+  async checkUser(email: string): Promise<{ exists: boolean; user?: User }> {
+    return this.request('/api/users/check', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   async getUser(userId: string): Promise<User> {
-    return this.request(`/users/${userId}`);
+    return this.request(`/api/users/${userId}`);
   }
 
   async getUserStatus(userId: string): Promise<{
@@ -110,7 +117,7 @@ class ApiClient {
     status: string;
     has_resume: boolean;
   }> {
-    return this.request(`/users/${userId}/status`);
+    return this.request(`/api/users/${userId}/status`);
   }
 
   // Interview endpoints
@@ -119,7 +126,7 @@ class ApiClient {
     agent_id: string;
     signed_url: string;
   }> {
-    return this.request('/interviews/start', {
+    return this.request('/api/interviews/start', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId }),
     });
@@ -133,21 +140,21 @@ class ApiClient {
     if (elevenlabsConversationId) {
       params.set('elevenlabs_conversation_id', elevenlabsConversationId);
     }
-    return this.request(`/interviews/${conversationId}/end?${params}`, {
+    return this.request(`/api/interviews/${conversationId}/end?${params}`, {
       method: 'POST',
     });
   }
 
   // Conversation endpoints
   async getUserConversations(userId: string): Promise<Conversation[]> {
-    return this.request(`/conversations/user/${userId}`);
+    return this.request(`/api/conversations/user/${userId}`);
   }
 
   async getConversation(conversationId: string): Promise<{
     conversation: Conversation;
     analysis: Analysis | null;
   }> {
-    return this.request(`/conversations/${conversationId}`);
+    return this.request(`/api/conversations/${conversationId}`);
   }
 
   async getConversationStatus(conversationId: string): Promise<{
@@ -156,7 +163,7 @@ class ApiClient {
     has_analysis: boolean;
     overall_score?: number;
   }> {
-    return this.request(`/conversations/${conversationId}/status`);
+    return this.request(`/api/conversations/${conversationId}/status`);
   }
 
   async uploadVideo(
@@ -167,7 +174,7 @@ class ApiClient {
     formData.append('video', videoBlob, 'recording.webm');
 
     const response = await fetch(
-      `${API_BASE}/conversations/${conversationId}/video`,
+      `${API_BASE}/api/conversations/${conversationId}/video`,
       {
         method: 'POST',
         body: formData,
@@ -184,3 +191,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
+
