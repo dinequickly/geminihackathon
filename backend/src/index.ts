@@ -35,6 +35,31 @@ app.get('/', (req, res) => {
 // ============================================
 // USERS
 // ============================================
+app.post('/api/users/check', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+       throw error;
+    }
+
+    if (data) {
+        res.json({ exists: true, user: data });
+    } else {
+        res.json({ exists: false });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/users/onboard', async (req, res) => {
   try {
     const { name, email, linkedin_url, job_description } = req.body;
