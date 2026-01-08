@@ -158,21 +158,39 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         </div>
 
         {/* Start New Interview */}
-        <button
-          onClick={() => navigate('/interview')}
-          className="w-full bg-primary-500 hover:bg-primary-600 text-white rounded-xl p-6 mb-8 flex items-center justify-between transition shadow-lg shadow-primary-500/20"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <Play className="w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <button
+            onClick={() => navigate('/interview')}
+            className="w-full bg-primary-500 hover:bg-primary-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-primary-500/20"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <Play className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold">Start New Interview</h3>
+                <p className="text-primary-100 text-sm">Practice with our AI interviewer</p>
+              </div>
             </div>
-            <div className="text-left">
-              <h3 className="text-lg font-semibold">Start New Interview</h3>
-              <p className="text-primary-100 text-sm">Practice with our AI interviewer</p>
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          <button
+            onClick={() => navigate('/emotion-analysis')}
+            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-indigo-500/20"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold">Emotion Analysis</h3>
+                <p className="text-indigo-100 text-sm">Analyze videos and images</p>
+              </div>
             </div>
-          </div>
-          <ChevronRight className="w-6 h-6" />
-        </button>
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
 
         {/* Previous Sessions */}
         <div>

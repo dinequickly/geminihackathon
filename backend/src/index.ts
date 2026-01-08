@@ -387,6 +387,12 @@ app.post('/api/conversations/:conversationId/video', upload.single('video'), asy
 // ============================================
 // WEBHOOKS (for n8n callbacks)
 // ============================================
+import { runFullAnalysis } from './analysis/orchestrator';
+
+// ... (imports)
+
+// ... (previous code)
+
 app.post('/api/webhooks/conversation-complete', async (req, res) => {
   try {
     const { conversation_id, user_id, transcript, transcript_json, duration_seconds } = req.body;
@@ -408,7 +414,7 @@ app.post('/api/webhooks/conversation-complete', async (req, res) => {
       if (data) {
         const convId = data.id;
 
-        // Update conversation
+        // Update conversation with initial data
         await supabase
           .from('conversations')
           .update({
@@ -421,19 +427,12 @@ app.post('/api/webhooks/conversation-complete', async (req, res) => {
           })
           .eq('id', convId);
 
-        // Trigger analysis
+        // Run local analysis orchestrator
         if (transcript) {
-          fetch(N8N_ANALYSIS_WEBHOOK, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversation_id: convId,
-              user_id: data.user_id,
-              transcript,
-              formatted_resume: data.users?.formatted_resume,
-              job_description: data.users?.job_description
-            })
-          }).catch(err => console.error('Analysis webhook failed:', err));
+          // Run in background so we don't block the response
+          runFullAnalysis(convId)
+            .then(() => console.log(`Analysis completed for ${convId}`))
+            .catch(err => console.error(`Analysis failed for ${convId}:`, err));
         }
 
         return res.json({ status: 'success', conversation_id: convId });
