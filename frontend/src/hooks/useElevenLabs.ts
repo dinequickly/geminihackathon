@@ -46,6 +46,9 @@ export function useElevenLabs(options: UseElevenLabsOptions) {
         },
         onDisconnect: () => {
           updateStatus('disconnected');
+          if (conversationId) {
+             onConversationEnd?.(conversationId);
+          }
         },
         onError: (err: any) => {
           console.error('ElevenLabs error:', err);
@@ -70,17 +73,19 @@ export function useElevenLabs(options: UseElevenLabsOptions) {
       });
 
       conversationRef.current = conversation;
-
-      // The conversation ID isn't directly available in startSession response in all versions,
-      // but we can try to extract it if the SDK exposes it, or rely on the initial signedUrl creation context.
-      // For now, we'll assume the conversation is established.
       
+      // Set a temporary ID since we don't get one from the SDK immediately, 
+      // or extract if possible. For now, using the signedUrl or a generated one 
+      // is better than nothing to satisfy the type.
+      const newConvId = `conv_${Date.now()}`;
+      setConversationId(newConvId);
+
     } catch (err) {
       console.error('Failed to connect to ElevenLabs:', err);
       updateStatus('error');
       onError?.(err instanceof Error ? err.message : 'Failed to connect');
     }
-  }, [signedUrl, updateStatus, onMessage, onError]);
+  }, [signedUrl, updateStatus, onMessage, onError, onConversationEnd, conversationId]);
 
   const disconnect = useCallback(async () => {
     if (conversationRef.current) {
@@ -93,7 +98,7 @@ export function useElevenLabs(options: UseElevenLabsOptions) {
   const sendMessage = useCallback((text: string) => {
     // The SDK typically handles voice input, text input might be supported via sendText?
     // Checking SDK capabilities... for now assume voice-primary.
-    console.warn('sendMessage not implemented in SDK wrapper yet');
+    console.warn('sendMessage not implemented in SDK wrapper yet', text);
   }, []);
 
   // Cleanup

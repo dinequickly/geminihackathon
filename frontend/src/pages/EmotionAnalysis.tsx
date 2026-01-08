@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as faceapi from 'face-api.js';
-import { Camera, Upload, Image as ImageIcon, Play, Pause, Download, BarChart2, ArrowLeft } from 'lucide-react';
+import { Camera, Upload, Image as ImageIcon, Download, BarChart2, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 type Mode = 'webcam' | 'video' | 'image';
@@ -99,21 +99,33 @@ const EmotionAnalysis = () => {
               <nav className="flex -mb-px">
                 <button
                   onClick={() => setMode('webcam')}
-                  className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center gap-2 ${mode === 'webcam' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                  className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center gap-2 ${
+                    mode === 'webcam'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
                 >
                   <Camera size={20} />
                   Live Webcam
                 </button>
                 <button
                   onClick={() => setMode('video')}
-                  className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center gap-2 ${mode === 'video' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                  className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center gap-2 ${
+                    mode === 'video'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
                 >
                   <Upload size={20} />
                   Video Upload
                 </button>
                 <button
                   onClick={() => setMode('image')}
-                  className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center gap-2 ${mode === 'image' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                  className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm flex items-center justify-center gap-2 ${
+                    mode === 'image'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
                 >
                   <ImageIcon size={20} />
                   Image Upload
@@ -139,7 +151,7 @@ const WebcamMode = () => {
   const [isStreaming, setIsStreaming] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     const startVideo = async () => {
       try {
@@ -216,7 +228,11 @@ const WebcamMode = () => {
       </div>
       <button
         onClick={() => setIsStreaming(!isStreaming)}
-        className={`px-6 py-2 rounded-lg font-medium transition-colors ${isStreaming ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+        className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+          isStreaming
+            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+        }`}
       >
         {isStreaming ? 'Stop Camera' : 'Start Camera'}
       </button>
@@ -226,11 +242,9 @@ const WebcamMode = () => {
 
 const VideoMode = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<any[]>([]);
-  const [currentTime, setCurrentTime] = useState(0);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -350,7 +364,6 @@ const VideoMode = () => {
                 ref={videoRef}
                 controls
                 className="w-full h-full object-contain"
-                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
               />
               {/* Overlay canvas could go here for realtime playback overlay if needed */}
             </div>
@@ -406,7 +419,13 @@ const VideoMode = () => {
                     className="w-full text-left p-2 rounded hover:bg-white border border-transparent hover:border-gray-200 text-sm flex items-center justify-between group"
                   >
                     <span className="font-mono text-gray-500">{new Date(data.timestamp * 1000).toISOString().substr(14, 5)}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${data.dominant === 'happy' ? 'bg-green-100 text-green-700' : data.dominant === 'angry' ? 'bg-red-100 text-red-700' : data.dominant === 'sad' ? 'bg-blue-100 text-blue-700' : data.dominant === 'surprise' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize
+                      ${data.dominant === 'happy' ? 'bg-green-100 text-green-700' :
+                        data.dominant === 'angry' ? 'bg-red-100 text-red-700' :
+                        data.dominant === 'sad' ? 'bg-blue-100 text-blue-700' :
+                        data.dominant === 'surprise' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}
                     >
                       {data.dominant}
                     </span>
