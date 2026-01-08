@@ -17,6 +17,8 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID || 'agent_1801k4yzmzs1exz9bee2kep0npbq';
 const N8N_LINKEDIN_WEBHOOK = process.env.N8N_LINKEDIN_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/c97f84f3-9319-4e39-91e2-a7f84590eb3f';
 const N8N_ANALYSIS_WEBHOOK = process.env.N8N_ANALYSIS_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/58227689-94ba-41e7-a1d0-1a1b798024f3';
+const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY!;
+const HUGGING_FACE_AUDIO_URL = process.env.HUGGING_FACE_AUDIO_URL!;
 
 // Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -380,6 +382,44 @@ app.post('/api/conversations/:conversationId/video', upload.single('video'), asy
     });
   } catch (error: any) {
     console.error('Video upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// AUDIO ANALYSIS
+// ============================================
+app.post('/api/analysis/audio', upload.single('audio'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+
+    const base64Audio = file.buffer.toString('base64');
+
+    const response = await fetch(HUGGING_FACE_AUDIO_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            inputs: base64Audio,
+            parameters: {}
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Hugging Face API failed: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    res.json(result);
+
+  } catch (error: any) {
+    console.error('Audio analysis error:', error);
     res.status(500).json({ error: error.message });
   }
 });

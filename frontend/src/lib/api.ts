@@ -188,6 +188,23 @@ class ApiClient {
 
     return response.json();
   }
+
+  async analyzeAudio(audioBlob: Blob): Promise<any> {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'audio.webm');
+
+    const response = await fetch(`${API_BASE}/api/analysis/audio`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Audio analysis failed' }));
+      throw new Error(error.detail);
+    }
+
+    return response.json();
+  }
 }
 
 export const api = new ApiClient();

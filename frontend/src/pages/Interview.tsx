@@ -165,12 +165,17 @@ export default function Interview({ userId }: InterviewProps) {
       // End interview on backend
       await api.endInterview(conversationId, elConvId);
 
-      // Upload video if we have it
+      // Upload video and analyze audio if we have it
       if (recordingBlobRef.current) {
         try {
-          await api.uploadVideo(conversationId, recordingBlobRef.current);
+          const uploadPromise = api.uploadVideo(conversationId, recordingBlobRef.current);
+          const analysisPromise = api.analyzeAudio(recordingBlobRef.current)
+            .then(result => console.log('Audio analysis result:', result))
+            .catch(err => console.error('Audio analysis failed:', err));
+
+          await Promise.all([uploadPromise, analysisPromise]);
         } catch (uploadErr) {
-          console.error('Video upload failed:', uploadErr);
+          console.error('Video upload/analysis failed:', uploadErr);
           // Continue even if upload fails
         }
       }
