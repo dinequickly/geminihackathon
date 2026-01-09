@@ -431,6 +431,85 @@ app.get('/api/conversations/:conversationId/status', async (req, res) => {
   }
 });
 
+// Get signed URL for direct upload to Supabase (bypasses Vercel body limit)
+app.post('/api/conversations/:conversationId/upload-url', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { fileType = 'video/webm', fileName = 'recording.webm' } = req.body;
+
+    // Verify conversation exists
+    const { data: conv, error: convError } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('id', conversationId)
+      .single();
+
+    if (convError || !conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const storagePath = `interviews/${conversationId}/${fileName}`;
+
+    // Create signed upload URL (valid for 1 hour)
+    const { data, error } = await supabase.storage
+      .from('interview-videos')
+      .createSignedUploadUrl(storagePath);
+
+    if (error) throw error;
+
+    // Get the public URL for after upload
+    const { data: urlData } = supabase.storage
+      .from('interview-videos')
+      .getPublicUrl(storagePath);
+
+    res.json({
+      uploadUrl: data.signedUrl,
+      token: data.token,
+      path: storagePath,
+      publicUrl: urlData.publicUrl
+    });
+  } catch (error: any) {
+    console.error('Upload URL error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Confirm upload completed and update conversation
+app.post('/api/conversations/:conversationId/confirm-upload', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { storagePath, publicUrl, type = 'video' } = req.body;
+
+    if (!storagePath || !publicUrl) {
+      return res.status(400).json({ error: 'storagePath and publicUrl required' });
+    }
+
+    // Update conversation with video URL
+    const updateData: any = {};
+    if (type === 'video') {
+      updateData.video_url = publicUrl;
+      updateData.video_storage_path = storagePath;
+    }
+
+    const { error } = await supabase
+      .from('conversations')
+      .update(updateData)
+      .eq('id', conversationId);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      conversation_id: conversationId,
+      [type === 'video' ? 'video_url' : 'url']: publicUrl
+    });
+  } catch (error: any) {
+    console.error('Confirm upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Legacy endpoint - keep for backward compatibility but may hit Vercel limits
 app.post('/api/conversations/:conversationId/video', upload.single('video'), async (req, res) => {
   try {
     const { conversationId } = req.params;

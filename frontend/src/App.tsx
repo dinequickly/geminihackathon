@@ -5,8 +5,6 @@ import Interview from './pages/Interview';
 import Results from './pages/Results';
 import Dashboard from './pages/Dashboard';
 
-import EmotionAnalysis from './pages/EmotionAnalysis';
-
 // Simple user context - in production, use proper state management
 interface UserContext {
   userId: string | null;
@@ -59,10 +57,6 @@ function App() {
             element={
               userId ? <Interview userId={userId} /> : <Navigate to="/" replace />
             }
-          />
-          <Route
-            path="/emotion-analysis"
-            element={<EmotionAnalysis />}
           />
           <Route
             path="/results/:conversationId"
