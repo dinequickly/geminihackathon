@@ -24,7 +24,10 @@ const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
 const HUGGING_FACE_AUDIO_URL = process.env.HUGGING_FACE_AUDIO_URL || '';
 
 // Supabase client
-const supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_KEY || 'placeholder');
+const supabase = createClient(
+  SUPABASE_URL || 'https://placeholder.supabase.co', 
+  process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_KEY || 'placeholder'
+);
 
 // Middleware
 app.use(cors({
