@@ -1422,7 +1422,7 @@ app.get('/api/conversations/:conversationId/emotions/timeline', async (req, res)
 
     const { data, error } = await query;
 
-    if (error) throw error;
+    if (error && !error.message.includes('schema cache')) throw error;
 
     // Group by model type
     const grouped: Record<string, any[]> = { face: [], prosody: [], language: [], burst: [] };
@@ -1504,10 +1504,10 @@ app.get('/api/conversations/:conversationId/transcript/annotated', async (req, r
       .eq('conversation_id', conversationId)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error && error.code !== 'PGRST116' && !error.message.includes('schema cache')) throw error;
 
-    if (!data) {
-      // Return raw transcript if no annotated version exists
+    if (!data || (error && error.message.includes('schema cache'))) {
+      // Return raw transcript if no annotated version exists or table is missing
       const { data: conv } = await supabase
         .from('conversations')
         .select('transcript')
@@ -1548,7 +1548,7 @@ app.get('/api/conversations/:conversationId/emotions/distribution', async (req, 
       .eq('model_type', model)
       .order('start_timestamp_ms', { ascending: true });
 
-    if (error) throw error;
+    if (error && !error.message.includes('schema cache')) throw error;
 
     // Bucket the data
     const buckets: Record<number, { emotions: Record<string, number>; count: number }> = {};

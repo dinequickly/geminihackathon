@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 -- USERS TABLE
 -- ============================================
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
@@ -19,18 +19,19 @@ CREATE TABLE users (
     skills JSONB DEFAULT '[]'::jsonb,
     experience_years INTEGER,
     profile_status TEXT DEFAULT 'pending' CHECK (profile_status IN ('pending', 'processing', 'ready', 'error')),
+    password TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index for email lookups
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_profile_status ON users(profile_status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_profile_status ON users(profile_status);
 
 -- ============================================
 -- CONVERSATIONS TABLE
 -- ============================================
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     elevenlabs_conversation_id TEXT UNIQUE,
@@ -40,6 +41,9 @@ CREATE TABLE conversations (
     duration_seconds INTEGER,
     video_url TEXT,
     video_storage_path TEXT,
+    expression_progress JSONB,
+    expression_analysis JSONB,
+    expression_analyzed_at TIMESTAMP WITH TIME ZONE,
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     ended_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -47,17 +51,19 @@ CREATE TABLE conversations (
 );
 
 -- Indexes for conversation queries
-CREATE INDEX idx_conversations_user_id ON conversations(user_id);
-CREATE INDEX idx_conversations_elevenlabs_id ON conversations(elevenlabs_conversation_id);
-CREATE INDEX idx_conversations_status ON conversations(status);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_elevenlabs_id ON conversations(elevenlabs_conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations(status);
 
 -- ============================================
--- ANALYSIS TABLE
+-- EMOTION_ANALYSIS TABLE
 -- ============================================
-CREATE TABLE analysis (
+CREATE TABLE IF NOT EXISTS emotion_analysis (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    conversation_id_elevenlabs TEXT,
+    url TEXT,
 
     -- Overall scores
     overall_score INTEGER CHECK (overall_score >= 0 AND overall_score <= 100),
@@ -99,78 +105,20 @@ CREATE TABLE analysis (
     full_analysis_json JSONB,
 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    CONSTRAINT emotion_analysis_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+    CONSTRAINT emotion_analysis_conversation_id_elevenlabs_fkey FOREIGN KEY (conversation_id_elevenlabs) REFERENCES conversations(elevenlabs_conversation_id)
 );
 
 -- Indexes for analysis queries
-CREATE INDEX idx_analysis_conversation_id ON analysis(conversation_id);
-CREATE INDEX idx_analysis_user_id ON analysis(user_id);
-
--- ============================================
--- ROW LEVEL SECURITY (RLS)
--- ============================================
-
--- Enable RLS on all tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE analysis ENABLE ROW LEVEL SECURITY;
-
--- For now, allow all operations via service role (backend)
--- You can add more restrictive policies later for direct client access
-
-CREATE POLICY "Allow all for service role" ON users
-    FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all for service role" ON conversations
-    FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all for service role" ON analysis
-    FOR ALL USING (true) WITH CHECK (true);
-
--- ============================================
--- STORAGE BUCKET FOR VIDEOS
--- ============================================
--- Run this separately in Supabase Dashboard > Storage
-
--- Create bucket: interview-videos
--- Make it private (not public)
--- Set file size limit: 500MB
--- Allowed MIME types: video/webm, video/mp4
-
--- ============================================
--- UPDATED_AT TRIGGER
--- ============================================
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_conversations_updated_at
-    BEFORE UPDATE ON conversations
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_analysis_updated_at
-    BEFORE UPDATE ON analysis
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ============================================
--- HELPFUL VIEWS
--- ============================================
+CREATE INDEX IF NOT EXISTS idx_emotion_analysis_conversation_id ON emotion_analysis(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_emotion_analysis_user_id ON emotion_analysis(user_id);
 
 -- ============================================
 -- EMOTION TIMELINES TABLE (Granular timestamped data)
 -- ============================================
-CREATE TABLE emotion_timelines (
+CREATE TABLE IF NOT EXISTS emotion_timelines (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     model_type TEXT NOT NULL CHECK (model_type IN ('face', 'prosody', 'language', 'burst')),
@@ -194,14 +142,14 @@ CREATE TABLE emotion_timelines (
 );
 
 -- Indexes for efficient timeline queries
-CREATE INDEX idx_emotion_timelines_conversation ON emotion_timelines(conversation_id);
-CREATE INDEX idx_emotion_timelines_model ON emotion_timelines(conversation_id, model_type);
-CREATE INDEX idx_emotion_timelines_time ON emotion_timelines(conversation_id, start_timestamp_ms);
+CREATE INDEX IF NOT EXISTS idx_emotion_timelines_conversation ON emotion_timelines(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_emotion_timelines_model ON emotion_timelines(conversation_id, model_type);
+CREATE INDEX IF NOT EXISTS idx_emotion_timelines_time ON emotion_timelines(conversation_id, start_timestamp_ms);
 
 -- ============================================
 -- ANNOTATED TRANSCRIPTS TABLE (Text with emotions)
 -- ============================================
-CREATE TABLE annotated_transcripts (
+CREATE TABLE IF NOT EXISTS annotated_transcripts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID NOT NULL UNIQUE REFERENCES conversations(id) ON DELETE CASCADE,
 
@@ -215,24 +163,63 @@ CREATE TABLE annotated_transcripts (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_annotated_transcripts_conversation ON annotated_transcripts(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_annotated_transcripts_conversation ON annotated_transcripts(conversation_id);
 
--- Add expression_progress column to conversations
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS expression_progress JSONB;
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS expression_analysis JSONB;
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS expression_analyzed_at TIMESTAMP WITH TIME ZONE;
+-- ============================================
+-- ROW LEVEL SECURITY (RLS)
+-- ============================================
 
--- RLS for new tables
+-- Enable RLS on all tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE emotion_analysis ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emotion_timelines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE annotated_transcripts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all for service role" ON emotion_timelines
-    FOR ALL USING (true) WITH CHECK (true);
+-- For now, allow all operations via service role (backend)
+-- You can add more restrictive policies later for direct client access
 
-CREATE POLICY "Allow all for service role" ON annotated_transcripts
-    FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service role" ON users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service role" ON conversations FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service role" ON emotion_analysis FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service role" ON emotion_timelines FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service role" ON annotated_transcripts FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================
+-- UPDATED_AT TRIGGER
+-- ============================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
+CREATE TRIGGER update_conversations_updated_at
+    BEFORE UPDATE ON conversations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_emotion_analysis_updated_at ON emotion_analysis;
+CREATE TRIGGER update_emotion_analysis_updated_at
+    BEFORE UPDATE ON emotion_analysis
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- HELPFUL VIEWS
+-- ============================================
 
 -- View for conversation list with analysis status
+DROP VIEW IF EXISTS conversation_summaries;
 CREATE VIEW conversation_summaries AS
 SELECT
     c.id,
@@ -249,5 +236,5 @@ SELECT
     CASE WHEN a.id IS NOT NULL THEN true ELSE false END as has_analysis
 FROM conversations c
 JOIN users u ON c.user_id = u.id
-LEFT JOIN analysis a ON c.id = a.conversation_id
+LEFT JOIN emotion_analysis a ON c.id = a.conversation_id
 ORDER BY c.created_at DESC;
