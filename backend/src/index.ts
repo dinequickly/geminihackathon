@@ -1738,6 +1738,33 @@ app.post('/api/webhooks/linkedin-complete', async (req, res) => {
   }
 });
 
+// Manual endpoint to fetch Hume predictions by Job ID
+app.get('/api/hume/jobs/:jobId/predictions', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const apiKey = process.env.HUME_API_KEY || 'nh0OO0vtjF0eLpo5I3irNNTNKsh2hgYNzK6fzOIbzUNVUEIX';
+
+    console.log(`Fetching Hume predictions for job: ${jobId}`);
+
+    const response = await fetch(`https://api.hume.ai/v0/batch/jobs/${jobId}/predictions`, {
+      headers: {
+        'X-Hume-Api-Key': apiKey
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ error: errorText });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    console.error('Hume fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server (only in dev, not on Vercel)
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
