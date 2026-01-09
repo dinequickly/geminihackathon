@@ -167,7 +167,73 @@ class ApiClient {
     return this.request(`/api/conversations/${conversationId}/status`);
   }
 
+  // Get signed URL for direct upload to Supabase (bypasses Vercel body limit)
+  async getUploadUrl(
+    conversationId: string,
+    fileName = 'recording.webm',
+    fileType = 'video/webm'
+  ): Promise<{ uploadUrl: string; token: string; path: string; publicUrl: string }> {
+    return this.request(`/api/conversations/${conversationId}/upload-url`, {
+      method: 'POST',
+      body: JSON.stringify({ fileName, fileType }),
+    });
+  }
+
+  // Confirm upload completed
+  async confirmUpload(
+    conversationId: string,
+    storagePath: string,
+    publicUrl: string,
+    type = 'video'
+  ): Promise<{ success: boolean; conversation_id: string; video_url?: string }> {
+    return this.request(`/api/conversations/${conversationId}/confirm-upload`, {
+      method: 'POST',
+      body: JSON.stringify({ storagePath, publicUrl, type }),
+    });
+  }
+
+  // Upload video directly to Supabase (recommended for large files)
   async uploadVideo(
+    conversationId: string,
+    videoBlob: Blob
+  ): Promise<{ video_url: string; storage_path: string }> {
+    try {
+      // Step 1: Get signed upload URL
+      const { uploadUrl, path, publicUrl } = await this.getUploadUrl(
+        conversationId,
+        'recording.webm',
+        videoBlob.type || 'video/webm'
+      );
+
+      // Step 2: Upload directly to Supabase Storage
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': videoBlob.type || 'video/webm',
+        },
+        body: videoBlob,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Direct upload failed: ${uploadResponse.status}`);
+      }
+
+      // Step 3: Confirm upload and update conversation
+      await this.confirmUpload(conversationId, path, publicUrl, 'video');
+
+      return {
+        video_url: publicUrl,
+        storage_path: path,
+      };
+    } catch (error) {
+      console.error('Direct upload failed, trying legacy endpoint:', error);
+      // Fallback to legacy endpoint for small files
+      return this.uploadVideoLegacy(conversationId, videoBlob);
+    }
+  }
+
+  // Legacy upload (may hit Vercel body limits for large files)
+  private async uploadVideoLegacy(
     conversationId: string,
     videoBlob: Blob
   ): Promise<{ video_url: string; storage_path: string }> {
@@ -184,7 +250,7 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
-      throw new Error(error.detail);
+      throw new Error(error.detail || error.error || 'Upload failed');
     }
 
     return response.json();

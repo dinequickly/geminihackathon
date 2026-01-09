@@ -367,6 +367,32 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
 
     const conversations = (data || []).map(conv => {
       const analysis = conv.emotion_analysis?.[0];
+
+      // Check if conversation is stuck in completed state with data but no analysis
+      if (conv.status === 'completed' && conv.transcript && !analysis) {
+        console.log(`[${conv.id}] Found stuck conversation, triggering analysis...`);
+
+        // Update status to analyzing
+        supabase
+          .from('conversations')
+          .update({ status: 'analyzing' })
+          .eq('id', conv.id)
+          .then(() => {
+            // Trigger analysis asynchronously
+            runFullAnalysis(conv.id).catch(err => {
+              console.error(`Analysis failed for ${conv.id}:`, err);
+            });
+
+            // Trigger Hume expression analysis
+            runHumeExpressionAnalysis(conv.id).catch(err => {
+              console.error(`Hume expression analysis failed for ${conv.id}:`, err);
+            });
+          });
+
+        // Return analyzing status to frontend
+        conv.status = 'analyzing';
+      }
+
       return {
         ...conv,
         analysis: undefined,
@@ -397,6 +423,29 @@ app.get('/api/conversations/:conversationId', async (req, res) => {
       .select('*')
       .eq('conversation_id', req.params.conversationId)
       .single();
+
+    // If conversation is completed with transcript but has no analysis, trigger analysis
+    if (conversation.status === 'completed' && conversation.transcript && !analysis) {
+      console.log(`[${req.params.conversationId}] Conversation completed but not analyzed, triggering analysis...`);
+
+      // Update status to analyzing
+      await supabase
+        .from('conversations')
+        .update({ status: 'analyzing' })
+        .eq('id', req.params.conversationId);
+
+      conversation.status = 'analyzing';
+
+      // Trigger analysis asynchronously
+      runFullAnalysis(req.params.conversationId).catch(err => {
+        console.error(`Analysis failed for ${req.params.conversationId}:`, err);
+      });
+
+      // Trigger Hume expression analysis
+      runHumeExpressionAnalysis(req.params.conversationId).catch(err => {
+        console.error(`Hume expression analysis failed for ${req.params.conversationId}:`, err);
+      });
+    }
 
     res.json({ conversation, analysis: analysis || null });
   } catch (error: any) {
@@ -1742,13 +1791,16 @@ app.post('/api/webhooks/linkedin-complete', async (req, res) => {
 app.get('/api/hume/jobs/:jobId/predictions', async (req, res) => {
   try {
     const { jobId } = req.params;
-    const apiKey = process.env.HUME_API_KEY || 'nh0OO0vtjF0eLpo5I3irNNTNKsh2hgYNzK6fzOIbzUNVUEIX';
+
+    if (!HUME_API_KEY) {
+      return res.status(400).json({ error: 'HUME_API_KEY not configured' });
+    }
 
     console.log(`Fetching Hume predictions for job: ${jobId}`);
 
     const response = await fetch(`https://api.hume.ai/v0/batch/jobs/${jobId}/predictions`, {
       headers: {
-        'X-Hume-Api-Key': apiKey
+        'X-Hume-Api-Key': HUME_API_KEY
       }
     });
 
