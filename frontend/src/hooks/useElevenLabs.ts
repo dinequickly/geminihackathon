@@ -74,11 +74,16 @@ export function useElevenLabs(options: UseElevenLabsOptions) {
 
       conversationRef.current = conversation;
       
-      // Set a temporary ID since we don't get one from the SDK immediately, 
-      // or extract if possible. For now, using the signedUrl or a generated one 
-      // is better than nothing to satisfy the type.
-      const newConvId = `conv_${Date.now()}`;
-      setConversationId(newConvId);
+      // Try to get the real conversation ID if available on the instance
+      // The SDK might not expose it synchronously, but usually it's there or accessible via getId()
+      const realId = (conversation as any).id || (conversation as any).conversationId;
+      if (realId) {
+          setConversationId(realId);
+      } else {
+          // Fallback if SDK doesn't expose it directly (older versions)
+          // We'll rely on the webhook to update the DB with the correct ID later
+          setConversationId(null); 
+      }
 
     } catch (err) {
       console.error('Failed to connect to ElevenLabs:', err);

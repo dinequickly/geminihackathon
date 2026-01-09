@@ -6,7 +6,6 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { runFullAnalysis } from './analysis/orchestrator.js';
-import { Client } from '@gradio/client';
 
 dotenv.config();
 
@@ -57,6 +56,7 @@ const N8N_ANALYSIS_WEBHOOK = process.env.N8N_ANALYSIS_WEBHOOK || 'https://maxipa
 const N8N_USER_CREATED_WEBHOOK = process.env.N8N_USER_CREATED_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/3afd0576-b305-4cce-a8a9-f82cbf04107b';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
 const HUGGING_FACE_AUDIO_URL = process.env.HUGGING_FACE_AUDIO_URL || '';
+const HUME_API_KEY = process.env.HUME_API_KEY || '';
 
 // Supabase client
 const supabase = createClient(
@@ -520,143 +520,379 @@ app.post('/api/analysis/audio', upload.single('audio'), async (req, res) => {
 });
 
 // ============================================
-// MULTIMODAL ANALYSIS (Gradio Client)
+// HUME AI EXPRESSION MEASUREMENT
 // ============================================
 
-interface MultimodalAnalysisResult {
-  text_emotion?: string;
-  image_emotion?: {
-    label: string | number | null;
-    confidences: Array<{ label: string | number | null; confidence: number | null }> | null;
-  };
-  audio_emotion?: string;
-  errors?: string[];
+interface HumeEmotion {
+  name: string;
+  score: number;
 }
 
-app.post('/api/multimodal-analysis', upload.fields([
-  { name: 'image', maxCount: 1 },
-  { name: 'audio', maxCount: 1 }
-]), async (req, res) => {
-  try {
-    const { text, audio_file_path } = req.body;
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+interface HumeExpressionResult {
+  prosody?: HumeEmotion[];
+  face?: HumeEmotion[];
+  language?: HumeEmotion[];
+  burst?: HumeEmotion[];
+}
 
-    const results: MultimodalAnalysisResult = {};
+// Helper to analyze with Hume REST API (batch)
+async function analyzeWithHumeBatch(
+  mediaUrl: string,
+  models: { prosody?: boolean; face?: boolean; language?: boolean; burst?: boolean }
+): Promise<any> {
+  // Start job
+  const startResponse = await fetch('https://api.hume.ai/v0/batch/jobs', {
+    method: 'POST',
+    headers: {
+      'X-Hume-Api-Key': HUME_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      urls: [mediaUrl],
+      models: {
+        prosody: models.prosody ? {} : undefined,
+        face: models.face ? {} : undefined,
+        language: models.language ? {} : undefined,
+        burst: models.burst ? {} : undefined
+      }
+    })
+  });
+
+  if (!startResponse.ok) {
+    const err = await startResponse.text();
+    throw new Error(`Hume batch start failed: ${startResponse.status} ${err}`);
+  }
+
+  const { job_id } = await startResponse.json();
+
+  // Poll for completion (max 60 seconds)
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+
+    const statusResponse = await fetch(`https://api.hume.ai/v0/batch/jobs/${job_id}`, {
+      headers: { 'X-Hume-Api-Key': HUME_API_KEY }
+    });
+
+    const status = await statusResponse.json();
+
+    if (status.state.status === 'COMPLETED') {
+      // Get predictions
+      const predictionsResponse = await fetch(`https://api.hume.ai/v0/batch/jobs/${job_id}/predictions`, {
+        headers: { 'X-Hume-Api-Key': HUME_API_KEY }
+      });
+      return predictionsResponse.json();
+    } else if (status.state.status === 'FAILED') {
+      throw new Error(`Hume job failed: ${status.state.message}`);
+    }
+  }
+
+  throw new Error('Hume job timed out');
+}
+
+// Helper to get top emotions from Hume results
+function getTopEmotions(emotions: HumeEmotion[], limit = 5): HumeEmotion[] {
+  return emotions
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+// Streaming endpoint for expression measurement via SSE
+app.get('/api/expression/stream/:conversationId', async (req, res) => {
+  const { conversationId } = req.params;
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  const sendEvent = (event: string, data: any) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    sendEvent('status', { message: 'Starting expression analysis...', stage: 'init' });
+
+    // Get conversation with video URL
+    const { data: conv, error: convError } = await supabase
+      .from('conversations')
+      .select('*, users(formatted_resume, job_description)')
+      .eq('id', conversationId)
+      .single();
+
+    if (convError || !conv) {
+      sendEvent('error', { message: 'Conversation not found' });
+      return res.end();
+    }
+
+    const results: HumeExpressionResult = {};
+
+    // Analyze transcript (language)
+    if (conv.transcript) {
+      sendEvent('status', { message: 'Analyzing language emotions...', stage: 'language' });
+      try {
+        // Use WebSocket for text streaming
+        const wsUrl = `wss://api.hume.ai/v0/stream/models?apiKey=${HUME_API_KEY}`;
+        const ws = new (await import('ws')).default(wsUrl);
+
+        await new Promise<void>((resolve, reject) => {
+          ws.on('open', () => {
+            ws.send(JSON.stringify({
+              models: { language: {} },
+              raw_text: true,
+              data: conv.transcript
+            }));
+          });
+
+          ws.on('message', (data: Buffer) => {
+            const response = JSON.parse(data.toString());
+            if (response.language?.predictions?.[0]?.emotions) {
+              results.language = getTopEmotions(response.language.predictions[0].emotions);
+              sendEvent('language', { emotions: results.language });
+            }
+            ws.close();
+            resolve();
+          });
+
+          ws.on('error', reject);
+          setTimeout(() => { ws.close(); resolve(); }, 30000);
+        });
+      } catch (err: any) {
+        sendEvent('warning', { message: `Language analysis failed: ${err.message}` });
+      }
+    }
+
+    // Analyze video (face + prosody)
+    if (conv.video_url) {
+      sendEvent('status', { message: 'Analyzing facial expressions and voice prosody...', stage: 'video' });
+      try {
+        const predictions = await analyzeWithHumeBatch(conv.video_url, { face: true, prosody: true });
+
+        if (predictions?.[0]?.results?.predictions?.[0]) {
+          const pred = predictions[0].results.predictions[0];
+
+          // Face emotions
+          if (pred.models?.face?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+            results.face = getTopEmotions(pred.models.face.grouped_predictions[0].predictions[0].emotions);
+            sendEvent('face', { emotions: results.face });
+          }
+
+          // Prosody emotions
+          if (pred.models?.prosody?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+            results.prosody = getTopEmotions(pred.models.prosody.grouped_predictions[0].predictions[0].emotions);
+            sendEvent('prosody', { emotions: results.prosody });
+          }
+        }
+      } catch (err: any) {
+        sendEvent('warning', { message: `Video analysis failed: ${err.message}` });
+      }
+    }
+
+    // Store results in database
+    await supabase
+      .from('conversations')
+      .update({
+        expression_analysis: results,
+        expression_analyzed_at: new Date().toISOString()
+      })
+      .eq('id', conversationId);
+
+    sendEvent('complete', {
+      message: 'Expression analysis complete',
+      results
+    });
+
+  } catch (error: any) {
+    sendEvent('error', { message: error.message });
+  }
+
+  res.end();
+});
+
+// Non-streaming endpoint for expression analysis
+app.post('/api/expression/analyze', async (req, res) => {
+  try {
+    const { conversation_id, video_url, transcript, audio_url } = req.body;
+
+    if (!video_url && !transcript && !audio_url) {
+      return res.status(400).json({ error: 'At least one of video_url, transcript, or audio_url required' });
+    }
+
+    const results: HumeExpressionResult = {};
     const errors: string[] = [];
 
-    // Initialize Gradio client
-    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
-
-    // Text sentiment analysis
-    if (text) {
+    // Analyze video (face + prosody)
+    if (video_url) {
       try {
-        const textResult = await client.predict("/predict_1", { text });
-        const data = textResult.data as any[];
-        results.text_emotion = data[0] as string;
+        const predictions = await analyzeWithHumeBatch(video_url, { face: true, prosody: true, burst: true });
+
+        if (predictions?.[0]?.results?.predictions?.[0]) {
+          const pred = predictions[0].results.predictions[0];
+
+          if (pred.models?.face?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+            results.face = getTopEmotions(pred.models.face.grouped_predictions[0].predictions[0].emotions);
+          }
+
+          if (pred.models?.prosody?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+            results.prosody = getTopEmotions(pred.models.prosody.grouped_predictions[0].predictions[0].emotions);
+          }
+
+          if (pred.models?.burst?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+            results.burst = getTopEmotions(pred.models.burst.grouped_predictions[0].predictions[0].emotions);
+          }
+        }
       } catch (err: any) {
-        errors.push(`Text analysis failed: ${err.message}`);
+        errors.push(`Video analysis: ${err.message}`);
       }
     }
 
-    // Image sentiment analysis
-    if (files?.image?.[0]) {
+    // Analyze transcript (language)
+    if (transcript) {
       try {
-        const imageFile = files.image[0];
-        const blob = new Blob([new Uint8Array(imageFile.buffer)], { type: imageFile.mimetype });
-        const imageResult = await client.predict("/predict_2", { img: blob });
-        const data = imageResult.data as any[];
-        results.image_emotion = data[0] as MultimodalAnalysisResult['image_emotion'];
+        const wsUrl = `wss://api.hume.ai/v0/stream/models?apiKey=${HUME_API_KEY}`;
+        const ws = new (await import('ws')).default(wsUrl);
+
+        await new Promise<void>((resolve, reject) => {
+          ws.on('open', () => {
+            ws.send(JSON.stringify({
+              models: { language: {} },
+              raw_text: true,
+              data: transcript
+            }));
+          });
+
+          ws.on('message', (data: Buffer) => {
+            const response = JSON.parse(data.toString());
+            if (response.language?.predictions?.[0]?.emotions) {
+              results.language = getTopEmotions(response.language.predictions[0].emotions);
+            }
+            ws.close();
+            resolve();
+          });
+
+          ws.on('error', reject);
+          setTimeout(() => { ws.close(); resolve(); }, 30000);
+        });
       } catch (err: any) {
-        errors.push(`Image analysis failed: ${err.message}`);
+        errors.push(`Language analysis: ${err.message}`);
       }
     }
 
-    // Audio sentiment analysis (via file path)
-    if (audio_file_path) {
-      try {
-        const audioResult = await client.predict("/predict_3", { file_path: audio_file_path });
-        const data = audioResult.data as any[];
-        results.audio_emotion = data[0] as string;
-      } catch (err: any) {
-        errors.push(`Audio analysis failed: ${err.message}`);
-      }
+    // Store in DB if conversation_id provided
+    if (conversation_id) {
+      await supabase
+        .from('conversations')
+        .update({
+          expression_analysis: results,
+          expression_analyzed_at: new Date().toISOString()
+        })
+        .eq('id', conversation_id);
     }
 
-    if (errors.length > 0) {
-      results.errors = errors;
-    }
+    res.json({
+      results,
+      errors: errors.length > 0 ? errors : undefined
+    });
 
-    if (!text && !files?.image?.[0] && !audio_file_path) {
-      return res.status(400).json({
-        error: 'At least one input required: text, image, or audio_file_path'
+  } catch (error: any) {
+    console.error('Expression analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// HUME EXPRESSION ANALYSIS HELPER
+// ============================================
+
+async function runHumeExpressionAnalysis(conversationId: string): Promise<void> {
+  console.log(`Starting Hume expression analysis for ${conversationId}...`);
+
+  // Get conversation data
+  const { data: conv, error } = await supabase
+    .from('conversations')
+    .select('id, transcript, video_url')
+    .eq('id', conversationId)
+    .single();
+
+  if (error || !conv) {
+    throw new Error(`Conversation not found: ${conversationId}`);
+  }
+
+  const results: HumeExpressionResult = {};
+
+  // Analyze transcript (language emotions)
+  if (conv.transcript && HUME_API_KEY) {
+    try {
+      console.log(`Analyzing language emotions for ${conversationId}...`);
+      const ws = new (await import('ws')).default(`wss://api.hume.ai/v0/stream/models?apiKey=${HUME_API_KEY}`);
+
+      await new Promise<void>((resolve, reject) => {
+        ws.on('open', () => {
+          ws.send(JSON.stringify({
+            models: { language: {} },
+            raw_text: true,
+            data: conv.transcript
+          }));
+        });
+
+        ws.on('message', (data: Buffer) => {
+          const response = JSON.parse(data.toString());
+          if (response.language?.predictions?.[0]?.emotions) {
+            results.language = getTopEmotions(response.language.predictions[0].emotions);
+          }
+          ws.close();
+          resolve();
+        });
+
+        ws.on('error', (err) => {
+          console.error('WebSocket error:', err);
+          ws.close();
+          resolve(); // Don't fail the whole process
+        });
+
+        setTimeout(() => { ws.close(); resolve(); }, 30000);
       });
+    } catch (err: any) {
+      console.error(`Language analysis failed for ${conversationId}:`, err.message);
     }
-
-    res.json(results);
-  } catch (error: any) {
-    console.error('Multimodal analysis error:', error);
-    res.status(500).json({ error: error.message });
   }
-});
 
-// Individual analysis endpoints for convenience
-app.post('/api/multimodal-analysis/text', async (req, res) => {
-  try {
-    const { text } = req.body;
+  // Analyze video (face + prosody)
+  if (conv.video_url && HUME_API_KEY) {
+    try {
+      console.log(`Analyzing facial expressions and prosody for ${conversationId}...`);
+      const predictions = await analyzeWithHumeBatch(conv.video_url, { face: true, prosody: true });
 
-    if (!text) {
-      return res.status(400).json({ error: 'text field is required' });
+      if (predictions?.[0]?.results?.predictions?.[0]) {
+        const pred = predictions[0].results.predictions[0];
+
+        if (pred.models?.face?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+          results.face = getTopEmotions(pred.models.face.grouped_predictions[0].predictions[0].emotions);
+        }
+
+        if (pred.models?.prosody?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+          results.prosody = getTopEmotions(pred.models.prosody.grouped_predictions[0].predictions[0].emotions);
+        }
+      }
+    } catch (err: any) {
+      console.error(`Video analysis failed for ${conversationId}:`, err.message);
     }
-
-    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
-    const result = await client.predict("/predict_1", { text });
-    const data = result.data as any[];
-
-    res.json({ emotion: data[0] });
-  } catch (error: any) {
-    console.error('Text multimodal analysis error:', error);
-    res.status(500).json({ error: error.message });
   }
-});
 
-app.post('/api/multimodal-analysis/image', upload.single('image'), async (req, res) => {
-  try {
-    const file = req.file;
+  // Store results
+  if (Object.keys(results).length > 0) {
+    await supabase
+      .from('conversations')
+      .update({
+        expression_analysis: results,
+        expression_analyzed_at: new Date().toISOString()
+      })
+      .eq('id', conversationId);
 
-    if (!file) {
-      return res.status(400).json({ error: 'image file is required' });
-    }
-
-    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
-    const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype });
-    const result = await client.predict("/predict_2", { img: blob });
-    const data = result.data as any[];
-
-    res.json({ emotion: data[0] });
-  } catch (error: any) {
-    console.error('Image multimodal analysis error:', error);
-    res.status(500).json({ error: error.message });
+    console.log(`Hume expression analysis completed for ${conversationId}:`, Object.keys(results));
+  } else {
+    console.log(`No expression analysis results for ${conversationId} (missing video_url or transcript, or no HUME_API_KEY)`);
   }
-});
-
-app.post('/api/multimodal-analysis/audio', async (req, res) => {
-  try {
-    const { file_path } = req.body;
-
-    if (!file_path) {
-      return res.status(400).json({ error: 'file_path field is required' });
-    }
-
-    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
-    const result = await client.predict("/predict_3", { file_path });
-    const data = result.data as any[];
-
-    res.json({ emotion: data[0] });
-  } catch (error: any) {
-    console.error('Audio multimodal analysis error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+}
 
 // ============================================
 // WEBHOOKS (for n8n callbacks)
@@ -731,6 +967,11 @@ app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
             console.error(`Analysis failed for ${convId}:`, err);
           }
         }
+
+        // Trigger Hume expression analysis (non-blocking)
+        runHumeExpressionAnalysis(convId).catch(err => {
+          console.error(`Hume expression analysis failed for ${convId}:`, err);
+        });
 
         return res.json({ status: 'success', conversation_id: convId });
       }

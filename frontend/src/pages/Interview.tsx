@@ -156,11 +156,14 @@ export default function Interview({ userId }: InterviewProps) {
     setIsEnding(true);
 
     try {
+      // Immediately stop all media tracks to prevent agent from hearing more
+      stopCamera(); // This stops both video and audio tracks from the user's stream
+      
       // Stop recording
       stopRecording();
 
       // Disconnect from ElevenLabs
-      disconnectElevenLabs();
+      await disconnectElevenLabs();
 
       // End interview on backend
       await api.endInterview(conversationId, elConvId);
