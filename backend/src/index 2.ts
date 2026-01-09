@@ -540,9 +540,6 @@ app.post('/api/conversations/:conversationId/confirm-upload', async (req, res) =
     if (type === 'video') {
       updateData.video_url = publicUrl;
       updateData.video_storage_path = storagePath;
-    } else if (type === 'audio') {
-      updateData.audio_url = publicUrl;
-      updateData.audio_storage_path = storagePath;
     }
 
     const { error } = await supabase
@@ -555,40 +552,10 @@ app.post('/api/conversations/:conversationId/confirm-upload', async (req, res) =
     res.json({
       success: true,
       conversation_id: conversationId,
-      [type === 'video' ? 'video_url' : type === 'audio' ? 'audio_url' : 'url']: publicUrl
+      [type === 'video' ? 'video_url' : 'url']: publicUrl
     });
   } catch (error: any) {
     console.error('Confirm upload error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Endpoint for n8n to upload audio URL
-app.post('/api/conversations/:conversationId/audio', async (req, res) => {
-  try {
-    const { conversationId } = req.params;
-    const { audio_url } = req.body;
-
-    if (!audio_url) {
-      return res.status(400).json({ error: 'audio_url is required' });
-    }
-
-    console.log(`Setting audio URL for conversation ${conversationId}: ${audio_url}`);
-
-    const { error } = await supabase
-      .from('conversations')
-      .update({ audio_url })
-      .eq('id', conversationId);
-
-    if (error) throw error;
-
-    res.json({
-      success: true,
-      conversation_id: conversationId,
-      audio_url
-    });
-  } catch (error: any) {
-    console.error('Audio URL update error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -701,8 +668,7 @@ interface HumeExpressionResult {
 // Helper to analyze with Hume REST API (batch)
 async function analyzeWithHumeBatch(
   mediaUrl: string,
-  models: { prosody?: boolean; face?: boolean; language?: boolean; burst?: boolean },
-  conversationId?: string
+  models: { prosody?: boolean; face?: boolean; language?: boolean; burst?: boolean }
 ): Promise<any> {
   // Start job
   const startResponse = await fetch('https://api.hume.ai/v0/batch/jobs', {
@@ -736,10 +702,7 @@ async function analyzeWithHumeBatch(
     await fetch('https://maxipad.app.n8n.cloud/webhook/1bfc2df0-6c2b-434b-aceb-671cf7e390dd', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        hume_job_id: job_id,
-        conversation_id: conversationId
-      })
+      body: JSON.stringify({ hume_job_id: job_id })
     });
     console.log(`[Hume] Webhook notified for job ${job_id}`);
   } catch (webhookErr: any) {
@@ -1235,7 +1198,7 @@ async function runHumeExpressionAnalysis(conversationId: string): Promise<void> 
       console.log(`[${conversationId}] Analyzing facial expressions and prosody...`);
 
       try {
-        const result = await analyzeWithHumeBatch(conv.video_url, { face: true, prosody: true }, conversationId);
+        const result = await analyzeWithHumeBatch(conv.video_url, { face: true, prosody: true });
 
         // New flow: Job is created and sent to n8n, will be processed async
         if (result.status === 'PROCESSING') {
@@ -1455,7 +1418,7 @@ app.get('/api/conversations/:conversationId/emotions/timeline', async (req, res)
 
     const { data, error } = await query;
 
-    if (error && !error.message.includes('schema cache')) throw error;
+    if (error) throw error;
 
     // Group by model type
     const grouped: Record<string, any[]> = { face: [], prosody: [], language: [], burst: [] };
@@ -1537,38 +1500,29 @@ app.get('/api/conversations/:conversationId/transcript/annotated', async (req, r
       .eq('conversation_id', conversationId)
       .single();
 
-    if (error && error.code !== 'PGRST116' && !error.message.includes('schema cache')) throw error;
+    if (error && error.code !== 'PGRST116') throw error;
 
-    if (!data || (error && error.message.includes('schema cache'))) {
-      // Return raw transcript if no annotated version exists or table is missing
+    if (!data) {
+      // Return raw transcript if no annotated version exists
       const { data: conv } = await supabase
         .from('conversations')
-        .select('transcript, transcript_json')
+        .select('transcript')
         .eq('id', conversationId)
         .single();
 
       return res.json({
         conversation_id: conversationId,
         has_annotations: false,
-        transcript: conv?.transcript || null,
-        transcript_json: conv?.transcript_json || null
+        transcript: conv?.transcript || null
       });
     }
-
-    // Fetch conversation for transcript_json even if we have annotations
-    const { data: conv } = await supabase
-      .from('conversations')
-      .select('transcript_json')
-      .eq('id', conversationId)
-      .single();
 
     res.json({
       conversation_id: conversationId,
       has_annotations: true,
       segments: data.segments,
       total_segments: data.total_segments,
-      analyzed_at: data.analyzed_at,
-      transcript_json: conv?.transcript_json || null
+      analyzed_at: data.analyzed_at
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -1590,7 +1544,7 @@ app.get('/api/conversations/:conversationId/emotions/distribution', async (req, 
       .eq('model_type', model)
       .order('start_timestamp_ms', { ascending: true });
 
-    if (error && !error.message.includes('schema cache')) throw error;
+    if (error) throw error;
 
     // Bucket the data
     const buckets: Record<number, { emotions: Record<string, number>; count: number }> = {};
@@ -1667,30 +1621,6 @@ app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
 
     console.log('Conversation complete webhook:', conversation_id);
 
-    // Transform ElevenLabs transcript format to our expected format
-    let normalizedTranscriptJson = null;
-    if (transcript_json) {
-      normalizedTranscriptJson = transcript_json;
-    } else if (payload.transcription) {
-      // ElevenLabs sends transcription as an object or array
-      const rawTranscription = payload.transcription;
-
-      // If it's an array of transcript items, normalize them
-      if (Array.isArray(rawTranscription)) {
-        normalizedTranscriptJson = rawTranscription.map((item: any) => ({
-          role: item.role === 'user' ? 'user' : 'agent',
-          message: item.message || item.text || item.content || null,
-          time_in_call_secs: item.time_in_call_secs || item.timestamp || item.time || undefined,
-          tool_calls: item.tool_calls || undefined,
-          tool_results: item.tool_results || undefined,
-          feedback: item.feedback || undefined
-        }));
-      } else if (rawTranscription.text) {
-        // If it's a single text object, just store the raw text
-        normalizedTranscriptJson = null; // Will use plain transcript field instead
-      }
-    }
-
     // Find conversation
     let query = supabase.from('conversations').select('*, users(formatted_resume, job_description)');
 
@@ -1713,7 +1643,7 @@ app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
             status: 'analyzing',
             elevenlabs_conversation_id: conversation_id,
             transcript: transcript || payload.transcription?.text,
-            transcript_json: normalizedTranscriptJson,
+            transcript_json: transcript_json || payload.transcription,
             duration_seconds: duration_seconds || payload.duration_seconds,
             ended_at: new Date().toISOString()
           })

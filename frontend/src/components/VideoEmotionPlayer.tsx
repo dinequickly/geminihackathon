@@ -5,6 +5,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from '
 interface VideoEmotionPlayerProps {
   conversationId: string;
   videoUrl: string;
+  audioUrl?: string;
   onTimeUpdate?: (timeMs: number) => void;
 }
 
@@ -59,9 +60,11 @@ const formatTime = (ms: number): string => {
 export default function VideoEmotionPlayer({
   conversationId,
   videoUrl,
+  audioUrl,
   onTimeUpdate
 }: VideoEmotionPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -151,8 +154,10 @@ export default function VideoEmotionPlayer({
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        audioRef.current?.pause();
       } else {
         videoRef.current.play();
+        audioRef.current?.play();
       }
       setIsPlaying(!isPlaying);
     }
@@ -161,6 +166,9 @@ export default function VideoEmotionPlayer({
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
+      if (audioRef.current) {
+        audioRef.current.muted = !isMuted;
+      }
       setIsMuted(!isMuted);
     }
   };
@@ -171,12 +179,18 @@ export default function VideoEmotionPlayer({
       const percent = (e.clientX - rect.left) / rect.width;
       const newTime = percent * videoRef.current.duration;
       videoRef.current.currentTime = newTime;
+      if (audioRef.current) {
+        audioRef.current.currentTime = newTime;
+      }
     }
   };
 
   const skipTime = (seconds: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime += seconds;
+      if (audioRef.current) {
+        audioRef.current.currentTime += seconds;
+      }
     }
   };
 
@@ -278,6 +292,26 @@ export default function VideoEmotionPlayer({
         {/* Video Section */}
         <div className="lg:col-span-2">
           <div className="relative bg-black aspect-video flex items-center justify-center">
+            {/* Hidden audio element for AI interviewer voice */}
+            {audioUrl && (
+              <audio
+                ref={audioRef}
+                src={audioUrl}
+                onPlay={() => {
+                  // Sync video if audio starts playing
+                  if (videoRef.current?.paused) {
+                    videoRef.current?.play();
+                  }
+                }}
+                onPause={() => {
+                  // Sync video if audio pauses
+                  if (!videoRef.current?.paused) {
+                    videoRef.current?.pause();
+                  }
+                }}
+              />
+            )}
+
             {!videoError ? (
                 <video
                   ref={videoRef}
@@ -286,8 +320,14 @@ export default function VideoEmotionPlayer({
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onError={handleError}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
+                  onPlay={() => {
+                    setIsPlaying(true);
+                    audioRef.current?.play();
+                  }}
+                  onPause={() => {
+                    setIsPlaying(false);
+                    audioRef.current?.pause();
+                  }}
                 />
             ) : (
                 <div className="text-white text-center p-6">

@@ -20,6 +20,7 @@ export interface Conversation {
   transcript?: string;
   duration_seconds?: number;
   video_url?: string;
+  audio_url?: string;
   started_at: string;
   ended_at?: string;
   has_analysis?: boolean;

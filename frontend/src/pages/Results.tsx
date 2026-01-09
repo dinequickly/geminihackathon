@@ -359,6 +359,7 @@ export default function Results() {
                   <VideoEmotionPlayer
                     conversationId={conversationId}
                     videoUrl={conversation.video_url}
+                    audioUrl={conversation.audio_url}
                     onTimeUpdate={setCurrentVideoTimeMs}
                   />
                 </div>
