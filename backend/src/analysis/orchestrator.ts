@@ -117,7 +117,6 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
         .from('emotion_analysis')
         .insert({
           conversation_id: conversationId,
-          user_id: conversation.user_id,
           overall_score: overallScore,
           overall_level: overallLevel,
           speaking_pace_wpm: wpm,
