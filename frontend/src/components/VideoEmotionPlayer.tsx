@@ -70,6 +70,7 @@ export default function VideoEmotionPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [audioOffset, setAudioOffset] = useState(0); // Offset in seconds to sync audio with video
   const [duration, setDuration] = useState(0);
   const [emotionData, setEmotionData] = useState<EmotionData>({ face: [], prosody: [] });
   const [currentEmotions, setCurrentEmotions] = useState<{
@@ -164,13 +165,11 @@ export default function VideoEmotionPlayer({
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      if (audioRef.current) {
-        audioRef.current.muted = !isMuted;
-      }
-      setIsMuted(!isMuted);
+    // Only toggle the ElevenLabs audio (video is always muted)
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
     }
+    setIsMuted(!isMuted);
   };
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -297,6 +296,9 @@ export default function VideoEmotionPlayer({
               <audio
                 ref={audioRef}
                 src={audioUrl}
+                preload="auto"
+                onLoadedData={() => console.log('Audio loaded:', audioUrl)}
+                onError={(e) => console.error('Audio load error:', e)}
                 onPlay={() => {
                   // Sync video if audio starts playing
                   if (videoRef.current?.paused) {
@@ -317,12 +319,22 @@ export default function VideoEmotionPlayer({
                   ref={videoRef}
                   src={videoUrl}
                   className="w-full h-full object-contain"
-                  onTimeUpdate={handleTimeUpdate}
+                  muted={true}  // Always mute video - we play ElevenLabs audio separately
+                  onTimeUpdate={(e) => {
+                    handleTimeUpdate();
+                    // Keep audio synced with video (with offset)
+                    if (audioRef.current && Math.abs((audioRef.current.currentTime + audioOffset) - (e.target as HTMLVideoElement).currentTime) > 0.3) {
+                      audioRef.current.currentTime = (e.target as HTMLVideoElement).currentTime - audioOffset;
+                    }
+                  }}
                   onLoadedMetadata={handleLoadedMetadata}
                   onError={handleError}
                   onPlay={() => {
                     setIsPlaying(true);
-                    audioRef.current?.play();
+                    if (audioRef.current) {
+                      audioRef.current.currentTime = videoRef.current!.currentTime - audioOffset;
+                      audioRef.current.play();
+                    }
                   }}
                   onPause={() => {
                     setIsPlaying(false);
@@ -411,6 +423,39 @@ export default function VideoEmotionPlayer({
               </>
             )}
           </div>
+
+          {/* Audio Sync Control - only show if audio is available */}
+          {audioUrl && (
+            <div className="px-4 pb-4 border-t border-gray-200 pt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Audio Sync Offset</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setAudioOffset(prev => prev - 0.1)}
+                    className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                  >
+                    -0.1s
+                  </button>
+                  <span className="text-sm font-mono w-16 text-center">
+                    {audioOffset >= 0 ? '+' : ''}{audioOffset.toFixed(1)}s
+                  </span>
+                  <button
+                    onClick={() => setAudioOffset(prev => prev + 0.1)}
+                    className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                  >
+                    +0.1s
+                  </button>
+                  <button
+                    onClick={() => setAudioOffset(0)}
+                    className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded ml-2"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Adjust if audio is ahead (+) or behind (-) the video</p>
+            </div>
+          )}
         </div>
 
         {/* Emotion Panel */}
