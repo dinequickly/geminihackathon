@@ -354,6 +354,7 @@ export default function VideoEmotionPlayer({
                 </div>
               </div>
             </div>
+            )}
           </div>
 
           {/* Emotion Timeline Bars */}
