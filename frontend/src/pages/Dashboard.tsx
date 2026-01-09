@@ -192,13 +192,14 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
                 <button
                   key={conv.id}
                   onClick={() => {
-                    if (conv.status === 'analyzed') {
+                    // Allow clicking on completed, analyzing, or analyzed conversations
+                    if (['completed', 'analyzing', 'analyzed'].includes(conv.status)) {
                       navigate(`/results/${conv.id}`);
                     }
                   }}
-                  disabled={conv.status !== 'analyzed'}
+                  disabled={conv.status === 'in_progress' || conv.status === 'error'}
                   className={`w-full bg-white rounded-xl p-4 flex items-center justify-between border border-gray-200 transition ${
-                    conv.status === 'analyzed' ? 'hover:border-primary-300 hover:shadow-md cursor-pointer' : 'opacity-75 cursor-default'
+                    ['completed', 'analyzing', 'analyzed'].includes(conv.status) ? 'hover:border-primary-300 hover:shadow-md cursor-pointer' : 'opacity-75 cursor-default'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -226,7 +227,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
                       </span>
                     )}
                     {getStatusBadge(conv.status)}
-                    {conv.status === 'analyzed' && (
+                    {['completed', 'analyzing', 'analyzed'].includes(conv.status) && (
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     )}
                   </div>
