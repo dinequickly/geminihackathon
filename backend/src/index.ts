@@ -137,14 +137,16 @@ app.post('/api/users/onboard', async (req, res) => {
 
       if (error) throw error;
       userId = data.id;
-
-      // Trigger new account webhook
-      await fetch(N8N_USER_CREATED_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, email, name })
-      }).catch(err => console.error('User created webhook failed:', err));
     }
+
+    // Trigger new account/update webhook
+    await fetch(N8N_USER_CREATED_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, email, name })
+    }).catch(err => console.error('User webhook failed:', err));
+
+    // Trigger LinkedIn scraping if URL provided
 
     // Trigger LinkedIn scraping if URL provided
     if (linkedin_url) {
