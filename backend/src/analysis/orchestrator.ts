@@ -84,17 +84,23 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
   };
 
   // 5. Save to Database
-  await supabase.from('analysis').upsert({
+  const { error: analysisError } = await supabase.from('analysis').upsert({
     conversation_id: conversationId,
     user_id: conversation.user_id,
     overall_score: overallScore,
     overall_level: overallLevel,
     speaking_pace_wpm: wpm,
     filler_word_count: fillerCount,
-    communication_score: communicationScore,
+    // communication_score is not in schema, mapping to technical_score for now or omitting
+    technical_score: communicationScore, 
     presence_score: presenceScore,
     full_analysis_json: analysisResult
   }, { onConflict: 'conversation_id' });
+
+  if (analysisError) {
+      console.error('Error saving analysis:', analysisError);
+      throw analysisError;
+  }
 
   // Update conversation status
   await supabase
