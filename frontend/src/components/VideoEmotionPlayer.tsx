@@ -74,6 +74,7 @@ export default function VideoEmotionPlayer({
     prosody?: { name: string; score: number; allEmotions: Array<{ name: string; score: number }> };
   }>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [videoError, setVideoError] = useState(false);
 
   // Load emotion timeline data
   useEffect(() => {
@@ -137,7 +138,13 @@ export default function VideoEmotionPlayer({
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration * 1000);
+      setVideoError(false);
     }
+  };
+
+  const handleError = () => {
+      console.error("Video failed to load");
+      setVideoError(true);
   };
 
   const togglePlay = () => {
@@ -159,7 +166,7 @@ export default function VideoEmotionPlayer({
   };
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (progressRef.current && videoRef.current) {
+    if (progressRef.current && videoRef.current && !videoError) {
       const rect = progressRef.current.getBoundingClientRect();
       const percent = (e.clientX - rect.left) / rect.width;
       const newTime = percent * videoRef.current.duration;
@@ -270,18 +277,27 @@ export default function VideoEmotionPlayer({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
         {/* Video Section */}
         <div className="lg:col-span-2">
-          <div className="relative bg-black aspect-video">
-            <video
-              ref={videoRef}
-              src={videoUrl}
-              className="w-full h-full object-contain"
-              onTimeUpdate={handleTimeUpdate}
-              onLoadedMetadata={handleLoadedMetadata}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-            />
+          <div className="relative bg-black aspect-video flex items-center justify-center">
+            {!videoError ? (
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  className="w-full h-full object-contain"
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onError={handleError}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                />
+            ) : (
+                <div className="text-white text-center p-6">
+                    <p className="text-lg font-semibold mb-2">Video Unavailable</p>
+                    <p className="text-sm text-gray-400">The recording for this interview could not be loaded.</p>
+                </div>
+            )}
 
             {/* Video Controls Overlay */}
+            {!videoError && (
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
               {/* Progress Bar */}
               <div

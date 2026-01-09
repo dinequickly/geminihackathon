@@ -353,6 +353,7 @@ class ApiClient {
     total_segments?: number;
     analyzed_at?: string;
     transcript?: string;
+    transcript_json?: any[];
   }> {
     return this.request(`/api/conversations/${conversationId}/transcript/annotated`);
   }

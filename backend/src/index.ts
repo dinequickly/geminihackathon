@@ -1510,23 +1510,32 @@ app.get('/api/conversations/:conversationId/transcript/annotated', async (req, r
       // Return raw transcript if no annotated version exists or table is missing
       const { data: conv } = await supabase
         .from('conversations')
-        .select('transcript')
+        .select('transcript, transcript_json')
         .eq('id', conversationId)
         .single();
 
       return res.json({
         conversation_id: conversationId,
         has_annotations: false,
-        transcript: conv?.transcript || null
+        transcript: conv?.transcript || null,
+        transcript_json: conv?.transcript_json || null
       });
     }
+
+    // Fetch conversation for transcript_json even if we have annotations
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('transcript_json')
+      .eq('id', conversationId)
+      .single();
 
     res.json({
       conversation_id: conversationId,
       has_annotations: true,
       segments: data.segments,
       total_segments: data.total_segments,
-      analyzed_at: data.analyzed_at
+      analyzed_at: data.analyzed_at,
+      transcript_json: conv?.transcript_json || null
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
