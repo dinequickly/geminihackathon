@@ -252,7 +252,10 @@ app.post('/api/interviews/start', async (req, res) => {
       .select()
       .single();
 
-    if (convError) throw convError;
+    if (convError) {
+        console.error('Supabase create conversation error:', convError);
+        throw convError;
+    }
 
     // Get ElevenLabs signed URL
     const elResponse = await fetch(
@@ -513,10 +516,13 @@ app.post('/api/webhooks/conversation-complete', async (req, res) => {
 
         // Run local analysis orchestrator
         if (transcript) {
-          // Run in background so we don't block the response
-          runFullAnalysis(convId)
-            .then(() => console.log(`Analysis completed for ${convId}`))
-            .catch(err => console.error(`Analysis failed for ${convId}:`, err));
+          try {
+            console.log(`Starting analysis for ${convId}...`);
+            await runFullAnalysis(convId);
+            console.log(`Analysis completed for ${convId}`);
+          } catch (err) {
+            console.error(`Analysis failed for ${convId}:`, err);
+          }
         }
 
         return res.json({ status: 'success', conversation_id: convId });
