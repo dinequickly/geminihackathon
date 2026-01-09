@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -17,7 +17,7 @@ import {
   Activity
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
-import { VideoEmotionPlayer, TranscriptViewer } from '../components';
+import { VideoEmotionPlayer, TranscriptViewer, VideoEmotionPlayerRef } from '../components';
 
 export default function Results() {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -27,8 +27,9 @@ export default function Results() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview', 'transcript']));
   const [currentVideoTimeMs, setCurrentVideoTimeMs] = useState(0);
+  const videoPlayerRef = useRef<VideoEmotionPlayerRef>(null);
 
   useEffect(() => {
     if (conversationId) {
@@ -335,55 +336,71 @@ export default function Results() {
           </div>
         )}
 
-        {/* Video with Emotion Analysis */}
-        {conversation?.video_url && conversationId && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Video with Emotion Analysis & Transcript */}
+        {conversationId && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {conversation?.video_url && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[70vh] flex flex-col">
+                <button
+                  onClick={() => toggleSection('video')}
+                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-gray-400" />
+                    <h2 className="text-lg font-semibold text-gray-900">Recording with Emotion Analysis</h2>
+                  </div>
+                  {expandedSections.has('video') ? (
+                    <ChevronUp className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+
+                {expandedSections.has('video') && (
+                  <div className="p-4 flex-grow overflow-hidden">
+                    <VideoEmotionPlayer
+                      ref={videoPlayerRef}
+                      conversationId={conversationId}
+                      videoUrl={conversation.video_url}
+                      audioUrl={conversation.audio_url}
+                      onTimeUpdate={setCurrentVideoTimeMs}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Transcript Viewer */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[70vh] flex flex-col">
               <button
-                onClick={() => toggleSection('video')}
+                onClick={() => toggleSection('transcript')}
                 className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
               >
                 <div className="flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-gray-400" />
-                  <h2 className="text-lg font-semibold text-gray-900">Recording with Emotion Analysis</h2>
+                  <MessageSquare className="w-5 h-5 text-gray-400" />
+                  <h2 className="text-lg font-semibold text-gray-900">Transcript</h2>
                 </div>
-                {expandedSections.has('video') ? (
+                {expandedSections.has('transcript') ? (
                   <ChevronUp className="w-5 h-5 text-gray-400" />
                 ) : (
                   <ChevronDown className="w-5 h-5 text-gray-400" />
                 )}
               </button>
-
-              {expandedSections.has('video') && (
-                <div className="p-4">
-                  <VideoEmotionPlayer
+              {expandedSections.has('transcript') && (
+                <div className="p-4 flex-grow overflow-y-auto">
+                  <TranscriptViewer
                     conversationId={conversationId}
-                    videoUrl={conversation.video_url}
-                    audioUrl={conversation.audio_url}
-                    onTimeUpdate={setCurrentVideoTimeMs}
+                    currentTimeMs={currentVideoTimeMs}
+                    onSegmentClick={(startTime) => {
+                      setCurrentVideoTimeMs(startTime * 1000);
+                      videoPlayerRef.current?.seekTo(startTime);
+                      videoPlayerRef.current?.pause(); // Pause on highlight
+                    }}
                   />
                 </div>
               )}
             </div>
-
-            {/* Transcript Viewer */}
-            <TranscriptViewer
-              conversationId={conversationId}
-              currentTimeMs={currentVideoTimeMs}
-              onSegmentClick={(startTime) => {
-                setCurrentVideoTimeMs(startTime * 1000);
-                // If we had a ref to the video player, we could seek to this time
-              }}
-            />
           </div>
-        )}
-
-        {/* Show transcript even without video */}
-        {!conversation?.video_url && conversationId && (
-          <TranscriptViewer
-            conversationId={conversationId}
-            currentTimeMs={currentVideoTimeMs}
-          />
         )}
 
         {/* Action Buttons */}

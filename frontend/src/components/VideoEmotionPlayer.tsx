@@ -1,12 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { api, EmotionTimelineItem } from '../lib/api';
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from 'lucide-react';
 
-interface VideoEmotionPlayerProps {
+export interface VideoEmotionPlayerProps {
   conversationId: string;
   videoUrl: string;
   audioUrl?: string;
   onTimeUpdate?: (timeMs: number) => void;
+}
+
+export interface VideoEmotionPlayerRef {
+  pause: () => void;
+  play: () => void;
+  seekTo: (timeSec: number) => void;
+  getCurrentTime: () => number;
 }
 
 interface EmotionData {
@@ -57,15 +64,31 @@ const formatTime = (ms: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export default function VideoEmotionPlayer({
-  conversationId,
-  videoUrl,
-  audioUrl,
-  onTimeUpdate
-}: VideoEmotionPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
+const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerProps>(
+  ({ conversationId, videoUrl, audioUrl, onTimeUpdate }, ref) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const progressRef = useRef<HTMLDivElement>(null);
+
+    useImperativeHandle(ref, () => ({
+      play: () => {
+        videoRef.current?.play();
+        audioRef.current?.play();
+      },
+      pause: () => {
+        videoRef.current?.pause();
+        audioRef.current?.pause();
+      },
+      seekTo: (timeSec: number) => {
+        if (videoRef.current) {
+          videoRef.current.currentTime = timeSec;
+        }
+        if (audioRef.current) {
+          audioRef.current.currentTime = timeSec;
+        }
+      },
+      getCurrentTime: () => videoRef.current?.currentTime || 0,
+    }));
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -487,4 +510,6 @@ export default function VideoEmotionPlayer({
       </div>
     </div>
   );
-}
+});
+
+export default VideoEmotionPlayer;
