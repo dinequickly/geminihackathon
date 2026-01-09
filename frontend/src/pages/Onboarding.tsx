@@ -17,6 +17,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     linkedinUrl: '',
     jobDescription: ''
   });
@@ -27,28 +28,39 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       return;
     }
 
+    if (!formData.password) {
+        setError('Please enter a password');
+        return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
-      const result = await api.checkUser(formData.email);
+      const result = await api.checkUser(formData.email, formData.password);
       
-      if (result.exists && result.user) {
-        // Existing user - skip to job details
-        setFormData(prev => ({
-          ...prev,
-          name: result.user!.name,
-          linkedinUrl: result.user!.linkedin_url || '',
-          jobDescription: result.user!.job_description || ''
-        }));
-        setStep(2);
+      if (result.exists) {
+        if (result.password_valid) {
+            // Login successful
+            onComplete(result.user!.id);
+            navigate('/dashboard');
+        } else if (result.password_valid === false) {
+            setError('Incorrect password');
+        } else {
+            // Legacy user without password or something else?
+            // For now treat as login success if backend didn't complain about validity (e.g. if we allowed no-pass login)
+             if (result.user) {
+                 onComplete(result.user.id);
+                 navigate('/dashboard');
+             }
+        }
       } else {
         // New user - go to profile setup
         setIsNewUser(true);
         setStep(1);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to verify email');
+      setError(err instanceof Error ? err.message : 'Failed to verify');
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +84,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       const result = await api.onboardUser({
         name: formData.name,
         email: formData.email,
+        password: formData.password,
         linkedin_url: formData.linkedinUrl || undefined,
         job_description: formData.jobDescription
       });
@@ -122,6 +135,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   onKeyDown={(e) => e.key === 'Enter' && handleEmailSubmit()}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                   placeholder="john@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Briefcase className="w-4 h-4 inline mr-2" />
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && handleEmailSubmit()}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                  placeholder="••••••••"
                 />
               </div>
 

@@ -45,6 +45,10 @@ function App() {
             element={<Onboarding onComplete={setUserId} />}
           />
           <Route
+            path="/signup"
+            element={<Onboarding onComplete={setUserId} />}
+          />
+          <Route
             path="/dashboard"
             element={
               userId ? <Dashboard userId={userId} onLogout={() => setUserId(null)} /> : <Navigate to="/" replace />

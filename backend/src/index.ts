@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 import { runFullAnalysis } from './analysis/orchestrator.js';
 
 dotenv.config();
@@ -45,7 +46,7 @@ app.get('/', (req, res) => {
 // ============================================
 app.post('/api/users/check', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, password } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
 
     const { data, error } = await supabase
@@ -59,7 +60,21 @@ app.post('/api/users/check', async (req, res) => {
     }
 
     if (data) {
-        res.json({ exists: true, user: data });
+        // User exists, verify password if provided
+        if (password) {
+            if (!data.password) {
+                 return res.json({ exists: true, user: data, password_valid: false }); 
+            }
+            
+            const match = await bcrypt.compare(password, data.password);
+            if (match) {
+                res.json({ exists: true, user: data, password_valid: true });
+            } else {
+                res.json({ exists: true, password_valid: false });
+            }
+        } else {
+            res.json({ exists: true, user: data });
+        }
     } else {
         res.json({ exists: false });
     }
@@ -70,11 +85,13 @@ app.post('/api/users/check', async (req, res) => {
 
 app.post('/api/users/onboard', async (req, res) => {
   try {
-    const { name, email, linkedin_url, job_description } = req.body;
+    const { name, email, password, linkedin_url, job_description } = req.body;
 
-    if (!name || !email || !job_description) {
+    if (!name || !email || !job_description || !password) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Check if user exists
     const { data: existing } = await supabase
@@ -91,6 +108,7 @@ app.post('/api/users/onboard', async (req, res) => {
         .from('users')
         .update({
           name,
+          password: hashedPassword,
           job_description,
           linkedin_url: linkedin_url || null,
           profile_status: linkedin_url ? 'processing' : 'ready'
@@ -108,6 +126,7 @@ app.post('/api/users/onboard', async (req, res) => {
         .insert({
           name,
           email,
+          password: hashedPassword,
           job_description,
           linkedin_url: linkedin_url || null,
           profile_status: linkedin_url ? 'processing' : 'ready'

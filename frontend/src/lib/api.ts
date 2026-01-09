@@ -92,6 +92,7 @@ class ApiClient {
   async onboardUser(data: {
     name: string;
     email: string;
+    password?: string;
     linkedin_url?: string;
     job_description: string;
   }): Promise<{ user_id: string; status: string; message: string }> {
@@ -101,10 +102,10 @@ class ApiClient {
     });
   }
 
-  async checkUser(email: string): Promise<{ exists: boolean; user?: User }> {
+  async checkUser(email: string, password?: string): Promise<{ exists: boolean; user?: User; password_valid?: boolean }> {
     return this.request('/api/users/check', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, password }),
     });
   }
 
