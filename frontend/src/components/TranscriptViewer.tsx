@@ -91,8 +91,14 @@ export default function TranscriptViewer({
         console.log('Transcript data received:', data);
 
         if (data.transcript_json && Array.isArray(data.transcript_json) && data.transcript_json.length > 0) {
-          console.log('Setting transcript_json with', data.transcript_json.length, 'items');
-          setTranscriptJson(data.transcript_json);
+          // Handle nested array from ElevenLabs - [[...items...]] -> [...items...]
+          let items = data.transcript_json;
+          if (items.length === 1 && Array.isArray(items[0])) {
+            items = items[0]; // Unwrap nested array
+            console.log('Unwrapped nested transcript_json array');
+          }
+          console.log('Setting transcript_json with', items.length, 'items');
+          setTranscriptJson(items);
         }
 
         if (data.has_annotations && data.segments) {

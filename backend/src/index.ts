@@ -1670,10 +1670,20 @@ app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
     // Transform ElevenLabs transcript format to our expected format
     let normalizedTranscriptJson = null;
     if (transcript_json) {
-      normalizedTranscriptJson = transcript_json;
+      // Handle nested array from ElevenLabs - [[...items...]] -> [...items...]
+      let items = transcript_json;
+      if (Array.isArray(items) && items.length === 1 && Array.isArray(items[0])) {
+        items = items[0]; // Unwrap the nested array
+      }
+      normalizedTranscriptJson = items;
     } else if (payload.transcription) {
       // ElevenLabs sends transcription as an object or array
-      const rawTranscription = payload.transcription;
+      let rawTranscription = payload.transcription;
+
+      // Handle nested array
+      if (Array.isArray(rawTranscription) && rawTranscription.length === 1 && Array.isArray(rawTranscription[0])) {
+        rawTranscription = rawTranscription[0];
+      }
 
       // If it's an array of transcript items, normalize them
       if (Array.isArray(rawTranscription)) {
