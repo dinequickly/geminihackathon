@@ -368,9 +368,10 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
     const conversations = (data || []).map(conv => {
       const analysis = conv.emotion_analysis?.[0];
 
-      // Check if conversation is stuck in completed state with data but no analysis
-      if (conv.status === 'completed' && conv.transcript && !analysis) {
-        console.log(`[${conv.id}] Found stuck conversation, triggering analysis...`);
+      // Check if conversation is stuck in completed state with transcript
+      // Status should be: in_progress -> completed -> analyzing -> analyzed
+      if (conv.status === 'completed' && conv.transcript) {
+        console.log(`[${conv.id}] Found completed conversation without analysis, triggering...`);
 
         // Update status to analyzing
         supabase
@@ -424,9 +425,10 @@ app.get('/api/conversations/:conversationId', async (req, res) => {
       .eq('conversation_id', req.params.conversationId)
       .single();
 
-    // If conversation is completed with transcript but has no analysis, trigger analysis
-    if (conversation.status === 'completed' && conversation.transcript && !analysis) {
-      console.log(`[${req.params.conversationId}] Conversation completed but not analyzed, triggering analysis...`);
+    // If conversation is completed with transcript, trigger analysis
+    // Status should be: in_progress -> completed -> analyzing -> analyzed
+    if (conversation.status === 'completed' && conversation.transcript) {
+      console.log(`[${req.params.conversationId}] Conversation completed, triggering analysis...`);
 
       // Update status to analyzing
       await supabase
