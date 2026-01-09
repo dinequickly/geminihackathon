@@ -140,11 +140,24 @@ app.post('/api/users/onboard', async (req, res) => {
     }
 
     // Trigger new account/update webhook
-    await fetch(N8N_USER_CREATED_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, email, name })
-    }).catch(err => console.error('User webhook failed:', err));
+    let webhookStatus = 'skipped';
+    try {
+      console.log('Triggering webhook to:', N8N_USER_CREATED_WEBHOOK);
+      const whResponse = await fetch(N8N_USER_CREATED_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, email, name })
+      });
+      console.log('Webhook response status:', whResponse.status);
+      webhookStatus = whResponse.ok ? 'success' : `failed_${whResponse.status}`;
+      if (!whResponse.ok) {
+        const text = await whResponse.text();
+        console.error('Webhook error body:', text);
+      }
+    } catch (err: any) {
+      console.error('User webhook failed:', err);
+      webhookStatus = `error_${err.message}`;
+    }
 
     // Trigger LinkedIn scraping if URL provided
 
@@ -160,7 +173,8 @@ app.post('/api/users/onboard', async (req, res) => {
     res.json({
       user_id: userId,
       status: linkedin_url ? 'processing' : 'ready',
-      message: linkedin_url ? 'Profile created. LinkedIn processing started.' : 'Profile created.'
+      message: linkedin_url ? 'Profile created. LinkedIn processing started.' : 'Profile created.',
+      debug_webhook: webhookStatus
     });
   } catch (error: any) {
     console.error('Onboard error:', error);
