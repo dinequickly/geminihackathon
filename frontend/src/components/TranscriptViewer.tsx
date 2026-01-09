@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api, TranscriptSegment } from '../lib/api';
-import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal, Database, Clock } from 'lucide-react';
+import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal, Database } from 'lucide-react';
 
 interface TranscriptViewerProps {
   conversationId: string;
@@ -191,7 +191,6 @@ export default function TranscriptViewer({
     <div className="space-y-4">
       {transcriptJson.map((item, index) => {
         const isUser = item.role === 'user';
-        const isAgent = item.role === 'agent';
         const isActive = index === activeIndex;
         const hasMessage = !!item.message;
         const hasTools = (item.tool_calls && item.tool_calls.length > 0) || (item.tool_results && item.tool_results.length > 0);
@@ -294,8 +293,7 @@ export default function TranscriptViewer({
   const renderAnnotatedSegments = () => (
     <div className="space-y-3">
       {segments.map((segment, index) => {
-        const isActive = index === activeIndex; // Re-use calculated active index logic if needed, or use segment logic
-        // But for annotated segments, we use the specific index found earlier
+        // For annotated segments, we use the specific index found earlier
         const isSegmentActive = segments.findIndex(
             s => s.start_time <= currentTimeSec && s.end_time >= currentTimeSec
           ) === index;
