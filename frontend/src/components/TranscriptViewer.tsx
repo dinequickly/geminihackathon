@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { api, TranscriptSegment } from '../lib/api';
-import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal, Database } from 'lucide-react';
+import { api, EmotionTimelineItem } from '../lib/api';
+import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal, Database, Smile, Mic } from 'lucide-react';
 
 interface TranscriptViewerProps {
   conversationId: string;
@@ -28,31 +28,42 @@ interface TranscriptItem {
   feedback?: any;
 }
 
-const EMOTION_CATEGORY_COLORS = {
-  positive: {
-    bg: 'bg-green-50',
-    border: 'border-green-200',
-    text: 'text-green-700',
-    badge: 'bg-green-100'
-  },
-  negative: {
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-700',
-    badge: 'bg-red-100'
-  },
-  neutral: {
-    bg: 'bg-gray-50',
-    border: 'border-gray-200',
-    text: 'text-gray-700',
-    badge: 'bg-gray-100'
-  },
-  surprise: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-700',
-    badge: 'bg-amber-100'
-  }
+interface EmotionData {
+  face: EmotionTimelineItem[];
+  prosody: EmotionTimelineItem[];
+}
+
+const EMOTION_COLORS: Record<string, string> = {
+  joy: '#22c55e',
+  happiness: '#22c55e',
+  amusement: '#84cc16',
+  excitement: '#eab308',
+  interest: '#3b82f6',
+  surprise: '#f59e0b',
+  concentration: '#6366f1',
+  contemplation: '#8b5cf6',
+  determination: '#0ea5e9',
+  calmness: '#06b6d4',
+  contentment: '#14b8a6',
+  realization: '#10b981',
+  admiration: '#ec4899',
+  sadness: '#64748b',
+  disappointment: '#475569',
+  tiredness: '#94a3b8',
+  confusion: '#a855f7',
+  anxiety: '#dc2626',
+  fear: '#991b1b',
+  anger: '#ef4444',
+  disgust: '#78716c',
+  contempt: '#57534e',
+  embarrassment: '#fb923c',
+  awkwardness: '#fdba74',
+  neutral: '#9ca3af',
+};
+
+const getEmotionColor = (emotionName: string): string => {
+  const lower = emotionName.toLowerCase();
+  return EMOTION_COLORS[lower] || '#9ca3af';
 };
 
 const formatTimestamp = (seconds: number): string => {
@@ -69,51 +80,49 @@ export default function TranscriptViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const activeSegmentRef = useRef<HTMLDivElement>(null);
 
-  const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [transcriptJson, setTranscriptJson] = useState<TranscriptItem[]>([]);
   const [rawTranscript, setRawTranscript] = useState<string | null>(null);
-  const [hasAnnotations, setHasAnnotations] = useState(false);
+  const [emotionData, setEmotionData] = useState<EmotionData>({ face: [], prosody: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [showEmotionDetails, setShowEmotionDetails] = useState<string | null>(null);
-  const [showToolDetails, setShowToolDetails] = useState<Record<string, boolean>>({});
   const [autoScroll, setAutoScroll] = useState(true);
 
-  // Load transcript data
+  // Load transcript and emotion data
   useEffect(() => {
-    const loadTranscript = async () => {
+    const loadData = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await api.getAnnotatedTranscript(conversationId);
 
-        console.log('Transcript data received:', data);
+        // Load transcript and emotions in parallel
+        const [transcriptData, emotionTimeline] = await Promise.all([
+          api.getAnnotatedTranscript(conversationId),
+          api.getEmotionTimeline(conversationId, { models: ['face', 'prosody'] }).catch(() => null)
+        ]);
 
-        if (data.transcript_json && Array.isArray(data.transcript_json) && data.transcript_json.length > 0) {
-          // Handle nested array from ElevenLabs - [[...items...]] -> [...items...]
-          let items = data.transcript_json;
+        console.log('Transcript data received:', transcriptData);
+
+        if (transcriptData.transcript_json && Array.isArray(transcriptData.transcript_json) && transcriptData.transcript_json.length > 0) {
+          let items = transcriptData.transcript_json;
           if (items.length === 1 && Array.isArray(items[0])) {
-            items = items[0]; // Unwrap nested array
+            items = items[0];
             console.log('Unwrapped nested transcript_json array');
           }
           console.log('Setting transcript_json with', items.length, 'items');
           setTranscriptJson(items);
         }
 
-        if (data.has_annotations && data.segments) {
-          console.log('Setting annotated segments with', data.segments.length, 'segments');
-          setSegments(data.segments);
-          setHasAnnotations(true);
+        if (transcriptData.transcript) {
+          setRawTranscript(transcriptData.transcript);
         }
 
-        // Always set raw transcript if available, as fallback
-        if (data.transcript) {
-          console.log('Setting raw transcript, length:', data.transcript.length);
-          setRawTranscript(data.transcript);
-          if (!data.has_annotations) {
-            setHasAnnotations(false);
-          }
+        if (emotionTimeline) {
+          console.log('Emotion timeline loaded:', emotionTimeline.total_records, 'records');
+          setEmotionData({
+            face: emotionTimeline.timeline.face || [],
+            prosody: emotionTimeline.timeline.prosody || []
+          });
         }
       } catch (err) {
         console.error('Failed to load transcript:', err);
@@ -123,7 +132,7 @@ export default function TranscriptViewer({
       }
     };
 
-    loadTranscript();
+    loadData();
   }, [conversationId]);
 
   // Auto-scroll to active segment
@@ -135,31 +144,37 @@ export default function TranscriptViewer({
       const containerRect = container.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
 
-      // Check if element is outside visible area
       if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
   }, [currentTimeMs, autoScroll]);
 
+  // Find emotions at a specific time
+  const getEmotionsAtTime = (timeSecs: number) => {
+    const timeMs = timeSecs * 1000;
+
+    // Find face emotion at this time (look within a 3-second window)
+    const faceEmotion = emotionData.face.find(
+      e => e.start_timestamp_ms <= timeMs + 1500 && e.end_timestamp_ms >= timeMs - 1500
+    );
+
+    // Find prosody emotion at this time
+    const prosodyEmotion = emotionData.prosody.find(
+      e => e.start_timestamp_ms <= timeMs + 1500 && e.end_timestamp_ms >= timeMs - 1500
+    );
+
+    return { face: faceEmotion, prosody: prosodyEmotion };
+  };
+
   // Find active segment based on current time
   const currentTimeSec = currentTimeMs / 1000;
-  
-  // Logic for active item depends on what data source we are using
   let activeIndex = -1;
-  if (hasAnnotations) {
-    activeIndex = segments.findIndex(
-      seg => seg.start_time <= currentTimeSec && seg.end_time >= currentTimeSec
-    );
-  } else if (transcriptJson.length > 0) {
-    // Approximate matching for JSON transcript based on time_in_call_secs
-    // This assumes items are sorted by time
-    for (let i = 0; i < transcriptJson.length; i++) {
-        if ((transcriptJson[i].time_in_call_secs || 0) <= currentTimeSec) {
-            activeIndex = i;
-        } else {
-            break;
-        }
+  for (let i = 0; i < transcriptJson.length; i++) {
+    if ((transcriptJson[i].time_in_call_secs || 0) <= currentTimeSec) {
+      activeIndex = i;
+    } else {
+      break;
     }
   }
 
@@ -167,17 +182,6 @@ export default function TranscriptViewer({
     if (onSegmentClick) {
       onSegmentClick(startTime);
     }
-  };
-
-  const toggleEmotionDetails = (segmentId: string) => {
-    setShowEmotionDetails(prev => prev === segmentId ? null : segmentId);
-  };
-
-  const toggleToolDetails = (index: number) => {
-    setShowToolDetails(prev => ({
-        ...prev,
-        [index]: !prev[index]
-    }));
   };
 
   if (isLoading) {
@@ -202,9 +206,35 @@ export default function TranscriptViewer({
     );
   }
 
-  // Render Rich JSON Transcript (Preferred)
-  const renderRichTranscript = () => (
-    <div className="space-y-4">
+  // Emotion badge component
+  const EmotionBadge = ({ emotion, type }: { emotion: EmotionTimelineItem; type: 'face' | 'prosody' }) => (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+      <div className="flex items-center gap-1.5">
+        {type === 'face' ? (
+          <Smile className="w-3.5 h-3.5 text-gray-400" />
+        ) : (
+          <Mic className="w-3.5 h-3.5 text-gray-400" />
+        )}
+        <span className="text-xs text-gray-500 uppercase tracking-wide">{type}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div
+          className="w-2.5 h-2.5 rounded-full"
+          style={{ backgroundColor: getEmotionColor(emotion.top_emotion_name) }}
+        />
+        <span className="text-sm font-medium text-gray-700 capitalize">
+          {emotion.top_emotion_name}
+        </span>
+        <span className="text-xs text-gray-400">
+          {(emotion.top_emotion_score * 100).toFixed(0)}%
+        </span>
+      </div>
+    </div>
+  );
+
+  // Render transcript with emotions
+  const renderTranscriptWithEmotions = () => (
+    <div className="space-y-6">
       {transcriptJson.map((item, index) => {
         const isUser = item.role === 'user';
         const isActive = index === activeIndex;
@@ -213,179 +243,142 @@ export default function TranscriptViewer({
 
         if (!hasMessage && !hasTools) return null;
 
-        return (
-          <div 
-            key={index} 
-            ref={isActive ? activeSegmentRef : null}
-            className={`transition-colors duration-200 rounded-lg ${isActive ? 'bg-primary-50 -mx-2 px-2 py-1' : ''}`}
-          >
-            {/* Metadata / Time */}
-            <div className="flex items-center justify-between mb-1 px-1">
-                <span className={`text-xs font-medium ${isUser ? 'text-blue-600' : 'text-purple-600'} flex items-center gap-1`}>
-                    {isUser ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
-                    {isUser ? 'You' : 'Interviewer'}
-                </span>
-                {item.time_in_call_secs !== undefined && (
-                    <span 
-                        className="text-xs text-gray-400 font-mono cursor-pointer hover:text-primary-600"
-                        onClick={() => handleSegmentClick(item.time_in_call_secs || 0)}
-                    >
-                        {formatTimestamp(item.time_in_call_secs)}
-                    </span>
-                )}
-            </div>
-
-            {/* Message Bubble */}
-            {hasMessage && (
-                <div 
-                    className={`p-3 rounded-2xl text-sm mb-2 ${
-                        isUser 
-                        ? 'bg-blue-50 text-blue-900 rounded-tr-none ml-8' 
-                        : 'bg-purple-50 text-purple-900 rounded-tl-none mr-8'
-                    }`}
-                >
-                    {item.message}
-                </div>
-            )}
-
-            {/* Tool Calls (Agent Actions) */}
-            {item.tool_calls?.map((tool, tIdx) => (
-                <div key={`call-${tIdx}`} className="ml-4 mr-8 mb-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-2 py-1.5">
-                        <Terminal className="w-3 h-3" />
-                        <span className="font-mono">Action: {tool.tool_name}</span>
-                        {tool.tool_details?.query_params && (
-                             <span className="text-gray-400 truncate max-w-[200px]">
-                                {JSON.stringify(tool.tool_details.query_params)}
-                             </span>
-                        )}
-                    </div>
-                </div>
-            ))}
-
-            {/* Tool Results (Data Fetched) */}
-            {item.tool_results?.map((result, rIdx) => {
-                const isExpanded = showToolDetails[`${index}-res-${rIdx}`];
-                const isError = result.is_error;
-                
-                return (
-                    <div key={`res-${rIdx}`} className="ml-4 mr-8 mb-2">
-                        <div 
-                            className={`text-xs border rounded-md overflow-hidden ${
-                                isError ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
-                            }`}
-                        >
-                            <button
-                                onClick={() => toggleToolDetails(`${index}-res-${rIdx}` as any)}
-                                className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-100 transition"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Database className={`w-3 h-3 ${isError ? 'text-red-500' : 'text-gray-500'}`} />
-                                    <span className={`font-mono font-medium ${isError ? 'text-red-700' : 'text-gray-700'}`}>
-                                        Result: {result.tool_name}
-                                    </span>
-                                </div>
-                                {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
-                            </button>
-                            
-                            {isExpanded && (
-                                <div className="p-3 bg-white border-t border-gray-200 overflow-x-auto">
-                                    <pre className="font-mono text-[10px] text-gray-600 whitespace-pre-wrap">
-                                        {result.result_value}
-                                    </pre>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            })}
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  // Render Annotated Segments (Legacy/Emotion)
-  const renderAnnotatedSegments = () => (
-    <div className="space-y-3">
-      {segments.map((segment, index) => {
-        // For annotated segments, we use the specific index found earlier
-        const isSegmentActive = segments.findIndex(
-            s => s.start_time <= currentTimeSec && s.end_time >= currentTimeSec
-          ) === index;
-
-        const categoryColors = EMOTION_CATEGORY_COLORS[segment.emotion_category] || EMOTION_CATEGORY_COLORS.neutral;
-        const isUser = segment.speaker === 'user';
+        // Get emotions for user messages
+        const emotions = isUser && item.time_in_call_secs !== undefined
+          ? getEmotionsAtTime(item.time_in_call_secs)
+          : { face: null, prosody: null };
 
         return (
           <div
-            key={segment.id}
-            ref={isSegmentActive ? activeSegmentRef : null}
-            className={`rounded-lg border transition-all duration-200 ${
-              isSegmentActive
-                ? `${categoryColors.bg} ${categoryColors.border} ring-2 ring-primary-400`
-                : 'bg-white border-gray-200 hover:border-gray-300'
-            }`}
+            key={index}
+            ref={isActive ? activeSegmentRef : null}
+            className={`transition-all duration-200 ${isActive ? 'scale-[1.01]' : ''}`}
           >
+            {/* Full-width message card */}
             <div
-              className="p-3 cursor-pointer"
-              onClick={() => handleSegmentClick(segment.start_time)}
+              className={`rounded-xl border-2 transition-colors ${
+                isActive
+                  ? 'border-primary-400 bg-primary-50/50'
+                  : isUser
+                  ? 'border-blue-100 bg-white hover:border-blue-200'
+                  : 'border-purple-100 bg-white hover:border-purple-200'
+              }`}
             >
-              {/* Speaker and Time */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {isUser ? (
-                    <User className="w-4 h-4 text-blue-500" />
-                  ) : (
-                    <Bot className="w-4 h-4 text-purple-500" />
-                  )}
-                  <span className={`text-xs font-medium ${isUser ? 'text-blue-600' : 'text-purple-600'}`}>
-                    {isUser ? 'You' : 'Interviewer'}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {formatTimestamp(segment.start_time)}
-                  </span>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    isUser ? 'bg-blue-100' : 'bg-purple-100'
+                  }`}>
+                    {isUser ? (
+                      <User className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <Bot className="w-4 h-4 text-purple-600" />
+                    )}
+                  </div>
+                  <div>
+                    <span className={`font-medium ${isUser ? 'text-blue-700' : 'text-purple-700'}`}>
+                      {isUser ? 'You' : 'Interviewer'}
+                    </span>
+                    {item.time_in_call_secs !== undefined && (
+                      <span
+                        className="ml-3 text-xs text-gray-400 font-mono cursor-pointer hover:text-primary-600"
+                        onClick={() => handleSegmentClick(item.time_in_call_secs || 0)}
+                      >
+                        {formatTimestamp(item.time_in_call_secs)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleEmotionDetails(segment.id);
-                  }}
-                  className={`px-2 py-0.5 rounded text-xs ${categoryColors.badge} ${categoryColors.text} capitalize flex items-center gap-1`}
-                >
-                  {segment.dominant_emotion}
-                  {showEmotionDetails === segment.id ? (
-                    <ChevronUp className="w-3 h-3" />
-                  ) : (
-                    <ChevronDown className="w-3 h-3" />
-                  )}
-                </button>
+
+                {/* Emotion badges for user messages */}
+                {isUser && (emotions.face || emotions.prosody) && (
+                  <div className="flex items-center gap-2">
+                    {emotions.face && <EmotionBadge emotion={emotions.face} type="face" />}
+                    {emotions.prosody && <EmotionBadge emotion={emotions.prosody} type="prosody" />}
+                  </div>
+                )}
               </div>
 
-              {/* Text */}
-              <p className={`text-sm ${isSegmentActive ? categoryColors.text : 'text-gray-700'}`}>
-                {segment.text}
-              </p>
+              {/* Message content */}
+              {hasMessage && (
+                <div className="px-4 py-4">
+                  <p className="text-gray-800 leading-relaxed">{item.message}</p>
+                </div>
+              )}
 
-              {/* Emotion Details */}
-              {showEmotionDetails === segment.id && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <div className="text-xs text-gray-500 mb-2">Emotion breakdown:</div>
-                  <div className="space-y-1">
-                    {segment.emotions.slice(0, 5).map((emotion, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs">
-                        <div className="w-20 text-gray-600 capitalize">{emotion.name}</div>
-                        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-primary-500"
-                            style={{ width: `${emotion.score * 100}%` }}
-                          />
+              {/* Tool calls/results */}
+              {hasTools && (
+                <div className="px-4 pb-4 space-y-2">
+                  {item.tool_calls?.map((tool, tIdx) => (
+                    <div key={`call-${tIdx}`} className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-md px-3 py-2">
+                      <Terminal className="w-3.5 h-3.5" />
+                      <span className="font-mono">Action: {tool.tool_name}</span>
+                    </div>
+                  ))}
+                  {item.tool_results?.map((result, rIdx) => (
+                    <div key={`res-${rIdx}`} className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-md px-3 py-2">
+                      <Database className="w-3.5 h-3.5" />
+                      <span className="font-mono">Result: {result.tool_name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Detailed emotion breakdown for user messages */}
+              {isUser && (emotions.face || emotions.prosody) && (
+                <div className="px-4 py-3 bg-gray-50/50 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-4">
+                    {emotions.face && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Smile className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-xs font-medium text-gray-500">Facial Expression</span>
                         </div>
-                        <div className="w-10 text-right text-gray-400">
-                          {(emotion.score * 100).toFixed(0)}%
+                        <div className="space-y-1.5">
+                          {emotions.face.emotions.slice(0, 3).map((e, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${e.score * 100}%`,
+                                    backgroundColor: getEmotionColor(e.name)
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-600 w-20 capitalize">{e.name}</span>
+                              <span className="text-xs text-gray-400 w-8">{(e.score * 100).toFixed(0)}%</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+                    )}
+                    {emotions.prosody && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Mic className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-xs font-medium text-gray-500">Voice Tone</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {emotions.prosody.emotions.slice(0, 3).map((e, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${e.score * 100}%`,
+                                    backgroundColor: getEmotionColor(e.name)
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-600 w-20 capitalize">{e.name}</span>
+                              <span className="text-xs text-gray-400 w-8">{(e.score * 100).toFixed(0)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -406,8 +399,13 @@ export default function TranscriptViewer({
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-gray-400" />
           <h2 className="text-lg font-semibold text-gray-900">
-            Transcript {hasAnnotations && <span className="text-sm font-normal text-primary-600">(with emotions)</span>}
+            Conversation Transcript
           </h2>
+          {emotionData.face.length > 0 && (
+            <span className="text-sm font-normal text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+              with emotions
+            </span>
+          )}
         </div>
         {isExpanded ? (
           <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -420,24 +418,10 @@ export default function TranscriptViewer({
         <div className="border-t border-gray-200">
           {/* Controls */}
           <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-            {hasAnnotations ? (
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  {Object.entries(EMOTION_CATEGORY_COLORS).map(([category, colors]) => (
-                    <span
-                      key={category}
-                      className={`px-2 py-0.5 rounded text-xs ${colors.badge} ${colors.text} capitalize`}
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-                <div className="text-xs text-gray-500">
-                    Full conversation log
-                </div>
-            )}
+            <div className="text-sm text-gray-600">
+              {transcriptJson.length} messages
+              {emotionData.face.length > 0 && ` • ${emotionData.face.length} emotion readings`}
+            </div>
             <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
               <input
                 type="checkbox"
@@ -449,25 +433,13 @@ export default function TranscriptViewer({
             </label>
           </div>
 
-          {/* Transcript Content */}
+          {/* Transcript Content - Full Width */}
           <div
             ref={containerRef}
-            className="max-h-[500px] overflow-y-auto p-4"
+            className="max-h-[700px] overflow-y-auto p-6"
           >
-            {/* Debug info - remove after testing */}
-            {import.meta.env.DEV && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                <div>transcript_json: {transcriptJson.length} items</div>
-                <div>segments: {segments.length} items</div>
-                <div>hasAnnotations: {hasAnnotations ? 'true' : 'false'}</div>
-                <div>rawTranscript: {rawTranscript ? `${rawTranscript.length} chars` : 'null'}</div>
-              </div>
-            )}
-
             {transcriptJson.length > 0 ? (
-                renderRichTranscript()
-            ) : hasAnnotations && segments.length > 0 ? (
-                renderAnnotatedSegments()
+              renderTranscriptWithEmotions()
             ) : rawTranscript ? (
               <div className="prose prose-sm max-w-none">
                 <p className="text-gray-700 whitespace-pre-wrap">{rawTranscript}</p>
