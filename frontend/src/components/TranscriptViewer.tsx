@@ -449,7 +449,7 @@ export default function TranscriptViewer({
             className="max-h-[500px] overflow-y-auto p-4"
           >
             {/* Debug info - remove after testing */}
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
                 <div>transcript_json: {transcriptJson.length} items</div>
                 <div>segments: {segments.length} items</div>
