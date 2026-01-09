@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { runFullAnalysis } from './analysis/orchestrator.js';
+import { Client } from '@gradio/client';
 
 dotenv.config();
 
@@ -545,7 +546,8 @@ app.post('/api/multimodal-analysis', upload.fields([
     if (text) {
       try {
         const textResult = await client.predict("/predict_1", { text });
-        results.text_emotion = textResult.data[0] as string;
+        const data = textResult.data as any[];
+        results.text_emotion = data[0] as string;
       } catch (err: any) {
         errors.push(`Text analysis failed: ${err.message}`);
       }
@@ -555,9 +557,10 @@ app.post('/api/multimodal-analysis', upload.fields([
     if (files?.image?.[0]) {
       try {
         const imageFile = files.image[0];
-        const blob = new Blob([imageFile.buffer], { type: imageFile.mimetype });
+        const blob = new Blob([new Uint8Array(imageFile.buffer)], { type: imageFile.mimetype });
         const imageResult = await client.predict("/predict_2", { img: blob });
-        results.image_emotion = imageResult.data[0] as MultimodalAnalysisResult['image_emotion'];
+        const data = imageResult.data as any[];
+        results.image_emotion = data[0] as MultimodalAnalysisResult['image_emotion'];
       } catch (err: any) {
         errors.push(`Image analysis failed: ${err.message}`);
       }
@@ -567,7 +570,8 @@ app.post('/api/multimodal-analysis', upload.fields([
     if (audio_file_path) {
       try {
         const audioResult = await client.predict("/predict_3", { file_path: audio_file_path });
-        results.audio_emotion = audioResult.data[0] as string;
+        const data = audioResult.data as any[];
+        results.audio_emotion = data[0] as string;
       } catch (err: any) {
         errors.push(`Audio analysis failed: ${err.message}`);
       }
@@ -601,8 +605,9 @@ app.post('/api/multimodal-analysis/text', async (req, res) => {
 
     const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
     const result = await client.predict("/predict_1", { text });
+    const data = result.data as any[];
 
-    res.json({ emotion: result.data[0] });
+    res.json({ emotion: data[0] });
   } catch (error: any) {
     console.error('Text multimodal analysis error:', error);
     res.status(500).json({ error: error.message });
@@ -618,10 +623,11 @@ app.post('/api/multimodal-analysis/image', upload.single('image'), async (req, r
     }
 
     const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
-    const blob = new Blob([file.buffer], { type: file.mimetype });
+    const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype });
     const result = await client.predict("/predict_2", { img: blob });
+    const data = result.data as any[];
 
-    res.json({ emotion: result.data[0] });
+    res.json({ emotion: data[0] });
   } catch (error: any) {
     console.error('Image multimodal analysis error:', error);
     res.status(500).json({ error: error.message });
@@ -638,8 +644,9 @@ app.post('/api/multimodal-analysis/audio', async (req, res) => {
 
     const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
     const result = await client.predict("/predict_3", { file_path });
+    const data = result.data as any[];
 
-    res.json({ emotion: result.data[0] });
+    res.json({ emotion: data[0] });
   } catch (error: any) {
     console.error('Audio multimodal analysis error:', error);
     res.status(500).json({ error: error.message });
@@ -831,6 +838,13 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
+
+// Catch-all for debugging 404s
+app.use((req, res) => {
+  console.log(`404 Hit: ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers));
+  res.status(404).json({ error: `Route not found: ${req.method} ${req.url}` });
+});
 
 // Export for Vercel
 export default app;
