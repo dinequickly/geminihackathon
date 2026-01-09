@@ -358,7 +358,7 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
       .from('conversations')
       .select(`
         *,
-        emotion_analysis (overall_score, overall_level)
+        emotion_analysis!emotion_analysis_conversation_id_fkey (overall_score, overall_level)
       `)
       .eq('user_id', req.params.userId)
       .order('created_at', { ascending: false });
