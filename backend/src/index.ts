@@ -139,7 +139,7 @@ app.post('/api/users/onboard', async (req, res) => {
       userId = data.id;
 
       // Trigger new account webhook
-      fetch(N8N_USER_CREATED_WEBHOOK, {
+      await fetch(N8N_USER_CREATED_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, email, name })
