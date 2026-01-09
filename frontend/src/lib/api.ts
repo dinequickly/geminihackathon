@@ -28,6 +28,15 @@ export interface Conversation {
   overall_level?: string;
 }
 
+export interface TranscriptHighlight {
+  id: string;
+  conversation_id: string;
+  highlighted_sentence: string;
+  comment: string | null;
+  color: 'yellow' | 'green' | 'blue' | 'pink' | 'orange';
+  created_at: string;
+}
+
 export interface Analysis {
   id: string;
   conversation_id: string;
@@ -380,6 +389,41 @@ class ApiClient {
     if (options?.model) params.set('model', options.model);
 
     return this.request(`/api/conversations/${conversationId}/emotions/distribution?${params}`);
+  }
+
+  // Highlights API
+  async getHighlights(conversationId: string): Promise<{
+    conversation_id: string;
+    highlights: TranscriptHighlight[];
+  }> {
+    return this.request(`/api/conversations/${conversationId}/highlights`);
+  }
+
+  async createHighlight(conversationId: string, data: {
+    highlighted_sentence: string;
+    comment?: string;
+    color?: 'yellow' | 'green' | 'blue' | 'pink' | 'orange';
+  }): Promise<TranscriptHighlight> {
+    return this.request(`/api/conversations/${conversationId}/highlights`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateHighlight(conversationId: string, highlightId: string, data: {
+    comment?: string;
+    color?: 'yellow' | 'green' | 'blue' | 'pink' | 'orange';
+  }): Promise<TranscriptHighlight> {
+    return this.request(`/api/conversations/${conversationId}/highlights/${highlightId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteHighlight(conversationId: string, highlightId: string): Promise<{ success: boolean }> {
+    return this.request(`/api/conversations/${conversationId}/highlights/${highlightId}`, {
+      method: 'DELETE',
+    });
   }
 }
 

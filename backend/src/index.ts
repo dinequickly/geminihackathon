@@ -1575,6 +1575,106 @@ app.get('/api/conversations/:conversationId/transcript/annotated', async (req, r
   }
 });
 
+// Get highlights for a conversation
+app.get('/api/conversations/:conversationId/highlights', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data, error } = await supabase
+      .from('transcript_highlights')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (error && !error.message.includes('does not exist')) throw error;
+
+    res.json({
+      conversation_id: conversationId,
+      highlights: data || []
+    });
+  } catch (error: any) {
+    console.error('Get highlights error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a highlight
+app.post('/api/conversations/:conversationId/highlights', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { highlighted_sentence, comment, color } = req.body;
+
+    if (!highlighted_sentence) {
+      return res.status(400).json({ error: 'highlighted_sentence is required' });
+    }
+
+    const { data, error } = await supabase
+      .from('transcript_highlights')
+      .insert({
+        conversation_id: conversationId,
+        highlighted_sentence,
+        comment: comment || null,
+        color: color || 'yellow'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error: any) {
+    console.error('Create highlight error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update a highlight
+app.patch('/api/conversations/:conversationId/highlights/:highlightId', async (req, res) => {
+  try {
+    const { conversationId, highlightId } = req.params;
+    const { comment, color } = req.body;
+
+    const updateData: any = {};
+    if (comment !== undefined) updateData.comment = comment;
+    if (color !== undefined) updateData.color = color;
+
+    const { data, error } = await supabase
+      .from('transcript_highlights')
+      .update(updateData)
+      .eq('id', highlightId)
+      .eq('conversation_id', conversationId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error: any) {
+    console.error('Update highlight error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a highlight
+app.delete('/api/conversations/:conversationId/highlights/:highlightId', async (req, res) => {
+  try {
+    const { conversationId, highlightId } = req.params;
+
+    const { error } = await supabase
+      .from('transcript_highlights')
+      .delete()
+      .eq('id', highlightId)
+      .eq('conversation_id', conversationId);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete highlight error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get emotion distribution/histogram over time
 app.get('/api/conversations/:conversationId/emotions/distribution', async (req, res) => {
   try {
