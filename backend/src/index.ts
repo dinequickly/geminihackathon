@@ -3,7 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { runFullAnalysis } from './analysis/orchestrator';
+import { runFullAnalysis } from './analysis/orchestrator.js';
 
 dotenv.config();
 
