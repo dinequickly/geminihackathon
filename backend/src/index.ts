@@ -4,11 +4,18 @@ import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { runFullAnalysis } from './analysis/orchestrator.js';
 
 dotenv.config();
 
 const app = express();
+// Use raw body for HMAC verification
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Config
@@ -16,7 +23,34 @@ const PORT = process.env.PORT || 8000;
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_KEY!;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!;
+const ELEVENLABS_WEBHOOK_SECRET = process.env.ELEVENLABS_WEBHOOK_SECRET || 'wsec_bb9f5f44ee1c3b80bccc093ed00242fab0bcd44fc6cd35efdda39511703d28cc';
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID || 'agent_1801k4yzmzs1exz9bee2kep0npbq';
+
+// ... (rest of middleware)
+
+function verifyElevenLabsSignature(signature: string, rawBody: Buffer, secret: string) {
+  try {
+    const parts = signature.split(',');
+    const tPart = parts.find(p => p.startsWith('t='));
+    const vPart = parts.find(p => p.startsWith('v0='));
+    
+    if (!tPart || !vPart) return false;
+    
+    const timestamp = tPart.split('=')[1];
+    const hash = vPart.split('=')[1];
+    
+    const signedPayload = `${timestamp}${rawBody.toString()}`;
+    const expectedHash = crypto
+      .createHmac('sha256', secret)
+      .update(signedPayload)
+      .digest('hex');
+      
+    return expectedHash === hash;
+  } catch (err) {
+    console.error('Signature verification error:', err);
+    return false;
+  }
+}
 const N8N_LINKEDIN_WEBHOOK = process.env.N8N_LINKEDIN_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/c97f84f3-9319-4e39-91e2-a7f84590eb3f';
 const N8N_ANALYSIS_WEBHOOK = process.env.N8N_ANALYSIS_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/58227689-94ba-41e7-a1d0-1a1b798024f3';
 const N8N_USER_CREATED_WEBHOOK = process.env.N8N_USER_CREATED_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/3afd0576-b305-4cce-a8a9-f82cbf04107b';
@@ -480,22 +514,180 @@ app.post('/api/analysis/audio', upload.single('audio'), async (req, res) => {
 });
 
 // ============================================
+// MULTIMODAL ANALYSIS (Gradio Client)
+// ============================================
+
+interface MultimodalAnalysisResult {
+  text_emotion?: string;
+  image_emotion?: {
+    label: string | number | null;
+    confidences: Array<{ label: string | number | null; confidence: number | null }> | null;
+  };
+  audio_emotion?: string;
+  errors?: string[];
+}
+
+app.post('/api/multimodal-analysis', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'audio', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { text, audio_file_path } = req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+    const results: MultimodalAnalysisResult = {};
+    const errors: string[] = [];
+
+    // Initialize Gradio client
+    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
+
+    // Text sentiment analysis
+    if (text) {
+      try {
+        const textResult = await client.predict("/predict_1", { text });
+        results.text_emotion = textResult.data[0] as string;
+      } catch (err: any) {
+        errors.push(`Text analysis failed: ${err.message}`);
+      }
+    }
+
+    // Image sentiment analysis
+    if (files?.image?.[0]) {
+      try {
+        const imageFile = files.image[0];
+        const blob = new Blob([imageFile.buffer], { type: imageFile.mimetype });
+        const imageResult = await client.predict("/predict_2", { img: blob });
+        results.image_emotion = imageResult.data[0] as MultimodalAnalysisResult['image_emotion'];
+      } catch (err: any) {
+        errors.push(`Image analysis failed: ${err.message}`);
+      }
+    }
+
+    // Audio sentiment analysis (via file path)
+    if (audio_file_path) {
+      try {
+        const audioResult = await client.predict("/predict_3", { file_path: audio_file_path });
+        results.audio_emotion = audioResult.data[0] as string;
+      } catch (err: any) {
+        errors.push(`Audio analysis failed: ${err.message}`);
+      }
+    }
+
+    if (errors.length > 0) {
+      results.errors = errors;
+    }
+
+    if (!text && !files?.image?.[0] && !audio_file_path) {
+      return res.status(400).json({
+        error: 'At least one input required: text, image, or audio_file_path'
+      });
+    }
+
+    res.json(results);
+  } catch (error: any) {
+    console.error('Multimodal analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Individual analysis endpoints for convenience
+app.post('/api/multimodal-analysis/text', async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'text field is required' });
+    }
+
+    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
+    const result = await client.predict("/predict_1", { text });
+
+    res.json({ emotion: result.data[0] });
+  } catch (error: any) {
+    console.error('Text multimodal analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/multimodal-analysis/image', upload.single('image'), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'image file is required' });
+    }
+
+    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
+    const blob = new Blob([file.buffer], { type: file.mimetype });
+    const result = await client.predict("/predict_2", { img: blob });
+
+    res.json({ emotion: result.data[0] });
+  } catch (error: any) {
+    console.error('Image multimodal analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/multimodal-analysis/audio', async (req, res) => {
+  try {
+    const { file_path } = req.body;
+
+    if (!file_path) {
+      return res.status(400).json({ error: 'file_path field is required' });
+    }
+
+    const client = await Client.connect("pavan2606/Multimodal-Sentiment-Analysis");
+    const result = await client.predict("/predict_3", { file_path });
+
+    res.json({ emotion: result.data[0] });
+  } catch (error: any) {
+    console.error('Audio multimodal analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
 // WEBHOOKS (for n8n callbacks)
 // ============================================
 
-app.post('/api/webhooks/conversation-complete', async (req, res) => {
+app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
   try {
-    const { conversation_id, user_id, transcript, transcript_json, duration_seconds } = req.body;
+    const signature = req.headers['elevenlabs-signature'];
+    const rawBody = req.rawBody;
+
+    console.log('Webhook received. Signature:', signature);
+    console.log('Webhook Body:', JSON.stringify(req.body, null, 2));
+
+    if (signature && ELEVENLABS_WEBHOOK_SECRET) {
+      const isValid = verifyElevenLabsSignature(signature as string, rawBody, ELEVENLABS_WEBHOOK_SECRET);
+      if (!isValid) {
+        console.error('Invalid ElevenLabs signature');
+        // return res.status(401).json({ error: 'Invalid signature' });
+      } else {
+        console.log('ElevenLabs signature verified successfully');
+      }
+    }
+
+    // Handle potential wrapper
+    let payload = req.body;
+    if (payload.type === 'speech_to_text_transcription' && payload.data) {
+        payload = {
+            ...payload.data,
+            transcript: payload.data.transcription?.text
+        };
+    }
+
+    const { conversation_id, user_id, transcript, transcript_json, duration_seconds } = payload;
 
     console.log('Conversation complete webhook:', conversation_id);
 
     // Find conversation
     let query = supabase.from('conversations').select('*, users(formatted_resume, job_description)');
 
-    if (user_id) {
+    if (user_id || conversation_id) {
       // Find latest in-progress conversation for user
       const { data } = await query
-        .eq('user_id', user_id)
+        .eq(conversation_id ? 'id' : 'user_id', conversation_id || user_id)
         .eq('status', 'in_progress')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -510,15 +702,15 @@ app.post('/api/webhooks/conversation-complete', async (req, res) => {
           .update({
             status: 'analyzing',
             elevenlabs_conversation_id: conversation_id,
-            transcript,
-            transcript_json,
-            duration_seconds,
+            transcript: transcript || payload.transcription?.text,
+            transcript_json: transcript_json || payload.transcription,
+            duration_seconds: duration_seconds || payload.duration_seconds,
             ended_at: new Date().toISOString()
           })
           .eq('id', convId);
 
         // Run local analysis orchestrator
-        if (transcript) {
+        if (transcript || payload.transcription?.text) {
           try {
             console.log(`Starting analysis for ${convId}...`);
             await runFullAnalysis(convId);
