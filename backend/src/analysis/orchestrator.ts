@@ -84,7 +84,7 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
   };
 
   // 5. Save to Database
-  const { error: analysisError } = await supabase.from('analysis').upsert({
+  const { error: analysisError } = await supabase.from('emotion_analysis').upsert({
     conversation_id: conversationId,
     user_id: conversation.user_id,
     overall_score: overallScore,

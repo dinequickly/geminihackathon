@@ -358,7 +358,7 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
       .from('conversations')
       .select(`
         *,
-        analysis (overall_score, overall_level)
+        emotion_analysis (overall_score, overall_level)
       `)
       .eq('user_id', req.params.userId)
       .order('created_at', { ascending: false });
@@ -366,7 +366,7 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
     if (error) throw error;
 
     const conversations = (data || []).map(conv => {
-      const analysis = conv.analysis?.[0];
+      const analysis = conv.emotion_analysis?.[0];
       return {
         ...conv,
         analysis: undefined,
@@ -393,7 +393,7 @@ app.get('/api/conversations/:conversationId', async (req, res) => {
     if (convError) throw convError;
 
     const { data: analysis } = await supabase
-      .from('analysis')
+      .from('emotion_analysis')
       .select('*')
       .eq('conversation_id', req.params.conversationId)
       .single();
@@ -415,7 +415,7 @@ app.get('/api/conversations/:conversationId/status', async (req, res) => {
     if (convError) throw convError;
 
     const { data: analysis } = await supabase
-      .from('analysis')
+      .from('emotion_analysis')
       .select('id, overall_score')
       .eq('conversation_id', req.params.conversationId)
       .single();
@@ -1690,7 +1690,7 @@ app.post('/api/webhooks/analysis-complete', async (req, res) => {
 
     // Upsert analysis
     const { error: analysisError } = await supabase
-      .from('analysis')
+      .from('emotion_analysis')
       .upsert(analysisData, { onConflict: 'conversation_id' });
 
     if (analysisError) throw analysisError;
