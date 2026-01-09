@@ -19,6 +19,7 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID || 'agent_1801k4yzmzs1exz9bee2kep0npbq';
 const N8N_LINKEDIN_WEBHOOK = process.env.N8N_LINKEDIN_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/c97f84f3-9319-4e39-91e2-a7f84590eb3f';
 const N8N_ANALYSIS_WEBHOOK = process.env.N8N_ANALYSIS_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/58227689-94ba-41e7-a1d0-1a1b798024f3';
+const N8N_USER_CREATED_WEBHOOK = 'https://maxipad.app.n8n.cloud/webhook/3afd0576-b305-4cce-a8a9-f82cbf04107b';
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
 const HUGGING_FACE_AUDIO_URL = process.env.HUGGING_FACE_AUDIO_URL || '';
 
@@ -136,6 +137,13 @@ app.post('/api/users/onboard', async (req, res) => {
 
       if (error) throw error;
       userId = data.id;
+
+      // Trigger new account webhook
+      fetch(N8N_USER_CREATED_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, email, name })
+      }).catch(err => console.error('User created webhook failed:', err));
     }
 
     // Trigger LinkedIn scraping if URL provided
