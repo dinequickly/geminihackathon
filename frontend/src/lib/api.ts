@@ -206,6 +206,139 @@ class ApiClient {
 
     return response.json();
   }
+
+  // Expression analysis status
+  async getAnalysisStatus(conversationId: string): Promise<{
+    conversation_id: string;
+    conversation_status: string;
+    expression_analysis: {
+      status: string;
+      is_stuck: boolean;
+      started_at?: string;
+      completed_at?: string;
+      error?: string;
+      models_analyzed: string[];
+      has_results: boolean;
+      durations: {
+        language_seconds?: number;
+        video_seconds?: number;
+        total_seconds?: number;
+      };
+    };
+    results_preview?: {
+      face_emotions: number;
+      prosody_emotions: number;
+      language_emotions: number;
+    };
+  }> {
+    return this.request(`/api/conversations/${conversationId}/analysis-status`);
+  }
+
+  async retryAnalysis(conversationId: string): Promise<{ message: string; conversation_id: string }> {
+    return this.request(`/api/conversations/${conversationId}/retry-analysis`, {
+      method: 'POST'
+    });
+  }
+
+  // Emotion timeline endpoints
+  async getEmotionTimeline(conversationId: string, options?: {
+    start_ms?: number;
+    end_ms?: number;
+    models?: string[];
+  }): Promise<{
+    conversation_id: string;
+    total_records: number;
+    timeline: {
+      face: EmotionTimelineItem[];
+      prosody: EmotionTimelineItem[];
+      language: EmotionTimelineItem[];
+      burst: EmotionTimelineItem[];
+    };
+  }> {
+    const params = new URLSearchParams();
+    if (options?.start_ms !== undefined) params.set('start_ms', options.start_ms.toString());
+    if (options?.end_ms !== undefined) params.set('end_ms', options.end_ms.toString());
+    if (options?.models) params.set('models', options.models.join(','));
+
+    return this.request(`/api/conversations/${conversationId}/emotions/timeline?${params}`);
+  }
+
+  async getEmotionAtTime(conversationId: string, timeMs: number): Promise<{
+    timestamp_ms: number;
+    face?: {
+      top_emotion: string;
+      score: number;
+      all_emotions: Array<{ name: string; score: number }>;
+      bounding_box?: { x: number; y: number; w: number; h: number };
+    };
+    prosody?: {
+      top_emotion: string;
+      score: number;
+      all_emotions: Array<{ name: string; score: number }>;
+    };
+  }> {
+    return this.request(`/api/conversations/${conversationId}/emotions/at?time_ms=${timeMs}`);
+  }
+
+  async getAnnotatedTranscript(conversationId: string): Promise<{
+    conversation_id: string;
+    has_annotations: boolean;
+    segments?: TranscriptSegment[];
+    total_segments?: number;
+    analyzed_at?: string;
+    transcript?: string;
+  }> {
+    return this.request(`/api/conversations/${conversationId}/transcript/annotated`);
+  }
+
+  async getEmotionDistribution(conversationId: string, options?: {
+    bucket_size_ms?: number;
+    model?: 'face' | 'prosody';
+  }): Promise<{
+    conversation_id: string;
+    model_type: string;
+    bucket_size_ms: number;
+    total_buckets: number;
+    distribution: Array<{
+      bucket_index: number;
+      time_range_ms: { start: number; end: number };
+      dominant_emotion: string | null;
+      emotion_counts: Record<string, number>;
+      sample_count: number;
+    }>;
+  }> {
+    const params = new URLSearchParams();
+    if (options?.bucket_size_ms) params.set('bucket_size_ms', options.bucket_size_ms.toString());
+    if (options?.model) params.set('model', options.model);
+
+    return this.request(`/api/conversations/${conversationId}/emotions/distribution?${params}`);
+  }
+}
+
+// Emotion timeline types
+export interface EmotionTimelineItem {
+  id: string;
+  conversation_id: string;
+  model_type: 'face' | 'prosody' | 'language' | 'burst';
+  start_timestamp_ms: number;
+  end_timestamp_ms: number;
+  emotions: Array<{ name: string; score: number }>;
+  top_emotion_name: string;
+  top_emotion_score: number;
+  face_bounding_box?: { x: number; y: number; w: number; h: number };
+}
+
+export interface TranscriptSegment {
+  id: string;
+  text: string;
+  start_index: number;
+  end_index: number;
+  start_time: number;
+  end_time: number;
+  speaker: string;
+  emotions: Array<{ name: string; score: number }>;
+  dominant_emotion: string;
+  emotion_category: 'positive' | 'negative' | 'neutral' | 'surprise';
 }
 
 export const api = new ApiClient();

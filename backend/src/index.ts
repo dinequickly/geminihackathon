@@ -596,6 +596,156 @@ function getTopEmotions(emotions: HumeEmotion[], limit = 5): HumeEmotion[] {
     .slice(0, limit);
 }
 
+// Helper to store granular timeline data from Hume batch response
+async function storeEmotionTimelines(
+  conversationId: string,
+  predictions: any
+): Promise<{ face: number; prosody: number; burst: number }> {
+  const counts = { face: 0, prosody: 0, burst: 0 };
+  const timelineRecords: any[] = [];
+
+  const pred = predictions?.[0]?.results?.predictions?.[0];
+  if (!pred) return counts;
+
+  // Process face predictions (frame-by-frame)
+  if (pred.models?.face?.grouped_predictions) {
+    for (const group of pred.models.face.grouped_predictions) {
+      for (const p of group.predictions || []) {
+        const topEmotion = p.emotions?.reduce((max: HumeEmotion, e: HumeEmotion) =>
+          e.score > max.score ? e : max, { name: '', score: 0 });
+
+        timelineRecords.push({
+          conversation_id: conversationId,
+          model_type: 'face',
+          start_timestamp_ms: Math.round((p.time || 0) * 1000),
+          end_timestamp_ms: Math.round((p.time || 0) * 1000) + 33, // ~30fps
+          emotions: p.emotions,
+          top_emotion_name: topEmotion?.name,
+          top_emotion_score: topEmotion?.score,
+          face_bounding_box: p.box || p.bounding_box
+        });
+        counts.face++;
+      }
+    }
+  }
+
+  // Process prosody predictions (time segments)
+  if (pred.models?.prosody?.grouped_predictions) {
+    for (const group of pred.models.prosody.grouped_predictions) {
+      for (const p of group.predictions || []) {
+        const topEmotion = p.emotions?.reduce((max: HumeEmotion, e: HumeEmotion) =>
+          e.score > max.score ? e : max, { name: '', score: 0 });
+
+        timelineRecords.push({
+          conversation_id: conversationId,
+          model_type: 'prosody',
+          start_timestamp_ms: Math.round((p.time?.begin || 0) * 1000),
+          end_timestamp_ms: Math.round((p.time?.end || 0) * 1000),
+          emotions: p.emotions,
+          top_emotion_name: topEmotion?.name,
+          top_emotion_score: topEmotion?.score
+        });
+        counts.prosody++;
+      }
+    }
+  }
+
+  // Process burst predictions
+  if (pred.models?.burst?.grouped_predictions) {
+    for (const group of pred.models.burst.grouped_predictions) {
+      for (const p of group.predictions || []) {
+        const topEmotion = p.emotions?.reduce((max: HumeEmotion, e: HumeEmotion) =>
+          e.score > max.score ? e : max, { name: '', score: 0 });
+
+        timelineRecords.push({
+          conversation_id: conversationId,
+          model_type: 'burst',
+          start_timestamp_ms: Math.round((p.time?.begin || 0) * 1000),
+          end_timestamp_ms: Math.round((p.time?.end || 0) * 1000),
+          emotions: p.emotions,
+          top_emotion_name: topEmotion?.name,
+          top_emotion_score: topEmotion?.score
+        });
+        counts.burst++;
+      }
+    }
+  }
+
+  // Batch insert timeline records
+  if (timelineRecords.length > 0) {
+    // Delete existing records first
+    await supabase
+      .from('emotion_timelines')
+      .delete()
+      .eq('conversation_id', conversationId);
+
+    // Insert in batches of 500
+    for (let i = 0; i < timelineRecords.length; i += 500) {
+      const batch = timelineRecords.slice(i, i + 500);
+      const { error } = await supabase
+        .from('emotion_timelines')
+        .insert(batch);
+
+      if (error) {
+        console.error(`[${conversationId}] Timeline insert error:`, error.message);
+      }
+    }
+  }
+
+  return counts;
+}
+
+// Helper to create annotated transcript with per-sentence emotions
+async function createAnnotatedTranscript(
+  conversationId: string,
+  transcript: string,
+  languageEmotions: HumeEmotion[]
+): Promise<void> {
+  // Split transcript into sentences
+  const sentences = transcript.match(/[^.!?]+[.!?]+/g) || [transcript];
+
+  const segments = sentences.map((text, idx) => {
+    const startIndex = transcript.indexOf(text);
+    // Estimate timing based on position (rough approximation)
+    const totalChars = transcript.length;
+    const startTime = (startIndex / totalChars) * 100; // Placeholder timing
+
+    return {
+      id: `seg-${idx}`,
+      text: text.trim(),
+      start_index: startIndex,
+      end_index: startIndex + text.length,
+      start_time: startTime,
+      end_time: startTime + (text.length / totalChars) * 100,
+      speaker: 'user',
+      emotions: languageEmotions,
+      dominant_emotion: languageEmotions[0]?.name || 'neutral',
+      emotion_category: categorizeEmotion(languageEmotions[0]?.name || '')
+    };
+  });
+
+  await supabase
+    .from('annotated_transcripts')
+    .upsert({
+      conversation_id: conversationId,
+      segments,
+      total_segments: segments.length,
+      analyzed_at: new Date().toISOString()
+    }, { onConflict: 'conversation_id' });
+}
+
+function categorizeEmotion(emotionName: string): string {
+  const positive = ['joy', 'amusement', 'excitement', 'pride', 'satisfaction', 'admiration', 'love', 'gratitude', 'relief'];
+  const negative = ['anger', 'sadness', 'fear', 'anxiety', 'disgust', 'contempt', 'disappointment', 'embarrassment'];
+  const surprise = ['surprise', 'realization', 'interest', 'curiosity'];
+
+  const lower = emotionName.toLowerCase();
+  if (positive.some(e => lower.includes(e))) return 'positive';
+  if (negative.some(e => lower.includes(e))) return 'negative';
+  if (surprise.some(e => lower.includes(e))) return 'surprise';
+  return 'neutral';
+}
+
 // Streaming endpoint for expression measurement via SSE
 app.get('/api/expression/stream/:conversationId', async (req, res) => {
   const { conversationId } = req.params;
@@ -803,96 +953,527 @@ app.post('/api/expression/analyze', async (req, res) => {
 // HUME EXPRESSION ANALYSIS HELPER
 // ============================================
 
-async function runHumeExpressionAnalysis(conversationId: string): Promise<void> {
-  console.log(`Starting Hume expression analysis for ${conversationId}...`);
+type ExpressionStatus = 'pending' | 'analyzing_language' | 'analyzing_video' | 'completed' | 'failed' | 'skipped';
 
-  // Get conversation data
-  const { data: conv, error } = await supabase
+interface ExpressionProgress {
+  status: ExpressionStatus;
+  started_at?: string;
+  language_started_at?: string;
+  language_completed_at?: string;
+  video_started_at?: string;
+  video_completed_at?: string;
+  completed_at?: string;
+  error?: string;
+  models_analyzed: string[];
+}
+
+async function updateExpressionStatus(
+  conversationId: string,
+  progress: Partial<ExpressionProgress>
+): Promise<void> {
+  await supabase
     .from('conversations')
-    .select('id, transcript, video_url')
-    .eq('id', conversationId)
-    .single();
+    .update({ expression_progress: progress })
+    .eq('id', conversationId);
+}
 
-  if (error || !conv) {
-    throw new Error(`Conversation not found: ${conversationId}`);
-  }
+async function runHumeExpressionAnalysis(conversationId: string): Promise<void> {
+  const startTime = new Date().toISOString();
+  console.log(`[${conversationId}] Starting Hume expression analysis...`);
 
-  const results: HumeExpressionResult = {};
+  const progress: ExpressionProgress = {
+    status: 'pending',
+    started_at: startTime,
+    models_analyzed: []
+  };
 
-  // Analyze transcript (language emotions)
-  if (conv.transcript && HUME_API_KEY) {
-    try {
-      console.log(`Analyzing language emotions for ${conversationId}...`);
-      const ws = new (await import('ws')).default(`wss://api.hume.ai/v0/stream/models?apiKey=${HUME_API_KEY}`);
+  try {
+    // Update status to pending
+    await updateExpressionStatus(conversationId, progress);
 
-      await new Promise<void>((resolve, reject) => {
-        ws.on('open', () => {
-          ws.send(JSON.stringify({
-            models: { language: {} },
-            raw_text: true,
-            data: conv.transcript
-          }));
-        });
-
-        ws.on('message', (data: Buffer) => {
-          const response = JSON.parse(data.toString());
-          if (response.language?.predictions?.[0]?.emotions) {
-            results.language = getTopEmotions(response.language.predictions[0].emotions);
-          }
-          ws.close();
-          resolve();
-        });
-
-        ws.on('error', (err) => {
-          console.error('WebSocket error:', err);
-          ws.close();
-          resolve(); // Don't fail the whole process
-        });
-
-        setTimeout(() => { ws.close(); resolve(); }, 30000);
-      });
-    } catch (err: any) {
-      console.error(`Language analysis failed for ${conversationId}:`, err.message);
+    // Check if HUME_API_KEY is configured
+    if (!HUME_API_KEY) {
+      console.log(`[${conversationId}] HUME_API_KEY not configured, skipping analysis`);
+      progress.status = 'skipped';
+      progress.error = 'HUME_API_KEY not configured';
+      await updateExpressionStatus(conversationId, progress);
+      return;
     }
-  }
 
-  // Analyze video (face + prosody)
-  if (conv.video_url && HUME_API_KEY) {
-    try {
-      console.log(`Analyzing facial expressions and prosody for ${conversationId}...`);
-      const predictions = await analyzeWithHumeBatch(conv.video_url, { face: true, prosody: true });
+    // Get conversation data
+    const { data: conv, error } = await supabase
+      .from('conversations')
+      .select('id, transcript, video_url')
+      .eq('id', conversationId)
+      .single();
 
-      if (predictions?.[0]?.results?.predictions?.[0]) {
-        const pred = predictions[0].results.predictions[0];
+    if (error || !conv) {
+      throw new Error(`Conversation not found: ${conversationId}`);
+    }
 
-        if (pred.models?.face?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
-          results.face = getTopEmotions(pred.models.face.grouped_predictions[0].predictions[0].emotions);
-        }
+    const results: HumeExpressionResult = {};
 
-        if (pred.models?.prosody?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
-          results.prosody = getTopEmotions(pred.models.prosody.grouped_predictions[0].predictions[0].emotions);
-        }
+    // Analyze transcript (language emotions)
+    if (conv.transcript) {
+      progress.status = 'analyzing_language';
+      progress.language_started_at = new Date().toISOString();
+      await updateExpressionStatus(conversationId, progress);
+
+      console.log(`[${conversationId}] Analyzing language emotions...`);
+
+      try {
+        const ws = new (await import('ws')).default(`wss://api.hume.ai/v0/stream/models?apiKey=${HUME_API_KEY}`);
+
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            console.log(`[${conversationId}] Language analysis timed out after 30s`);
+            ws.close();
+            resolve();
+          }, 30000);
+
+          ws.on('open', () => {
+            ws.send(JSON.stringify({
+              models: { language: {} },
+              raw_text: true,
+              data: conv.transcript
+            }));
+          });
+
+          ws.on('message', (data: Buffer) => {
+            clearTimeout(timeout);
+            const response = JSON.parse(data.toString());
+            if (response.language?.predictions?.[0]?.emotions) {
+              results.language = getTopEmotions(response.language.predictions[0].emotions);
+              progress.models_analyzed.push('language');
+              console.log(`[${conversationId}] Language analysis complete: ${results.language.length} emotions`);
+            }
+            ws.close();
+            resolve();
+          });
+
+          ws.on('error', (err) => {
+            clearTimeout(timeout);
+            console.error(`[${conversationId}] WebSocket error:`, err.message);
+            ws.close();
+            resolve();
+          });
+        });
+
+        progress.language_completed_at = new Date().toISOString();
+      } catch (err: any) {
+        console.error(`[${conversationId}] Language analysis failed:`, err.message);
       }
-    } catch (err: any) {
-      console.error(`Video analysis failed for ${conversationId}:`, err.message);
     }
-  }
 
-  // Store results
-  if (Object.keys(results).length > 0) {
+    // Analyze video (face + prosody)
+    if (conv.video_url) {
+      progress.status = 'analyzing_video';
+      progress.video_started_at = new Date().toISOString();
+      await updateExpressionStatus(conversationId, progress);
+
+      console.log(`[${conversationId}] Analyzing facial expressions and prosody...`);
+
+      try {
+        const predictions = await analyzeWithHumeBatch(conv.video_url, { face: true, prosody: true });
+
+        if (predictions?.[0]?.results?.predictions?.[0]) {
+          const pred = predictions[0].results.predictions[0];
+
+          if (pred.models?.face?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+            results.face = getTopEmotions(pred.models.face.grouped_predictions[0].predictions[0].emotions);
+            progress.models_analyzed.push('face');
+            console.log(`[${conversationId}] Face analysis complete: ${results.face.length} emotions`);
+          }
+
+          if (pred.models?.prosody?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+            results.prosody = getTopEmotions(pred.models.prosody.grouped_predictions[0].predictions[0].emotions);
+            progress.models_analyzed.push('prosody');
+            console.log(`[${conversationId}] Prosody analysis complete: ${results.prosody.length} emotions`);
+          }
+
+          // Store granular timeline data for video scrubbing
+          try {
+            const timelineCounts = await storeEmotionTimelines(conversationId, predictions);
+            console.log(`[${conversationId}] Timeline stored: ${timelineCounts.face} face, ${timelineCounts.prosody} prosody frames`);
+          } catch (tlErr: any) {
+            console.error(`[${conversationId}] Timeline storage failed:`, tlErr.message);
+          }
+        }
+
+        progress.video_completed_at = new Date().toISOString();
+      } catch (err: any) {
+        console.error(`[${conversationId}] Video analysis failed:`, err.message);
+        progress.error = `Video analysis failed: ${err.message}`;
+      }
+    }
+
+    // Create annotated transcript if we have language results
+    if (results.language && conv.transcript) {
+      try {
+        await createAnnotatedTranscript(conversationId, conv.transcript, results.language);
+        console.log(`[${conversationId}] Annotated transcript created`);
+      } catch (atErr: any) {
+        console.error(`[${conversationId}] Annotated transcript failed:`, atErr.message);
+      }
+    }
+
+    // Store results
+    progress.status = 'completed';
+    progress.completed_at = new Date().toISOString();
+
+    const updateData: any = {
+      expression_progress: progress
+    };
+
+    if (Object.keys(results).length > 0) {
+      updateData.expression_analysis = results;
+      updateData.expression_analyzed_at = progress.completed_at;
+    }
+
+    await supabase
+      .from('conversations')
+      .update(updateData)
+      .eq('id', conversationId);
+
+    const duration = (new Date(progress.completed_at).getTime() - new Date(startTime).getTime()) / 1000;
+    console.log(`[${conversationId}] Expression analysis completed in ${duration}s. Models: ${progress.models_analyzed.join(', ') || 'none'}`);
+
+  } catch (err: any) {
+    console.error(`[${conversationId}] Expression analysis failed:`, err.message);
+    progress.status = 'failed';
+    progress.error = err.message;
+    progress.completed_at = new Date().toISOString();
+    await updateExpressionStatus(conversationId, progress);
+  }
+}
+
+// ============================================
+// ANALYSIS STATUS ENDPOINT
+// ============================================
+
+app.get('/api/conversations/:conversationId/analysis-status', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data: conv, error } = await supabase
+      .from('conversations')
+      .select('id, status, expression_progress, expression_analysis, expression_analyzed_at, created_at, ended_at')
+      .eq('id', conversationId)
+      .single();
+
+    if (error || !conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const progress = conv.expression_progress as ExpressionProgress | null;
+
+    // Calculate durations
+    let languageDuration: number | null = null;
+    let videoDuration: number | null = null;
+    let totalDuration: number | null = null;
+
+    if (progress?.language_started_at && progress?.language_completed_at) {
+      languageDuration = (new Date(progress.language_completed_at).getTime() - new Date(progress.language_started_at).getTime()) / 1000;
+    }
+    if (progress?.video_started_at && progress?.video_completed_at) {
+      videoDuration = (new Date(progress.video_completed_at).getTime() - new Date(progress.video_started_at).getTime()) / 1000;
+    }
+    if (progress?.started_at && progress?.completed_at) {
+      totalDuration = (new Date(progress.completed_at).getTime() - new Date(progress.started_at).getTime()) / 1000;
+    }
+
+    // Check if stuck (started > 5 min ago but not completed)
+    let isStuck = false;
+    if (progress?.started_at && !progress?.completed_at) {
+      const elapsed = (Date.now() - new Date(progress.started_at).getTime()) / 1000;
+      isStuck = elapsed > 300; // 5 minutes
+    }
+
+    res.json({
+      conversation_id: conversationId,
+      conversation_status: conv.status,
+      expression_analysis: {
+        status: progress?.status || 'not_started',
+        is_stuck: isStuck,
+        started_at: progress?.started_at,
+        completed_at: progress?.completed_at,
+        error: progress?.error,
+        models_analyzed: progress?.models_analyzed || [],
+        has_results: !!conv.expression_analysis,
+        durations: {
+          language_seconds: languageDuration,
+          video_seconds: videoDuration,
+          total_seconds: totalDuration
+        },
+        stages: {
+          language: {
+            started: progress?.language_started_at,
+            completed: progress?.language_completed_at
+          },
+          video: {
+            started: progress?.video_started_at,
+            completed: progress?.video_completed_at
+          }
+        }
+      },
+      results_preview: conv.expression_analysis ? {
+        face_emotions: (conv.expression_analysis as any).face?.length || 0,
+        prosody_emotions: (conv.expression_analysis as any).prosody?.length || 0,
+        language_emotions: (conv.expression_analysis as any).language?.length || 0
+      } : null
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Retry failed analysis
+app.post('/api/conversations/:conversationId/retry-analysis', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data: conv, error } = await supabase
+      .from('conversations')
+      .select('id, expression_progress')
+      .eq('id', conversationId)
+      .single();
+
+    if (error || !conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const progress = conv.expression_progress as ExpressionProgress | null;
+
+    if (progress?.status === 'analyzing_language' || progress?.status === 'analyzing_video') {
+      return res.status(400).json({
+        error: 'Analysis already in progress',
+        current_status: progress.status
+      });
+    }
+
+    // Clear previous progress and restart
     await supabase
       .from('conversations')
       .update({
-        expression_analysis: results,
-        expression_analyzed_at: new Date().toISOString()
+        expression_progress: null,
+        expression_analysis: null,
+        expression_analyzed_at: null
       })
       .eq('id', conversationId);
 
-    console.log(`Hume expression analysis completed for ${conversationId}:`, Object.keys(results));
-  } else {
-    console.log(`No expression analysis results for ${conversationId} (missing video_url or transcript, or no HUME_API_KEY)`);
+    // Trigger new analysis
+    runHumeExpressionAnalysis(conversationId).catch(err => {
+      console.error(`Retry analysis failed for ${conversationId}:`, err);
+    });
+
+    res.json({
+      message: 'Analysis restarted',
+      conversation_id: conversationId
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
-}
+});
+
+// ============================================
+// EMOTION TIMELINE QUERIES
+// ============================================
+
+// Get emotion timeline data for video scrubbing
+app.get('/api/conversations/:conversationId/emotions/timeline', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { start_ms, end_ms, models } = req.query;
+
+    let query = supabase
+      .from('emotion_timelines')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('start_timestamp_ms', { ascending: true });
+
+    // Filter by time range if provided
+    if (start_ms) {
+      query = query.gte('start_timestamp_ms', parseInt(start_ms as string));
+    }
+    if (end_ms) {
+      query = query.lte('end_timestamp_ms', parseInt(end_ms as string));
+    }
+
+    // Filter by model types if provided
+    if (models) {
+      const modelList = (models as string).split(',');
+      query = query.in('model_type', modelList);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Group by model type
+    const grouped: Record<string, any[]> = { face: [], prosody: [], language: [], burst: [] };
+    (data || []).forEach(item => {
+      grouped[item.model_type]?.push(item);
+    });
+
+    res.json({
+      conversation_id: conversationId,
+      total_records: data?.length || 0,
+      timeline: grouped
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get emotions at specific timestamp (for video playback sync)
+app.get('/api/conversations/:conversationId/emotions/at', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { time_ms } = req.query;
+
+    if (!time_ms) {
+      return res.status(400).json({ error: 'time_ms query parameter required' });
+    }
+
+    const timeMs = parseInt(time_ms as string);
+
+    // Get face emotion at this time
+    const { data: faceData } = await supabase
+      .from('emotion_timelines')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .eq('model_type', 'face')
+      .lte('start_timestamp_ms', timeMs)
+      .gte('end_timestamp_ms', timeMs)
+      .limit(1)
+      .single();
+
+    // Get prosody emotion at this time
+    const { data: prosodyData } = await supabase
+      .from('emotion_timelines')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .eq('model_type', 'prosody')
+      .lte('start_timestamp_ms', timeMs)
+      .gte('end_timestamp_ms', timeMs)
+      .limit(1)
+      .single();
+
+    res.json({
+      timestamp_ms: timeMs,
+      face: faceData ? {
+        top_emotion: faceData.top_emotion_name,
+        score: faceData.top_emotion_score,
+        all_emotions: faceData.emotions?.slice(0, 5),
+        bounding_box: faceData.face_bounding_box
+      } : null,
+      prosody: prosodyData ? {
+        top_emotion: prosodyData.top_emotion_name,
+        score: prosodyData.top_emotion_score,
+        all_emotions: prosodyData.emotions?.slice(0, 5)
+      } : null
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get annotated transcript with emotion highlighting
+app.get('/api/conversations/:conversationId/transcript/annotated', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data, error } = await supabase
+      .from('annotated_transcripts')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    if (!data) {
+      // Return raw transcript if no annotated version exists
+      const { data: conv } = await supabase
+        .from('conversations')
+        .select('transcript')
+        .eq('id', conversationId)
+        .single();
+
+      return res.json({
+        conversation_id: conversationId,
+        has_annotations: false,
+        transcript: conv?.transcript || null
+      });
+    }
+
+    res.json({
+      conversation_id: conversationId,
+      has_annotations: true,
+      segments: data.segments,
+      total_segments: data.total_segments,
+      analyzed_at: data.analyzed_at
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get emotion distribution/histogram over time
+app.get('/api/conversations/:conversationId/emotions/distribution', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { bucket_size_ms = '1000', model = 'face' } = req.query;
+
+    const bucketSize = parseInt(bucket_size_ms as string);
+
+    const { data, error } = await supabase
+      .from('emotion_timelines')
+      .select('start_timestamp_ms, top_emotion_name, top_emotion_score')
+      .eq('conversation_id', conversationId)
+      .eq('model_type', model)
+      .order('start_timestamp_ms', { ascending: true });
+
+    if (error) throw error;
+
+    // Bucket the data
+    const buckets: Record<number, { emotions: Record<string, number>; count: number }> = {};
+
+    (data || []).forEach(item => {
+      const bucketIndex = Math.floor(item.start_timestamp_ms / bucketSize);
+      if (!buckets[bucketIndex]) {
+        buckets[bucketIndex] = { emotions: {}, count: 0 };
+      }
+      if (item.top_emotion_name) {
+        buckets[bucketIndex].emotions[item.top_emotion_name] =
+          (buckets[bucketIndex].emotions[item.top_emotion_name] || 0) + 1;
+      }
+      buckets[bucketIndex].count++;
+    });
+
+    // Convert to array
+    const distribution = Object.entries(buckets).map(([index, data]) => ({
+      bucket_index: parseInt(index),
+      time_range_ms: {
+        start: parseInt(index) * bucketSize,
+        end: (parseInt(index) + 1) * bucketSize
+      },
+      dominant_emotion: Object.entries(data.emotions)
+        .sort((a, b) => b[1] - a[1])[0]?.[0] || null,
+      emotion_counts: data.emotions,
+      sample_count: data.count
+    }));
+
+    res.json({
+      conversation_id: conversationId,
+      model_type: model,
+      bucket_size_ms: bucketSize,
+      total_buckets: distribution.length,
+      distribution
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // ============================================
 // WEBHOOKS (for n8n callbacks)

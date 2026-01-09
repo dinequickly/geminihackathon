@@ -11,12 +11,13 @@ import {
   TrendingUp,
   Clock,
   MessageSquare,
-  Video,
   ChevronDown,
   ChevronUp,
-  RefreshCw
+  RefreshCw,
+  Activity
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
+import { VideoEmotionPlayer, TranscriptViewer } from '../components';
 
 export default function Results() {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -27,6 +28,7 @@ export default function Results() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
+  const [currentVideoTimeMs, setCurrentVideoTimeMs] = useState(0);
 
   useEffect(() => {
     if (conversationId) {
@@ -333,34 +335,54 @@ export default function Results() {
           </div>
         )}
 
-        {/* Video Recording */}
-        {conversation?.video_url && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <button
-              onClick={() => toggleSection('video')}
-              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
-            >
-              <div className="flex items-center gap-2">
-                <Video className="w-5 h-5 text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900">Recording</h2>
-              </div>
-              {expandedSections.has('video') ? (
-                <ChevronUp className="w-5 h-5 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
+        {/* Video with Emotion Analysis */}
+        {conversation?.video_url && conversationId && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => toggleSection('video')}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
+              >
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-gray-400" />
+                  <h2 className="text-lg font-semibold text-gray-900">Recording with Emotion Analysis</h2>
+                </div>
+                {expandedSections.has('video') ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
 
-            {expandedSections.has('video') && (
-              <div className="px-4 pb-4">
-                <video
-                  src={conversation.video_url}
-                  controls
-                  className="w-full rounded-lg bg-black"
-                />
-              </div>
-            )}
+              {expandedSections.has('video') && (
+                <div className="p-4">
+                  <VideoEmotionPlayer
+                    conversationId={conversationId}
+                    videoUrl={conversation.video_url}
+                    onTimeUpdate={setCurrentVideoTimeMs}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Transcript Viewer */}
+            <TranscriptViewer
+              conversationId={conversationId}
+              currentTimeMs={currentVideoTimeMs}
+              onSegmentClick={(startTime) => {
+                setCurrentVideoTimeMs(startTime * 1000);
+                // If we had a ref to the video player, we could seek to this time
+              }}
+            />
           </div>
+        )}
+
+        {/* Show transcript even without video */}
+        {!conversation?.video_url && conversationId && (
+          <TranscriptViewer
+            conversationId={conversationId}
+            currentTimeMs={currentVideoTimeMs}
+          />
         )}
 
         {/* Action Buttons */}

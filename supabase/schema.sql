@@ -167,6 +167,71 @@ CREATE TRIGGER update_analysis_updated_at
 -- HELPFUL VIEWS
 -- ============================================
 
+-- ============================================
+-- EMOTION TIMELINES TABLE (Granular timestamped data)
+-- ============================================
+CREATE TABLE emotion_timelines (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    model_type TEXT NOT NULL CHECK (model_type IN ('face', 'prosody', 'language', 'burst')),
+
+    -- Timestamp range for this emotion window (milliseconds)
+    start_timestamp_ms BIGINT NOT NULL,
+    end_timestamp_ms BIGINT NOT NULL,
+
+    -- All emotions with scores (not just top 5)
+    emotions JSONB NOT NULL,
+    top_emotion_name TEXT,
+    top_emotion_score FLOAT,
+
+    -- Face-specific data
+    face_bounding_box JSONB,
+
+    -- Raw prediction data
+    raw_prediction JSONB,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for efficient timeline queries
+CREATE INDEX idx_emotion_timelines_conversation ON emotion_timelines(conversation_id);
+CREATE INDEX idx_emotion_timelines_model ON emotion_timelines(conversation_id, model_type);
+CREATE INDEX idx_emotion_timelines_time ON emotion_timelines(conversation_id, start_timestamp_ms);
+
+-- ============================================
+-- ANNOTATED TRANSCRIPTS TABLE (Text with emotions)
+-- ============================================
+CREATE TABLE annotated_transcripts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL UNIQUE REFERENCES conversations(id) ON DELETE CASCADE,
+
+    -- Segments with emotion data
+    segments JSONB NOT NULL,  -- Array of {id, text, start_index, end_index, start_time, end_time, speaker, emotions, dominant_emotion}
+
+    -- Metadata
+    total_segments INTEGER,
+    analyzed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_annotated_transcripts_conversation ON annotated_transcripts(conversation_id);
+
+-- Add expression_progress column to conversations
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS expression_progress JSONB;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS expression_analysis JSONB;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS expression_analyzed_at TIMESTAMP WITH TIME ZONE;
+
+-- RLS for new tables
+ALTER TABLE emotion_timelines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE annotated_transcripts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all for service role" ON emotion_timelines
+    FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all for service role" ON annotated_transcripts
+    FOR ALL USING (true) WITH CHECK (true);
+
 -- View for conversation list with analysis status
 CREATE VIEW conversation_summaries AS
 SELECT
