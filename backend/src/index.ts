@@ -1634,6 +1634,30 @@ app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
 
     console.log('Conversation complete webhook:', conversation_id);
 
+    // Transform ElevenLabs transcript format to our expected format
+    let normalizedTranscriptJson = null;
+    if (transcript_json) {
+      normalizedTranscriptJson = transcript_json;
+    } else if (payload.transcription) {
+      // ElevenLabs sends transcription as an object or array
+      const rawTranscription = payload.transcription;
+
+      // If it's an array of transcript items, normalize them
+      if (Array.isArray(rawTranscription)) {
+        normalizedTranscriptJson = rawTranscription.map((item: any) => ({
+          role: item.role === 'user' ? 'user' : 'agent',
+          message: item.message || item.text || item.content || null,
+          time_in_call_secs: item.time_in_call_secs || item.timestamp || item.time || undefined,
+          tool_calls: item.tool_calls || undefined,
+          tool_results: item.tool_results || undefined,
+          feedback: item.feedback || undefined
+        }));
+      } else if (rawTranscription.text) {
+        // If it's a single text object, just store the raw text
+        normalizedTranscriptJson = null; // Will use plain transcript field instead
+      }
+    }
+
     // Find conversation
     let query = supabase.from('conversations').select('*, users(formatted_resume, job_description)');
 
@@ -1656,7 +1680,7 @@ app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
             status: 'analyzing',
             elevenlabs_conversation_id: conversation_id,
             transcript: transcript || payload.transcription?.text,
-            transcript_json: transcript_json || payload.transcription,
+            transcript_json: normalizedTranscriptJson,
             duration_seconds: duration_seconds || payload.duration_seconds,
             ended_at: new Date().toISOString()
           })

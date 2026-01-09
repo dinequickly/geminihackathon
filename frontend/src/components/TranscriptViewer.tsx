@@ -88,16 +88,26 @@ export default function TranscriptViewer({
         setError(null);
         const data = await api.getAnnotatedTranscript(conversationId);
 
+        console.log('Transcript data received:', data);
+
         if (data.transcript_json && Array.isArray(data.transcript_json) && data.transcript_json.length > 0) {
+          console.log('Setting transcript_json with', data.transcript_json.length, 'items');
           setTranscriptJson(data.transcript_json);
         }
 
         if (data.has_annotations && data.segments) {
+          console.log('Setting annotated segments with', data.segments.length, 'segments');
           setSegments(data.segments);
           setHasAnnotations(true);
-        } else if (data.transcript) {
+        }
+
+        // Always set raw transcript if available, as fallback
+        if (data.transcript) {
+          console.log('Setting raw transcript, length:', data.transcript.length);
           setRawTranscript(data.transcript);
-          setHasAnnotations(false);
+          if (!data.has_annotations) {
+            setHasAnnotations(false);
+          }
         }
       } catch (err) {
         console.error('Failed to load transcript:', err);
@@ -438,6 +448,16 @@ export default function TranscriptViewer({
             ref={containerRef}
             className="max-h-[500px] overflow-y-auto p-4"
           >
+            {/* Debug info - remove after testing */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                <div>transcript_json: {transcriptJson.length} items</div>
+                <div>segments: {segments.length} items</div>
+                <div>hasAnnotations: {hasAnnotations ? 'true' : 'false'}</div>
+                <div>rawTranscript: {rawTranscript ? `${rawTranscript.length} chars` : 'null'}</div>
+              </div>
+            )}
+
             {transcriptJson.length > 0 ? (
                 renderRichTranscript()
             ) : hasAnnotations && segments.length > 0 ? (
