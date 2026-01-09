@@ -108,6 +108,25 @@ export default function Interview({ userId }: InterviewProps) {
     };
   }, []);
 
+  // Handle page navigation/refresh - warn user and cleanup
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only warn if interview is active
+      if (conversationId && !isEnding) {
+        e.preventDefault();
+        e.returnValue = '';
+
+        // Cleanup in background
+        stopCamera();
+        stopRecording();
+        disconnectElevenLabs();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [conversationId, isEnding]);
+
   // Connect video stream to video element
   useEffect(() => {
     if (stream && videoRef.current) {
@@ -120,12 +139,12 @@ export default function Interview({ userId }: InterviewProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Connect to ElevenLabs when we have signed URL
+  // Connect to ElevenLabs when we have signed URL (but not when intentionally ending)
   useEffect(() => {
-    if (signedUrl && !isInitializing && elStatus === 'disconnected') {
+    if (signedUrl && !isInitializing && !isEnding && elStatus === 'disconnected') {
       connectElevenLabs();
     }
-  }, [signedUrl, isInitializing, elStatus]);
+  }, [signedUrl, isInitializing, isEnding, elStatus]);
 
   const initializeSession = async () => {
     try {
@@ -156,9 +175,12 @@ export default function Interview({ userId }: InterviewProps) {
     setIsEnding(true);
 
     try {
+      // Clear signedUrl to prevent any reconnection attempts
+      setSignedUrl(null);
+
       // Immediately stop all media tracks to prevent agent from hearing more
       stopCamera(); // This stops both video and audio tracks from the user's stream
-      
+
       // Stop recording
       stopRecording();
 
