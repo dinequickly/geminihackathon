@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { runFullAnalysis } from './analysis/orchestrator';
 
 dotenv.config();
 
@@ -17,14 +18,19 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID || 'agent_1801k4yzmzs1exz9bee2kep0npbq';
 const N8N_LINKEDIN_WEBHOOK = process.env.N8N_LINKEDIN_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/c97f84f3-9319-4e39-91e2-a7f84590eb3f';
 const N8N_ANALYSIS_WEBHOOK = process.env.N8N_ANALYSIS_WEBHOOK || 'https://maxipad.app.n8n.cloud/webhook/58227689-94ba-41e7-a1d0-1a1b798024f3';
-const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY!;
-const HUGGING_FACE_AUDIO_URL = process.env.HUGGING_FACE_AUDIO_URL!;
+const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
+const HUGGING_FACE_AUDIO_URL = process.env.HUGGING_FACE_AUDIO_URL || '';
 
 // Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_KEY || 'placeholder');
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins for now, or specify your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
+}));
+app.options('*', cors()); // Enable pre-flight for all routes
 app.use(express.json());
 
 // ============================================
@@ -427,11 +433,6 @@ app.post('/api/analysis/audio', upload.single('audio'), async (req, res) => {
 // ============================================
 // WEBHOOKS (for n8n callbacks)
 // ============================================
-import { runFullAnalysis } from './analysis/orchestrator';
-
-// ... (imports)
-
-// ... (previous code)
 
 app.post('/api/webhooks/conversation-complete', async (req, res) => {
   try {
