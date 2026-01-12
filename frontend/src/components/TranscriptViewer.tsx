@@ -5,6 +5,7 @@ import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal
 interface TranscriptViewerProps {
   conversationId: string;
   currentTimeMs?: number;
+  humeJobId?: string;
   onSegmentClick?: (startTime: number) => void;
 }
 
@@ -83,6 +84,7 @@ const formatTimestamp = (seconds: number): string => {
 export default function TranscriptViewer({
   conversationId,
   currentTimeMs = 0,
+  humeJobId,
   onSegmentClick
 }: TranscriptViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,9 +113,10 @@ export default function TranscriptViewer({
         setIsLoading(true);
         setError(null);
 
+        const fallbackJobId = humeJobId?.trim() || undefined;
         const [transcriptData, emotionTimeline, highlightsData] = await Promise.all([
           api.getAnnotatedTranscript(conversationId),
-          api.getEmotionTimeline(conversationId, { models: ['face', 'prosody'] }).catch(() => null),
+          api.getEmotionTimeline(conversationId, { models: ['face', 'prosody'], fallbackJobId }).catch(() => null),
           api.getHighlights(conversationId).catch(() => ({ highlights: [] }))
         ]);
 
@@ -148,7 +151,7 @@ export default function TranscriptViewer({
     };
 
     loadData();
-  }, [conversationId]);
+  }, [conversationId, humeJobId]);
 
   // Auto-scroll to active segment
   useEffect(() => {

@@ -9,7 +9,6 @@ import {
   Users,
   Sparkles,
   TrendingUp,
-  Clock,
   MessageSquare,
   ChevronDown,
   ChevronUp,
@@ -93,35 +92,6 @@ export default function Results() {
       exceptional: 'Exceptional'
     };
     return labels[level] || level;
-  };
-
-  const formatDuration = (seconds: number | undefined) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}m ${secs}s`;
-  };
-
-  // Calculate duration from timestamps if not stored
-  const getDuration = () => {
-    if (conversation?.duration_seconds) {
-      return conversation.duration_seconds;
-    }
-    // Use created_at and ended_at (preferred)
-    if (conversation?.created_at && conversation?.ended_at) {
-      const start = new Date(conversation.created_at).getTime();
-      const end = new Date(conversation.ended_at).getTime();
-      return (end - start) / 1000;
-    }
-    // Fallback: use created_at and updated_at
-    if (conversation?.created_at && conversation?.updated_at) {
-      const start = new Date(conversation.created_at).getTime();
-      const end = new Date(conversation.updated_at).getTime();
-      const duration = (end - start) / 1000;
-      // Cap at 30 minutes to avoid showing analysis time
-      return duration > 1800 ? undefined : duration;
-    }
-    return undefined;
   };
 
   if (isLoading) {
@@ -250,12 +220,7 @@ export default function Results() {
           )}
 
           {/* Quick stats */}
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <Clock className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-              <p className="text-lg font-semibold text-gray-900">{formatDuration(getDuration())}</p>
-              <p className="text-xs text-gray-500">Duration</p>
-            </div>
+          <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <MessageSquare className="w-5 h-5 text-gray-400 mx-auto mb-1" />
               <p className="text-lg font-semibold text-gray-900">{analysis.filler_word_count || 0}</p>
@@ -366,6 +331,7 @@ export default function Results() {
                       conversationId={conversationId}
                       videoUrl={conversation.video_url}
                       audioUrl={conversation.audio_url}
+                      humeJobId={analysis?.url}
                       onTimeUpdate={setCurrentVideoTimeMs}
                     />
                   </div>
@@ -394,6 +360,7 @@ export default function Results() {
                   <TranscriptViewer
                     conversationId={conversationId}
                     currentTimeMs={currentVideoTimeMs}
+                    humeJobId={analysis?.url}
                     onSegmentClick={(startTime) => {
                       setCurrentVideoTimeMs(startTime * 1000);
                       videoPlayerRef.current?.seekTo(startTime);

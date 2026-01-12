@@ -7,6 +7,7 @@ export interface VideoEmotionPlayerProps {
   conversationId: string;
   videoUrl: string;
   audioUrl?: string;
+  humeJobId?: string;
   onTimeUpdate?: (timeMs: number) => void;
   onEmotionUpdate?: (payload: { timeMs: number; emotions: CurrentEmotions }) => void;
   showLiveEmotions?: boolean;
@@ -44,7 +45,7 @@ const formatTime = (ms: number): string => {
 };
 
 const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerProps>(
-  ({ conversationId, videoUrl, audioUrl, onTimeUpdate, onEmotionUpdate, showLiveEmotions = true }, ref) => {
+  ({ conversationId, videoUrl, audioUrl, humeJobId, onTimeUpdate, onEmotionUpdate, showLiveEmotions = true }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
@@ -84,8 +85,10 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
     const loadEmotionData = async () => {
       try {
         setIsLoading(true);
+        const fallbackJobId = humeJobId?.trim() || undefined;
         const data = await api.getEmotionTimeline(conversationId, {
-          models: ['face', 'prosody']
+          models: ['face', 'prosody'],
+          fallbackJobId
         });
         setEmotionData({
           face: data.timeline.face || [],
@@ -99,7 +102,7 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
     };
 
     loadEmotionData();
-  }, [conversationId]);
+  }, [conversationId, humeJobId]);
 
   // Update current emotions based on video time
   const updateCurrentEmotions = useCallback((timeMs: number) => {
@@ -109,9 +112,18 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
     );
 
     // Find prosody emotion at current time
-    const prosodyEmotion = emotionData.prosody.find(
+    let prosodyEmotion = emotionData.prosody.find(
       e => e.start_timestamp_ms <= timeMs && e.end_timestamp_ms >= timeMs
     );
+    if (!prosodyEmotion) {
+      for (let i = emotionData.prosody.length - 1; i >= 0; i -= 1) {
+        const candidate = emotionData.prosody[i];
+        if (candidate.start_timestamp_ms <= timeMs) {
+          prosodyEmotion = candidate;
+          break;
+        }
+      }
+    }
 
     const updatedEmotions: CurrentEmotions = {
       face: faceEmotion ? {
