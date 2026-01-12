@@ -166,6 +166,20 @@ CREATE TABLE IF NOT EXISTS annotated_transcripts (
 CREATE INDEX IF NOT EXISTS idx_annotated_transcripts_conversation ON annotated_transcripts(conversation_id);
 
 -- ============================================
+-- TRANSCRIPT HIGHLIGHTS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS transcript_highlights (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    highlighted_sentence TEXT NOT NULL,
+    comment TEXT,
+    color TEXT NOT NULL DEFAULT 'yellow' CHECK (color IN ('yellow', 'green', 'blue', 'pink', 'orange')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_transcript_highlights_conversation ON transcript_highlights(conversation_id);
+
+-- ============================================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================
 
@@ -175,6 +189,7 @@ ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emotion_analysis ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emotion_timelines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE annotated_transcripts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transcript_highlights ENABLE ROW LEVEL SECURITY;
 
 -- For now, allow all operations via service role (backend)
 -- You can add more restrictive policies later for direct client access
@@ -184,6 +199,7 @@ CREATE POLICY "Allow all for service role" ON conversations FOR ALL USING (true)
 CREATE POLICY "Allow all for service role" ON emotion_analysis FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for service role" ON emotion_timelines FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for service role" ON annotated_transcripts FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service role" ON transcript_highlights FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================
 -- UPDATED_AT TRIGGER

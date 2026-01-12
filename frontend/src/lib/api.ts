@@ -23,6 +23,8 @@ export interface Conversation {
   audio_url?: string;
   started_at: string;
   ended_at?: string;
+  created_at: string;
+  updated_at?: string;
   has_analysis?: boolean;
   overall_score?: number;
   overall_level?: string;
@@ -40,9 +42,10 @@ export interface TranscriptHighlight {
 export interface Analysis {
   id: string;
   conversation_id: string;
+  url?: string;
   overall_score: number;
   overall_level: string;
-  overall_summary: string;
+  overall_summary?: string;
   technical_score?: number;
   technical_feedback?: string;
   eq_score?: number;
@@ -53,6 +56,8 @@ export interface Analysis {
   culture_fit_feedback?: string;
   authenticity_score?: number;
   authenticity_feedback?: string;
+  communication_score?: number;
+  communication_feedback?: string;
   filler_word_count?: number;
   filler_words?: string[];
   speaking_pace_wpm?: number;
@@ -75,6 +80,11 @@ export interface Analysis {
     score: number;
     feedback: string;
   }>;
+  // From full_analysis_json
+  feedback?: {
+    summary?: string;
+    top_improvements?: Array<{ area: string; suggestion: string }>;
+  };
 }
 
 class ApiClient {
@@ -321,6 +331,7 @@ class ApiClient {
     start_ms?: number;
     end_ms?: number;
     models?: string[];
+    fallbackJobId?: string;
   }): Promise<{
     conversation_id: string;
     total_records: number;
@@ -336,7 +347,61 @@ class ApiClient {
     if (options?.end_ms !== undefined) params.set('end_ms', options.end_ms.toString());
     if (options?.models) params.set('models', options.models.join(','));
 
-    return this.request(`/api/conversations/${conversationId}/emotions/timeline?${params}`);
+    type TimelineResponse = {
+      conversation_id: string;
+      total_records: number;
+      timeline: {
+        face: EmotionTimelineItem[];
+        prosody: EmotionTimelineItem[];
+        language: EmotionTimelineItem[];
+        burst: EmotionTimelineItem[];
+      };
+    };
+
+    try {
+      const data = await this.request<TimelineResponse>(`/api/conversations/${conversationId}/emotions/timeline?${params}`);
+      if (options?.fallbackJobId && data.total_records === 0) {
+        try {
+          return await this.getEmotionTimelineFromHume(conversationId, options.fallbackJobId, options.models);
+        } catch (fallbackError) {
+          console.warn('Hume fallback failed, returning empty timeline:', fallbackError);
+          return data;
+        }
+      }
+      return data;
+    } catch (err) {
+      if (options?.fallbackJobId) {
+        try {
+          return await this.getEmotionTimelineFromHume(conversationId, options.fallbackJobId, options.models);
+        } catch (fallbackError) {
+          console.warn('Hume fallback failed after timeline error:', fallbackError);
+          throw err;
+        }
+      }
+      throw err;
+    }
+  }
+
+  async getHumePredictions(jobId: string): Promise<any> {
+    return this.request(`/api/hume/jobs/${jobId}/predictions`);
+  }
+
+  private async getEmotionTimelineFromHume(
+    conversationId: string,
+    jobId: string,
+    models?: string[]
+  ): Promise<{
+    conversation_id: string;
+    total_records: number;
+    timeline: {
+      face: EmotionTimelineItem[];
+      prosody: EmotionTimelineItem[];
+      language: EmotionTimelineItem[];
+      burst: EmotionTimelineItem[];
+    };
+  }> {
+    const predictions = await this.getHumePredictions(jobId);
+    return buildEmotionTimelineFromHumePredictions(conversationId, predictions, models);
   }
 
   async getEmotionAtTime(conversationId: string, timeMs: number): Promise<{
@@ -453,5 +518,172 @@ export interface TranscriptSegment {
   emotion_category: 'positive' | 'negative' | 'neutral' | 'surprise';
 }
 
-export const api = new ApiClient();
+const getTopEmotion = (emotions: Array<{ name: string; score: number }>) => {
+  return emotions.reduce(
+    (top, emotion) => (emotion.score > top.score ? emotion : top),
+    { name: '', score: 0 }
+  );
+};
 
+const buildEmotionTimelineFromHumePredictions = (
+  conversationId: string,
+  predictions: any,
+  models?: string[]
+): {
+  conversation_id: string;
+  total_records: number;
+  timeline: {
+    face: EmotionTimelineItem[];
+    prosody: EmotionTimelineItem[];
+    language: EmotionTimelineItem[];
+    burst: EmotionTimelineItem[];
+  };
+} => {
+  const modelFilter = models ? new Set(models) : null;
+  const includeModel = (model: string) => !modelFilter || modelFilter.has(model);
+  const timeline = { face: [], prosody: [], language: [], burst: [] } as {
+    face: EmotionTimelineItem[];
+    prosody: EmotionTimelineItem[];
+    language: EmotionTimelineItem[];
+    burst: EmotionTimelineItem[];
+  };
+
+  const pred = predictions?.[0]?.results?.predictions?.[0];
+  if (!pred) {
+    return { conversation_id: conversationId, total_records: 0, timeline };
+  }
+
+  let faceIndex = 0;
+  let prosodyIndex = 0;
+  let languageIndex = 0;
+  let burstIndex = 0;
+
+  if (includeModel('face')) {
+    const groups = pred.models?.face?.grouped_predictions || [];
+    for (const group of groups) {
+      const groupPredictions = Array.isArray(group.predictions) ? group.predictions : [];
+      for (const p of groupPredictions) {
+        const emotions = Array.isArray(p.emotions) ? p.emotions : [];
+        const top = getTopEmotion(emotions);
+        const timeMs = Math.round((p.time || 0) * 1000);
+        timeline.face.push({
+          id: `${conversationId}-face-${faceIndex++}`,
+          conversation_id: conversationId,
+          model_type: 'face',
+          start_timestamp_ms: timeMs,
+          end_timestamp_ms: timeMs + 33,
+          emotions,
+          top_emotion_name: top.name,
+          top_emotion_score: top.score,
+          face_bounding_box: p.box || p.bounding_box
+        });
+      }
+    }
+  }
+
+  if (includeModel('prosody')) {
+    const groups = pred.models?.prosody?.grouped_predictions || [];
+    for (const group of groups) {
+      const groupPredictions = Array.isArray(group.predictions) ? group.predictions : [];
+      for (const p of groupPredictions) {
+        const emotions = Array.isArray(p.emotions) ? p.emotions : [];
+        const top = getTopEmotion(emotions);
+        const startMs = Math.round(((p.time?.begin ?? p.time?.start ?? 0) as number) * 1000);
+        const endMs = Math.round(((p.time?.end ?? p.time?.finish ?? 0) as number) * 1000);
+        timeline.prosody.push({
+          id: `${conversationId}-prosody-${prosodyIndex++}`,
+          conversation_id: conversationId,
+          model_type: 'prosody',
+          start_timestamp_ms: startMs,
+          end_timestamp_ms: Math.max(endMs, startMs),
+          emotions,
+          top_emotion_name: top.name,
+          top_emotion_score: top.score
+        });
+      }
+    }
+  }
+
+  if (includeModel('language')) {
+    const groups = pred.models?.language?.grouped_predictions || [];
+    for (const group of groups) {
+      const groupPredictions = Array.isArray(group.predictions) ? group.predictions : [];
+      for (const p of groupPredictions) {
+        const emotions = Array.isArray(p.emotions) ? p.emotions : [];
+        const top = getTopEmotion(emotions);
+        const startMs = Math.round(((p.time?.begin ?? p.time?.start ?? 0) as number) * 1000);
+        const endMs = Math.round(((p.time?.end ?? p.time?.finish ?? 0) as number) * 1000);
+        timeline.language.push({
+          id: `${conversationId}-language-${languageIndex++}`,
+          conversation_id: conversationId,
+          model_type: 'language',
+          start_timestamp_ms: startMs,
+          end_timestamp_ms: Math.max(endMs, startMs),
+          emotions,
+          top_emotion_name: top.name,
+          top_emotion_score: top.score
+        });
+      }
+    }
+  }
+
+  if (includeModel('burst')) {
+    const groups = pred.models?.burst?.grouped_predictions || [];
+    for (const group of groups) {
+      const groupPredictions = Array.isArray(group.predictions) ? group.predictions : [];
+      for (const p of groupPredictions) {
+        const emotions = Array.isArray(p.emotions) ? p.emotions : [];
+        const top = getTopEmotion(emotions);
+        const startMs = Math.round(((p.time?.begin ?? p.time?.start ?? 0) as number) * 1000);
+        const endMs = Math.round(((p.time?.end ?? p.time?.finish ?? 0) as number) * 1000);
+        timeline.burst.push({
+          id: `${conversationId}-burst-${burstIndex++}`,
+          conversation_id: conversationId,
+          model_type: 'burst',
+          start_timestamp_ms: startMs,
+          end_timestamp_ms: Math.max(endMs, startMs),
+          emotions,
+          top_emotion_name: top.name,
+          top_emotion_score: top.score
+        });
+      }
+    }
+  }
+
+  timeline.face.sort((a, b) => a.start_timestamp_ms - b.start_timestamp_ms);
+  for (let i = 0; i < timeline.face.length; i += 1) {
+    const current = timeline.face[i];
+    const next = timeline.face[i + 1];
+    if (next) {
+      current.end_timestamp_ms = Math.max(next.start_timestamp_ms, current.start_timestamp_ms);
+    } else if (!current.end_timestamp_ms || current.end_timestamp_ms <= current.start_timestamp_ms) {
+      current.end_timestamp_ms = current.start_timestamp_ms + 33;
+    }
+  }
+  timeline.prosody.sort((a, b) => a.start_timestamp_ms - b.start_timestamp_ms);
+  for (let i = 0; i < timeline.prosody.length; i += 1) {
+    const current = timeline.prosody[i];
+    const next = timeline.prosody[i + 1];
+    if (next) {
+      current.end_timestamp_ms = next.start_timestamp_ms;
+    } else if (!current.end_timestamp_ms || current.end_timestamp_ms <= current.start_timestamp_ms) {
+      current.end_timestamp_ms = current.start_timestamp_ms + 250;
+    }
+  }
+  timeline.language.sort((a, b) => a.start_timestamp_ms - b.start_timestamp_ms);
+  timeline.burst.sort((a, b) => a.start_timestamp_ms - b.start_timestamp_ms);
+
+  const totalRecords =
+    timeline.face.length +
+    timeline.prosody.length +
+    timeline.language.length +
+    timeline.burst.length;
+
+  return {
+    conversation_id: conversationId,
+    total_records: totalRecords,
+    timeline
+  };
+};
+
+export const api = new ApiClient();

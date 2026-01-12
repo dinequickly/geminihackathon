@@ -5,6 +5,7 @@ import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal
 interface TranscriptViewerProps {
   conversationId: string;
   currentTimeMs?: number;
+  humeJobId?: string;
   onSegmentClick?: (startTime: number) => void;
 }
 
@@ -83,6 +84,7 @@ const formatTimestamp = (seconds: number): string => {
 export default function TranscriptViewer({
   conversationId,
   currentTimeMs = 0,
+  humeJobId,
   onSegmentClick
 }: TranscriptViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,9 +113,10 @@ export default function TranscriptViewer({
         setIsLoading(true);
         setError(null);
 
+        const fallbackJobId = humeJobId?.trim() || undefined;
         const [transcriptData, emotionTimeline, highlightsData] = await Promise.all([
           api.getAnnotatedTranscript(conversationId),
-          api.getEmotionTimeline(conversationId, { models: ['face', 'prosody'] }).catch(() => null),
+          api.getEmotionTimeline(conversationId, { models: ['face', 'prosody'], fallbackJobId }).catch(() => null),
           api.getHighlights(conversationId).catch(() => ({ highlights: [] }))
         ]);
 
@@ -148,7 +151,7 @@ export default function TranscriptViewer({
     };
 
     loadData();
-  }, [conversationId]);
+  }, [conversationId, humeJobId]);
 
   // Auto-scroll to active segment
   useEffect(() => {
@@ -519,7 +522,7 @@ export default function TranscriptViewer({
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -549,7 +552,7 @@ export default function TranscriptViewer({
       </button>
 
       {isExpanded && (
-        <div className="border-t border-gray-200">
+        <div className="border-t border-gray-200 flex-1 min-h-0 flex flex-col">
           {/* Controls */}
           <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-600">
@@ -568,11 +571,11 @@ export default function TranscriptViewer({
           </div>
 
           {/* Two-column layout: Transcript + Highlights */}
-          <div className="flex">
+          <div className="flex flex-1 min-h-0">
             {/* Transcript - Left side */}
             <div
               ref={containerRef}
-              className="flex-1 max-h-[700px] overflow-y-auto p-4 border-r border-gray-100"
+              className="flex-1 min-h-0 overflow-y-auto p-4 border-r border-gray-100"
             >
               {transcriptJson.length > 0 ? (
                 renderTranscriptWithEmotions()
@@ -588,7 +591,7 @@ export default function TranscriptViewer({
             </div>
 
             {/* Highlights Panel - Right side */}
-            <div className="w-80 max-h-[700px] overflow-y-auto p-4 bg-gray-50/50">
+            <div className="w-80 min-h-0 overflow-y-auto p-4 bg-gray-50/50">
               {renderHighlightsPanel()}
             </div>
           </div>
