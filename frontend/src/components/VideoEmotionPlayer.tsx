@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { api, EmotionTimelineItem } from '../lib/api';
+import { EMOTION_COLORS, getEmotionColor } from '../lib/emotions';
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from 'lucide-react';
 
 export interface VideoEmotionPlayerProps {
@@ -7,6 +8,8 @@ export interface VideoEmotionPlayerProps {
   videoUrl: string;
   audioUrl?: string;
   onTimeUpdate?: (timeMs: number) => void;
+  onEmotionUpdate?: (payload: { timeMs: number; emotions: CurrentEmotions }) => void;
+  showLiveEmotions?: boolean;
 }
 
 export interface VideoEmotionPlayerRef {
@@ -16,48 +19,24 @@ export interface VideoEmotionPlayerRef {
   getCurrentTime: () => number;
 }
 
+export interface EmotionSnapshot {
+  name: string;
+  score: number;
+  allEmotions: Array<{ name: string; score: number }>;
+}
+
+export interface CurrentEmotions {
+  face?: EmotionSnapshot;
+  prosody?: EmotionSnapshot;
+}
+
 interface EmotionData {
   face: EmotionTimelineItem[];
   prosody: EmotionTimelineItem[];
 }
 
-const EMOTION_COLORS: Record<string, string> = {
-  joy: '#22c55e',
-  happiness: '#22c55e',
-  amusement: '#84cc16',
-  excitement: '#eab308',
-  interest: '#3b82f6',
-  surprise: '#f59e0b',
-  concentration: '#6366f1',
-  contemplation: '#8b5cf6',
-  determination: '#0ea5e9',
-  calmness: '#06b6d4',
-  contentment: '#14b8a6',
-  realization: '#10b981',
-  admiration: '#ec4899',
-  love: '#f43f5e',
-  desire: '#e11d48',
-  sadness: '#64748b',
-  disappointment: '#475569',
-  tiredness: '#94a3b8',
-  boredom: '#9ca3af',
-  confusion: '#a855f7',
-  anxiety: '#dc2626',
-  fear: '#991b1b',
-  anger: '#ef4444',
-  disgust: '#78716c',
-  contempt: '#57534e',
-  embarrassment: '#fb923c',
-  awkwardness: '#fdba74',
-  neutral: '#9ca3af',
-};
-
-const getEmotionColor = (emotionName: string): string => {
-  const lower = emotionName.toLowerCase();
-  return EMOTION_COLORS[lower] || '#9ca3af';
-};
-
 const formatTime = (ms: number): string => {
+  if (!ms || !isFinite(ms) || isNaN(ms)) return '0:00';
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -65,7 +44,7 @@ const formatTime = (ms: number): string => {
 };
 
 const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerProps>(
-  ({ conversationId, videoUrl, audioUrl, onTimeUpdate }, ref) => {
+  ({ conversationId, videoUrl, audioUrl, onTimeUpdate, onEmotionUpdate, showLiveEmotions = true }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
@@ -96,10 +75,7 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
   const [audioOffset, setAudioOffset] = useState(0); // Offset in seconds to sync audio with video
   const [duration, setDuration] = useState(0);
   const [emotionData, setEmotionData] = useState<EmotionData>({ face: [], prosody: [] });
-  const [currentEmotions, setCurrentEmotions] = useState<{
-    face?: { name: string; score: number; allEmotions: Array<{ name: string; score: number }> };
-    prosody?: { name: string; score: number; allEmotions: Array<{ name: string; score: number }> };
-  }>({});
+  const [currentEmotions, setCurrentEmotions] = useState<CurrentEmotions>({});
   const [isLoading, setIsLoading] = useState(true);
   const [videoError, setVideoError] = useState(false);
 
@@ -137,7 +113,7 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
       e => e.start_timestamp_ms <= timeMs && e.end_timestamp_ms >= timeMs
     );
 
-    setCurrentEmotions({
+    const updatedEmotions: CurrentEmotions = {
       face: faceEmotion ? {
         name: faceEmotion.top_emotion_name,
         score: faceEmotion.top_emotion_score,
@@ -148,10 +124,13 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
         score: prosodyEmotion.top_emotion_score,
         allEmotions: prosodyEmotion.emotions.slice(0, 5)
       } : undefined
-    });
+    };
+
+    setCurrentEmotions(updatedEmotions);
+    onEmotionUpdate?.({ timeMs, emotions: updatedEmotions });
 
     onTimeUpdate?.(timeMs);
-  }, [emotionData, onTimeUpdate]);
+  }, [emotionData, onEmotionUpdate, onTimeUpdate]);
 
   // Video event handlers
   const handleTimeUpdate = () => {
@@ -310,9 +289,9 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
+      <div className={`grid grid-cols-1 ${showLiveEmotions ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-0`}>
         {/* Video Section */}
-        <div className="lg:col-span-2">
+        <div className={showLiveEmotions ? 'lg:col-span-2' : ''}>
           <div className="relative bg-black aspect-video flex items-center justify-center">
             {/* Hidden audio element for AI interviewer voice */}
             {audioUrl && (
@@ -482,31 +461,33 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
         </div>
 
         {/* Emotion Panel */}
-        <div className="lg:border-l border-gray-200 p-4 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Live Emotions</h3>
-          <p className="text-sm text-gray-500">
-            Emotions detected at {formatTime(currentTime)}
-          </p>
+        {showLiveEmotions && (
+          <div className="lg:border-l border-gray-200 p-4 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Live Emotions</h3>
+            <p className="text-sm text-gray-500">
+              Emotions detected at {formatTime(currentTime)}
+            </p>
 
-          <EmotionPanel title="Facial Expression" emotion={currentEmotions.face} />
-          <EmotionPanel title="Voice Prosody" emotion={currentEmotions.prosody} />
+            <EmotionPanel title="Facial Expression" emotion={currentEmotions.face} />
+            <EmotionPanel title="Voice Prosody" emotion={currentEmotions.prosody} />
 
-          {/* Emotion Legend */}
-          <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Emotion Legend</h4>
-            <div className="grid grid-cols-2 gap-1 text-xs">
-              {Object.entries(EMOTION_COLORS).slice(0, 12).map(([name, color]) => (
-                <div key={name} className="flex items-center gap-1.5">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="capitalize text-gray-600">{name}</span>
-                </div>
-              ))}
+            {/* Emotion Legend */}
+            <div className="mt-6">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Emotion Legend</h4>
+              <div className="grid grid-cols-2 gap-1 text-xs">
+                {Object.entries(EMOTION_COLORS).slice(0, 12).map(([name, color]) => (
+                  <div key={name} className="flex items-center gap-1.5">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="capitalize text-gray-600">{name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

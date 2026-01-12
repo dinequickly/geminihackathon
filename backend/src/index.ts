@@ -325,7 +325,7 @@ app.post('/api/interviews/:conversationId/end', async (req, res) => {
     const { conversationId } = req.params;
     const { elevenlabs_conversation_id } = req.query;
 
-    const updateData: any = { status: 'completed' };
+    const updateData: any = { status: 'completed', ended_at: new Date().toISOString() };
     if (elevenlabs_conversation_id) {
       updateData.elevenlabs_conversation_id = elevenlabs_conversation_id;
     }
@@ -449,7 +449,16 @@ app.get('/api/conversations/:conversationId', async (req, res) => {
       });
     }
 
-    res.json({ conversation, analysis: analysis || null });
+    // Merge full_analysis_json into analysis response for richer data
+    let mergedAnalysis = analysis;
+    if (analysis?.full_analysis_json) {
+      mergedAnalysis = {
+        ...analysis,
+        ...analysis.full_analysis_json,
+      };
+    }
+
+    res.json({ conversation, analysis: mergedAnalysis || null });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

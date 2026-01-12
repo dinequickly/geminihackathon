@@ -23,6 +23,8 @@ export interface Conversation {
   audio_url?: string;
   started_at: string;
   ended_at?: string;
+  created_at: string;
+  updated_at?: string;
   has_analysis?: boolean;
   overall_score?: number;
   overall_level?: string;
@@ -42,7 +44,7 @@ export interface Analysis {
   conversation_id: string;
   overall_score: number;
   overall_level: string;
-  overall_summary: string;
+  overall_summary?: string;
   technical_score?: number;
   technical_feedback?: string;
   eq_score?: number;
@@ -53,6 +55,8 @@ export interface Analysis {
   culture_fit_feedback?: string;
   authenticity_score?: number;
   authenticity_feedback?: string;
+  communication_score?: number;
+  communication_feedback?: string;
   filler_word_count?: number;
   filler_words?: string[];
   speaking_pace_wpm?: number;
@@ -75,6 +79,11 @@ export interface Analysis {
     score: number;
     feedback: string;
   }>;
+  // From full_analysis_json
+  feedback?: {
+    summary?: string;
+    top_improvements?: Array<{ area: string; suggestion: string }>;
+  };
 }
 
 class ApiClient {

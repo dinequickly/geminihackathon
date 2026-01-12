@@ -14,7 +14,8 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Activity
+  Activity,
+  Mic
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
 import { VideoEmotionPlayer, TranscriptViewer, VideoEmotionPlayerRef } from '../components';
@@ -27,7 +28,7 @@ export default function Results() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview', 'transcript']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview', 'transcript', 'video', 'categories']));
   const [currentVideoTimeMs, setCurrentVideoTimeMs] = useState(0);
   const videoPlayerRef = useRef<VideoEmotionPlayerRef>(null);
 
@@ -97,8 +98,30 @@ export default function Results() {
   const formatDuration = (seconds: number | undefined) => {
     if (!seconds) return '--:--';
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const secs = Math.floor(seconds % 60);
+    return `${mins}m ${secs}s`;
+  };
+
+  // Calculate duration from timestamps if not stored
+  const getDuration = () => {
+    if (conversation?.duration_seconds) {
+      return conversation.duration_seconds;
+    }
+    // Use created_at and ended_at (preferred)
+    if (conversation?.created_at && conversation?.ended_at) {
+      const start = new Date(conversation.created_at).getTime();
+      const end = new Date(conversation.ended_at).getTime();
+      return (end - start) / 1000;
+    }
+    // Fallback: use created_at and updated_at
+    if (conversation?.created_at && conversation?.updated_at) {
+      const start = new Date(conversation.created_at).getTime();
+      const end = new Date(conversation.updated_at).getTime();
+      const duration = (end - start) / 1000;
+      // Cap at 30 minutes to avoid showing analysis time
+      return duration > 1800 ? undefined : duration;
+    }
+    return undefined;
   };
 
   if (isLoading) {
@@ -153,9 +176,10 @@ export default function Results() {
   }
 
   const categoryScores = [
+    { key: 'communication', label: 'Communication', icon: Mic, score: analysis.communication_score, feedback: analysis.communication_feedback },
+    { key: 'presence', label: 'Executive Presence', icon: Sparkles, score: analysis.presence_score, feedback: analysis.presence_feedback },
     { key: 'technical', label: 'Technical Skills', icon: Brain, score: analysis.technical_score, feedback: analysis.technical_feedback },
     { key: 'eq', label: 'Emotional Intelligence', icon: Heart, score: analysis.eq_score, feedback: analysis.eq_feedback },
-    { key: 'presence', label: 'Executive Presence', icon: Sparkles, score: analysis.presence_score, feedback: analysis.presence_feedback },
     { key: 'culture', label: 'Culture Fit', icon: Users, score: analysis.culture_fit_score, feedback: analysis.culture_fit_feedback },
     { key: 'authenticity', label: 'Authenticity', icon: Award, score: analysis.authenticity_score, feedback: analysis.authenticity_feedback },
   ].filter(c => c.score !== undefined && c.score !== null);
@@ -164,7 +188,7 @@ export default function Results() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="px-6 py-4 flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard')}
             className="p-2 hover:bg-gray-100 rounded-lg transition"
@@ -184,7 +208,7 @@ export default function Results() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <main className="px-6 py-8 space-y-6">
         {/* Overall Score Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
@@ -202,17 +226,34 @@ export default function Results() {
             </div>
           </div>
 
-          {analysis.overall_summary && (
+          {(analysis.feedback?.summary || analysis.overall_summary) && (
             <p className="mt-4 text-gray-600 leading-relaxed">
-              {analysis.overall_summary}
+              {analysis.feedback?.summary || analysis.overall_summary}
             </p>
           )}
 
+          {/* Category scores at top */}
+          {categoryScores.length > 0 && (
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              {categoryScores.map(({ key, label, icon: Icon, score }) => (
+                <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${getScoreBg(score!)} flex items-center justify-center`}>
+                      <Icon className={`w-5 h-5 ${getScoreColor(score!)}`} />
+                    </div>
+                    <span className="font-medium text-gray-900">{label}</span>
+                  </div>
+                  <span className={`text-2xl font-bold ${getScoreColor(score!)}`}>{score}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Quick stats */}
-          <div className="mt-6 grid grid-cols-3 gap-4">
+          <div className="mt-4 grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <Clock className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-              <p className="text-lg font-semibold text-gray-900">{formatDuration(conversation?.duration_seconds)}</p>
+              <p className="text-lg font-semibold text-gray-900">{formatDuration(getDuration())}</p>
               <p className="text-xs text-gray-500">Duration</p>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
@@ -227,44 +268,6 @@ export default function Results() {
             </div>
           </div>
         </div>
-
-        {/* Category Scores */}
-        {categoryScores.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <button
-              onClick={() => toggleSection('categories')}
-              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
-            >
-              <h2 className="text-lg font-semibold text-gray-900">Category Breakdown</h2>
-              {expandedSections.has('categories') ? (
-                <ChevronUp className="w-5 h-5 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
-
-            {expandedSections.has('categories') && (
-              <div className="px-4 pb-4 space-y-4">
-                {categoryScores.map(({ key, label, icon: Icon, score, feedback }) => (
-                  <div key={key} className="border border-gray-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg ${getScoreBg(score!)} flex items-center justify-center`}>
-                          <Icon className={`w-5 h-5 ${getScoreColor(score!)}`} />
-                        </div>
-                        <span className="font-medium text-gray-900">{label}</span>
-                      </div>
-                      <span className={`text-2xl font-bold ${getScoreColor(score!)}`}>{score}</span>
-                    </div>
-                    {feedback && (
-                      <p className="text-sm text-gray-600 mt-2">{feedback}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Top Improvements */}
         {analysis.top_improvements && analysis.top_improvements.length > 0 && (
@@ -340,7 +343,7 @@ export default function Results() {
         {conversationId && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {conversation?.video_url && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[70vh] flex flex-col">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[80vh] flex flex-col">
                 <button
                   onClick={() => toggleSection('video')}
                   className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
@@ -371,7 +374,7 @@ export default function Results() {
             )}
 
             {/* Transcript Viewer */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[70vh] flex flex-col">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[80vh] flex flex-col">
               <button
                 onClick={() => toggleSection('transcript')}
                 className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
