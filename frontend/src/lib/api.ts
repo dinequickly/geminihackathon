@@ -347,8 +347,19 @@ class ApiClient {
     if (options?.end_ms !== undefined) params.set('end_ms', options.end_ms.toString());
     if (options?.models) params.set('models', options.models.join(','));
 
+    type TimelineResponse = {
+      conversation_id: string;
+      total_records: number;
+      timeline: {
+        face: EmotionTimelineItem[];
+        prosody: EmotionTimelineItem[];
+        language: EmotionTimelineItem[];
+        burst: EmotionTimelineItem[];
+      };
+    };
+
     try {
-      const data = await this.request(`/api/conversations/${conversationId}/emotions/timeline?${params}`);
+      const data = await this.request<TimelineResponse>(`/api/conversations/${conversationId}/emotions/timeline?${params}`);
       if (options?.fallbackJobId && data.total_records === 0) {
         try {
           return await this.getEmotionTimelineFromHume(conversationId, options.fallbackJobId, options.models);
