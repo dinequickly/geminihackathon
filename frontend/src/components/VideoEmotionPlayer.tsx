@@ -404,8 +404,8 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
                   onTimeUpdate={(e) => {
                     handleTimeUpdate();
                     // Keep audio synced with video (with offset)
-                    if (audioRef.current && Math.abs((audioRef.current.currentTime + audioOffset) - (e.target as HTMLVideoElement).currentTime) > 0.3) {
-                      audioRef.current.currentTime = (e.target as HTMLVideoElement).currentTime - audioOffset;
+                    if (audioRef.current && Math.abs((audioRef.current.currentTime + _audioOffset) - (e.target as HTMLVideoElement).currentTime) > 0.3) {
+                      audioRef.current.currentTime = (e.target as HTMLVideoElement).currentTime - _audioOffset;
                     }
                   }}
                   onLoadedMetadata={handleLoadedMetadata}
@@ -413,7 +413,7 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
                   onPlay={() => {
                     setIsPlaying(true);
                     if (audioRef.current) {
-                      audioRef.current.currentTime = videoRef.current!.currentTime - audioOffset;
+                      audioRef.current.currentTime = videoRef.current!.currentTime - _audioOffset;
                       audioRef.current.play();
                     }
                   }}
