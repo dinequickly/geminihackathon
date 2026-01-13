@@ -139,6 +139,54 @@ export interface UserSubscription {
   };
 }
 
+// Interview Customization types
+export interface InterviewerMoodPreset {
+  id: string;
+  name: string;
+  description: string | null;
+  system_prompt_template: string;
+  elevenlabs_config: Record<string, any> | null;
+  sort_order: number;
+}
+
+export interface UserInterviewAgent {
+  id: string;
+  user_id: string;
+  agent_name: string;
+  system_prompt: string;
+  elevenlabs_agent_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserInterviewPreferences {
+  user_id: string;
+  use_dynamic_behavior: boolean;
+  selected_mood_preset_id: string | null;
+  custom_agent_id: string | null;
+  updated_at?: string;
+}
+
+export interface UserProgressMetric {
+  id: string;
+  user_id: string;
+  session_id: string | null;
+  metric_type: string;
+  score: number;
+  measured_at: string;
+}
+
+export interface UserProgressSummary {
+  user_id: string;
+  category: string;
+  total_sessions: number;
+  avg_score: number;
+  improvement_rate: number;
+  last_session_date: string | null;
+  updated_at: string;
+}
+
 class ApiClient {
   private async request<T>(
     endpoint: string,
@@ -588,6 +636,92 @@ class ApiClient {
     total: number;
   }> {
     return this.request(`/api/users/${userId}/sessions`);
+  }
+
+  // Interview Customization endpoints
+  async getInterviewerMoods(): Promise<{
+    presets: InterviewerMoodPreset[];
+    total: number;
+  }> {
+    return this.request('/api/interviewer-moods');
+  }
+
+  async getUserAgents(userId: string): Promise<{
+    user_id: string;
+    agents: UserInterviewAgent[];
+    total: number;
+  }> {
+    return this.request(`/api/users/${userId}/agents`);
+  }
+
+  async createUserAgent(userId: string, data: {
+    agent_name: string;
+    system_prompt: string;
+    elevenlabs_agent_id?: string;
+  }): Promise<{
+    agent: UserInterviewAgent;
+    message: string;
+  }> {
+    return this.request(`/api/users/${userId}/agents`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUserAgent(userId: string, agentId: string, data: Partial<{
+    agent_name: string;
+    system_prompt: string;
+    elevenlabs_agent_id: string;
+    is_active: boolean;
+  }>): Promise<{
+    agent: UserInterviewAgent;
+  }> {
+    return this.request(`/api/users/${userId}/agents/${agentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUserAgent(userId: string, agentId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    return this.request(`/api/users/${userId}/agents/${agentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getInterviewPreferences(userId: string): Promise<UserInterviewPreferences> {
+    return this.request(`/api/users/${userId}/interview-preferences`);
+  }
+
+  async updateInterviewPreferences(userId: string, data: Partial<UserInterviewPreferences>): Promise<UserInterviewPreferences> {
+    return this.request(`/api/users/${userId}/interview-preferences`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getUserProgress(userId: string, options?: {
+    metric_type?: string;
+    days?: number;
+  }): Promise<{
+    user_id: string;
+    metrics: UserProgressMetric[];
+    total: number;
+  }> {
+    const params = new URLSearchParams();
+    if (options?.metric_type) params.set('metric_type', options.metric_type);
+    if (options?.days) params.set('days', options.days.toString());
+
+    return this.request(`/api/users/${userId}/progress?${params}`);
+  }
+
+  async getUserProgressSummary(userId: string): Promise<{
+    user_id: string;
+    summary: UserProgressSummary[];
+  }> {
+    return this.request(`/api/users/${userId}/progress/summary`);
   }
 }
 

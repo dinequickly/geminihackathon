@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Loader2,
   Video,
-  Package
+  Package,
+  Settings
 } from 'lucide-react';
 import { api, Conversation } from '../lib/api';
 import { PackSelectionModal } from '../components';
@@ -124,13 +125,22 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
             <h1 className="text-xl font-bold text-gray-900">InterviewPro</h1>
             <p className="text-sm text-gray-500">Welcome back, {userName}</p>
           </div>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/interview-settings')}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition"
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </button>
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 

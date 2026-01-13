@@ -2322,6 +2322,244 @@ app.get('/api/users/:userId/sessions', async (req, res) => {
   }
 });
 
+// ============================================
+// INTERVIEW CUSTOMIZATION
+// ============================================
+
+// Get interviewer mood presets
+app.get('/api/interviewer-moods', async (req, res) => {
+  try {
+    const { data: presets, error } = await supabase
+      .from('interviewer_mood_presets')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({
+      presets: presets || [],
+      total: presets?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's custom agents
+app.get('/api/users/:userId/agents', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: agents, error } = await supabase
+      .from('user_interview_agents')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      user_id: userId,
+      agents: agents || [],
+      total: agents?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create custom agent
+app.post('/api/users/:userId/agents', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { agent_name, system_prompt, elevenlabs_agent_id } = req.body;
+
+    if (!agent_name || !system_prompt) {
+      return res.status(400).json({ error: 'agent_name and system_prompt required' });
+    }
+
+    const { data: agent, error } = await supabase
+      .from('user_interview_agents')
+      .insert({
+        user_id: userId,
+        agent_name,
+        system_prompt,
+        elevenlabs_agent_id,
+        is_active: false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      agent,
+      message: 'Agent created successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update custom agent
+app.patch('/api/users/:userId/agents/:agentId', async (req, res) => {
+  try {
+    const { userId, agentId } = req.params;
+    const { agent_name, system_prompt, elevenlabs_agent_id, is_active } = req.body;
+
+    const updateData: any = { updated_at: new Date().toISOString() };
+    if (agent_name !== undefined) updateData.agent_name = agent_name;
+    if (system_prompt !== undefined) updateData.system_prompt = system_prompt;
+    if (elevenlabs_agent_id !== undefined) updateData.elevenlabs_agent_id = elevenlabs_agent_id;
+    if (is_active !== undefined) updateData.is_active = is_active;
+
+    const { data: agent, error } = await supabase
+      .from('user_interview_agents')
+      .update(updateData)
+      .eq('id', agentId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!agent) return res.status(404).json({ error: 'Agent not found' });
+
+    res.json({ agent });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete custom agent
+app.delete('/api/users/:userId/agents/:agentId', async (req, res) => {
+  try {
+    const { userId, agentId } = req.params;
+
+    const { error } = await supabase
+      .from('user_interview_agents')
+      .delete()
+      .eq('id', agentId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    res.json({ success: true, message: 'Agent deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's interview preferences
+app.get('/api/users/:userId/interview-preferences', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: prefs, error } = await supabase
+      .from('user_interview_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    // Return default preferences if none exist
+    if (!prefs) {
+      return res.json({
+        user_id: userId,
+        use_dynamic_behavior: false,
+        selected_mood_preset_id: null,
+        custom_agent_id: null
+      });
+    }
+
+    res.json(prefs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user's interview preferences
+app.put('/api/users/:userId/interview-preferences', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { use_dynamic_behavior, selected_mood_preset_id, custom_agent_id } = req.body;
+
+    const { data: prefs, error } = await supabase
+      .from('user_interview_preferences')
+      .upsert({
+        user_id: userId,
+        use_dynamic_behavior: use_dynamic_behavior ?? false,
+        selected_mood_preset_id: selected_mood_preset_id || null,
+        custom_agent_id: custom_agent_id || null,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(prefs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's progress metrics
+app.get('/api/users/:userId/progress', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { metric_type, days = 30 } = req.query;
+
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - parseInt(days as string));
+
+    let query = supabase
+      .from('user_progress_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('measured_at', daysAgo.toISOString())
+      .order('measured_at', { ascending: true });
+
+    if (metric_type) {
+      query = query.eq('metric_type', metric_type);
+    }
+
+    const { data: metrics, error } = await query;
+    if (error) throw error;
+
+    res.json({
+      user_id: userId,
+      metrics: metrics || [],
+      total: metrics?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's progress summary
+app.get('/api/users/:userId/progress/summary', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: summary, error } = await supabase
+      .from('user_progress_summary')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    res.json({
+      user_id: userId,
+      summary: summary || []
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server (only in dev, not on Vercel)
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
