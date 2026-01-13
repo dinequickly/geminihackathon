@@ -8,9 +8,11 @@ import {
   LogOut,
   ChevronRight,
   Loader2,
-  Video
+  Video,
+  Package
 } from 'lucide-react';
 import { api, Conversation } from '../lib/api';
+import { PackSelectionModal } from '../components';
 
 interface DashboardProps {
   userId: string;
@@ -22,6 +24,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState('');
+  const [showPackModal, setShowPackModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -40,6 +43,20 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSelectPack = async (packId: string) => {
+    // TODO: Navigate to pack interview page or create session
+    console.log('Selected pack:', packId);
+    // For now, just show an alert
+    alert(`Selected pack: ${packId}. Pack interview flow coming soon!`);
+  };
+
+  const handleCreateCustomPack = () => {
+    // TODO: Navigate to custom pack creation flow
+    console.log('Create custom pack');
+    // For now, just show an alert
+    alert('Custom pack creation chatbot coming soon!');
   };
 
   const getScoreColor = (score: number | undefined) => {
@@ -157,11 +174,12 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
           </div>
         </div>
 
-        {/* Start New Interview */}
-        <div className="mb-8">
+        {/* Action Buttons */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Start New Interview */}
           <button
             onClick={() => navigate('/interview')}
-            className="w-full bg-primary-500 hover:bg-primary-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-primary-500/20"
+            className="bg-primary-500 hover:bg-primary-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-primary-500/20"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
@@ -169,7 +187,24 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
               </div>
               <div className="text-left">
                 <h3 className="text-lg font-semibold">Start New Interview</h3>
-                <p className="text-primary-100 text-sm">Practice with our AI interviewer</p>
+                <p className="text-primary-100 text-sm">Practice with AI interviewer</p>
+              </div>
+            </div>
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Practice with Packs */}
+          <button
+            onClick={() => setShowPackModal(true)}
+            className="bg-sunshine-400 hover:bg-sunshine-500 text-gray-900 rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-sunshine-400/20"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/30 flex items-center justify-center">
+                <Package className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold">Practice with Packs</h3>
+                <p className="text-gray-700 text-sm">Use curated question sets</p>
               </div>
             </div>
             <ChevronRight className="w-6 h-6" />
@@ -237,6 +272,15 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
           )}
         </div>
       </main>
+
+      {/* Pack Selection Modal */}
+      <PackSelectionModal
+        isOpen={showPackModal}
+        onClose={() => setShowPackModal(false)}
+        userId={userId}
+        onSelectPack={handleSelectPack}
+        onCreateCustomPack={handleCreateCustomPack}
+      />
     </div>
   );
 }

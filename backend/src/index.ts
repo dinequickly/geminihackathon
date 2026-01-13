@@ -2078,6 +2078,250 @@ app.get('/api/hume/jobs/:jobId/predictions', async (req, res) => {
   }
 });
 
+// ============================================
+// INTERVIEW PACKS
+// ============================================
+
+// Get user's subscription status (placeholder - extend based on your subscription logic)
+app.get('/api/users/:userId/subscription', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // For now, return a basic subscription status
+    // TODO: Integrate with actual subscription service (Stripe, etc.)
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Placeholder logic - you can extend this based on a subscription table
+    res.json({
+      user_id: userId,
+      has_subscription: false, // TODO: Check subscription status
+      plan: 'free', // Options: 'free', 'basic', 'premium', 'enterprise'
+      features: {
+        can_create_custom_packs: true,
+        max_custom_packs: 3,
+        access_premium_packs: false
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get available interview packs for a user
+app.get('/api/users/:userId/packs/available', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get user to check subscription
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Get user's pack access
+    const { data: userAccess } = await supabase
+      .from('user_pack_access')
+      .select('pack_id')
+      .eq('user_id', userId)
+      .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString());
+
+    const accessiblePackIds = userAccess?.map(a => a.pack_id) || [];
+
+    // Get all packs that user can access
+    // This includes: custom packs created by user, packs they have access to, and free packs
+    let query = supabase
+      .from('interview_packs')
+      .select('*, interview_questions(count)')
+      .order('created_at', { ascending: false });
+
+    // Build OR filter based on available conditions
+    const conditions = [`created_by.eq.${userId}`, `is_subscription_only.eq.false`];
+    if (accessiblePackIds.length > 0) {
+      conditions.push(`id.in.(${accessiblePackIds.join(',')})`);
+    }
+    query = query.or(conditions.join(','));
+
+    const { data: packs, error } = await query;
+
+    if (error) throw error;
+
+    // Format response with question counts
+    const formattedPacks = packs?.map(pack => ({
+      id: pack.id,
+      name: pack.name,
+      description: pack.description,
+      category: pack.category,
+      is_subscription_only: pack.is_subscription_only,
+      required_plan: pack.required_plan,
+      is_custom: pack.is_custom,
+      created_by_user: pack.created_by === userId,
+      question_count: pack.interview_questions?.[0]?.count || 0,
+      created_at: pack.created_at,
+      updated_at: pack.updated_at
+    })) || [];
+
+    res.json({
+      user_id: userId,
+      packs: formattedPacks,
+      total: formattedPacks.length
+    });
+  } catch (error: any) {
+    console.error('Get available packs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get specific pack details with questions
+app.get('/api/packs/:packId', async (req, res) => {
+  try {
+    const { packId } = req.params;
+
+    const { data: pack, error: packError } = await supabase
+      .from('interview_packs')
+      .select('*')
+      .eq('id', packId)
+      .single();
+
+    if (packError) throw packError;
+    if (!pack) return res.status(404).json({ error: 'Pack not found' });
+
+    const { data: questions, error: questionsError } = await supabase
+      .from('interview_questions')
+      .select('*')
+      .eq('pack_id', packId)
+      .order('created_at', { ascending: true });
+
+    if (questionsError) throw questionsError;
+
+    res.json({
+      pack: {
+        id: pack.id,
+        name: pack.name,
+        description: pack.description,
+        category: pack.category,
+        is_subscription_only: pack.is_subscription_only,
+        required_plan: pack.required_plan,
+        is_custom: pack.is_custom,
+        created_by: pack.created_by,
+        created_at: pack.created_at,
+        updated_at: pack.updated_at
+      },
+      questions: questions || [],
+      question_count: questions?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new interview session with a pack
+app.post('/api/packs/:packId/sessions', async (req, res) => {
+  try {
+    const { packId } = req.params;
+    const { user_id, session_type = 'practice' } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id required' });
+    }
+
+    // Verify pack exists
+    const { data: pack, error: packError } = await supabase
+      .from('interview_packs')
+      .select('*')
+      .eq('id', packId)
+      .single();
+
+    if (packError || !pack) {
+      return res.status(404).json({ error: 'Pack not found' });
+    }
+
+    // Check if user has access (TODO: add subscription check for premium packs)
+    // For now, allow all packs
+
+    // Create session
+    const { data: session, error: sessionError } = await supabase
+      .from('user_interview_sessions')
+      .insert({
+        user_id,
+        pack_id: packId,
+        session_type,
+        status: 'in_progress'
+      })
+      .select()
+      .single();
+
+    if (sessionError) throw sessionError;
+
+    // Get questions for this pack
+    const { data: questions } = await supabase
+      .from('interview_questions')
+      .select('*')
+      .eq('pack_id', packId)
+      .order('created_at', { ascending: true });
+
+    res.json({
+      session_id: session.id,
+      pack: {
+        id: pack.id,
+        name: pack.name,
+        description: pack.description
+      },
+      questions: questions || [],
+      status: 'created'
+    });
+  } catch (error: any) {
+    console.error('Create session error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's interview sessions
+app.get('/api/users/:userId/sessions', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: sessions, error } = await supabase
+      .from('user_interview_sessions')
+      .select(`
+        *,
+        interview_packs(id, name, description, category),
+        question_responses(count)
+      `)
+      .eq('user_id', userId)
+      .order('started_at', { ascending: false });
+
+    if (error) throw error;
+
+    const formattedSessions = sessions?.map(session => ({
+      id: session.id,
+      pack: session.interview_packs,
+      session_type: session.session_type,
+      status: session.status,
+      started_at: session.started_at,
+      completed_at: session.completed_at,
+      response_count: session.question_responses?.[0]?.count || 0
+    })) || [];
+
+    res.json({
+      user_id: userId,
+      sessions: formattedSessions,
+      total: formattedSessions.length
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server (only in dev, not on Vercel)
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

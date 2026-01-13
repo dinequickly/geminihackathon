@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Loader2,
   Award,
   Brain,
   Heart,
@@ -13,11 +12,12 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Activity,
-  Mic
+  Mic,
+  AlertCircle
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
 import { VideoEmotionPlayer, TranscriptViewer, VideoEmotionPlayerRef } from '../components';
+import { PlayfulButton, PlayfulCard, LoadingSpinner } from '../components/PlayfulUI';
 
 export default function Results() {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -30,6 +30,7 @@ export default function Results() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview', 'transcript', 'video', 'categories']));
   const [currentVideoTimeMs, setCurrentVideoTimeMs] = useState(0);
   const videoPlayerRef = useRef<VideoEmotionPlayerRef>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (conversationId) {
@@ -71,6 +72,18 @@ export default function Results() {
     });
   };
 
+  const scrollToTranscript = () => {
+    // Expand transcript section if collapsed
+    if (!expandedSections.has('transcript')) {
+      setExpandedSections(prev => new Set([...prev, 'transcript']));
+    }
+
+    // Scroll to transcript after a brief delay to allow expansion
+    setTimeout(() => {
+      transcriptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
     if (score >= 60) return 'text-yellow-600';
@@ -96,25 +109,30 @@ export default function Results() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center">
+        <LoadingSpinner size="lg" color="primary" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to load results</h2>
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
+        <PlayfulCard variant="white" className="max-w-md w-full text-center animate-scale-in">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to load results</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button
+          <PlayfulButton
             onClick={() => navigate('/dashboard')}
-            className="py-3 px-6 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition"
+            variant="primary"
+            size="lg"
+            icon={ArrowLeft}
           >
             Back to Dashboard
-          </button>
-        </div>
+          </PlayfulButton>
+        </PlayfulCard>
       </div>
     );
   }
@@ -122,25 +140,27 @@ export default function Results() {
   // Show processing state
   if (!analysis) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
-            <RefreshCw className="w-8 h-8 text-primary-600 animate-spin" />
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
+        <PlayfulCard variant="white" className="max-w-md w-full text-center animate-scale-in">
+          <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+            <RefreshCw className="w-10 h-10 text-primary-600 animate-spin" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Analyzing your interview</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Analyzing your interview</h2>
           <p className="text-gray-600 mb-6">
             Our AI is reviewing your performance. This usually takes 1-2 minutes.
           </p>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
-            <div className="bg-primary-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+          <div className="w-full bg-gray-200 rounded-full h-3 mb-6 overflow-hidden">
+            <div className="bg-primary-500 h-3 rounded-full animate-pulse" style={{ width: '60%' }} />
           </div>
-          <button
+          <PlayfulButton
             onClick={() => navigate('/dashboard')}
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            variant="secondary"
+            size="md"
+            icon={ArrowLeft}
           >
             Back to Dashboard
-          </button>
-        </div>
+          </PlayfulButton>
+        </PlayfulCard>
       </div>
     );
   }
@@ -155,19 +175,28 @@ export default function Results() {
   ].filter(c => c.score !== undefined && c.score !== null);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cream-100 relative">
+      {/* Playful background blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[5%] right-[10%] w-96 h-96 bg-sky-200/30 rounded-blob animate-float" style={{ animationDuration: '10s' }} />
+        <div className="absolute bottom-[10%] left-[5%] w-[500px] h-[500px] bg-sunshine-200/30 rounded-blob-2 animate-float" style={{ animationDelay: '2s', animationDuration: '12s' }} />
+      </div>
+
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-6 py-4 flex items-center gap-4">
+      <header className="bg-white/80 backdrop-blur-md border-b-2 border-primary-100 sticky top-0 z-20 shadow-soft">
+        <div className="px-6 py-5 max-w-7xl mx-auto flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition"
+            className="p-3 hover:bg-primary-50 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-primary-600" />
           </button>
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">Interview Results</h1>
-            <p className="text-sm text-gray-500">
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Award className="w-6 h-6 text-primary-500" />
+              Interview Results
+            </h1>
+            <p className="text-sm text-gray-600 mt-0.5">
               {conversation?.started_at && new Date(conversation.started_at).toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
@@ -178,7 +207,7 @@ export default function Results() {
         </div>
       </header>
 
-      <main className="px-6 py-8 space-y-6">
+      <main className="px-6 py-8 max-w-7xl mx-auto space-y-6 relative z-10">
         {/* Overall Score Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
@@ -304,89 +333,57 @@ export default function Results() {
           </div>
         )}
 
-        {/* Video with Emotion Analysis & Transcript */}
+        {/* Video with Emotion Analysis */}
+        {conversationId && conversation?.video_url && (
+          <div className="animate-fade-in">
+            <VideoEmotionPlayer
+              ref={videoPlayerRef}
+              conversationId={conversationId}
+              videoUrl={conversation.video_url}
+              audioUrl={conversation.audio_url}
+              humeJobId={analysis?.url}
+              onTimeUpdate={setCurrentVideoTimeMs}
+              onReviewTranscript={scrollToTranscript}
+            />
+          </div>
+        )}
+
+        {/* Transcript Viewer */}
         {conversationId && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {conversation?.video_url && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[80vh] flex flex-col">
-                <button
-                  onClick={() => toggleSection('video')}
-                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-900">Recording with Emotion Analysis</h2>
-                  </div>
-                  {expandedSections.has('video') ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </button>
-
-                {expandedSections.has('video') && (
-                  <div className="p-4 flex-grow overflow-hidden">
-                    <VideoEmotionPlayer
-                      ref={videoPlayerRef}
-                      conversationId={conversationId}
-                      videoUrl={conversation.video_url}
-                      audioUrl={conversation.audio_url}
-                      humeJobId={analysis?.url}
-                      onTimeUpdate={setCurrentVideoTimeMs}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Transcript Viewer */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[80vh] flex flex-col">
-              <button
-                onClick={() => toggleSection('transcript')}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-gray-400" />
-                  <h2 className="text-lg font-semibold text-gray-900">Transcript</h2>
-                </div>
-                {expandedSections.has('transcript') ? (
-                  <ChevronUp className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-              {expandedSections.has('transcript') && (
-                <div className="p-4 flex-grow overflow-y-auto">
-                  <TranscriptViewer
-                    conversationId={conversationId}
-                    currentTimeMs={currentVideoTimeMs}
-                    humeJobId={analysis?.url}
-                    onSegmentClick={(startTime) => {
-                      setCurrentVideoTimeMs(startTime * 1000);
-                      videoPlayerRef.current?.seekTo(startTime);
-                      videoPlayerRef.current?.pause(); // Pause on highlight
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+          <div ref={transcriptRef} className="animate-fade-in">
+            <TranscriptViewer
+              conversationId={conversationId}
+              currentTimeMs={currentVideoTimeMs}
+              humeJobId={analysis?.url}
+              onSegmentClick={(startTime) => {
+                setCurrentVideoTimeMs(startTime * 1000);
+                videoPlayerRef.current?.seekTo(startTime);
+                videoPlayerRef.current?.pause();
+              }}
+            />
           </div>
         )}
 
         {/* Action Buttons */}
         <div className="flex gap-4">
-          <button
+          <PlayfulButton
             onClick={() => navigate('/interview')}
-            className="flex-1 py-3 px-4 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition"
+            variant="primary"
+            size="lg"
+            className="flex-1"
+            icon={RefreshCw}
           >
             Practice Again
-          </button>
-          <button
+          </PlayfulButton>
+          <PlayfulButton
             onClick={() => navigate('/dashboard')}
-            className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+            variant="secondary"
+            size="lg"
+            className="flex-1"
+            icon={ArrowLeft}
           >
             Back to Dashboard
-          </button>
+          </PlayfulButton>
         </div>
       </main>
     </div>

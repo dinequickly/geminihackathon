@@ -87,6 +87,58 @@ export interface Analysis {
   };
 }
 
+// Interview Pack types
+export interface InterviewPack {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  is_subscription_only: boolean;
+  required_plan: string | null;
+  is_custom: boolean;
+  created_by_user: boolean;
+  question_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InterviewQuestion {
+  id: string;
+  pack_id: string;
+  question_text: string;
+  question_type: string;
+  difficulty: string | null;
+  expected_duration_seconds: number | null;
+  elevenlabs_conversation_id: string | null;
+  created_at: string;
+}
+
+export interface InterviewSession {
+  id: string;
+  pack: {
+    id: string;
+    name: string;
+    description: string | null;
+    category: string;
+  };
+  session_type: string;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  response_count: number;
+}
+
+export interface UserSubscription {
+  user_id: string;
+  has_subscription: boolean;
+  plan: 'free' | 'basic' | 'premium' | 'enterprise';
+  features: {
+    can_create_custom_packs: boolean;
+    max_custom_packs: number;
+    access_premium_packs: boolean;
+  };
+}
+
 class ApiClient {
   private async request<T>(
     endpoint: string,
@@ -489,6 +541,53 @@ class ApiClient {
     return this.request(`/api/conversations/${conversationId}/highlights/${highlightId}`, {
       method: 'DELETE',
     });
+  }
+
+  // Interview Pack endpoints
+  async getUserSubscription(userId: string): Promise<UserSubscription> {
+    return this.request(`/api/users/${userId}/subscription`);
+  }
+
+  async getAvailablePacks(userId: string): Promise<{
+    user_id: string;
+    packs: InterviewPack[];
+    total: number;
+  }> {
+    return this.request(`/api/users/${userId}/packs/available`);
+  }
+
+  async getPackDetails(packId: string): Promise<{
+    pack: Omit<InterviewPack, 'created_by_user' | 'question_count'> & {
+      created_by: string;
+    };
+    questions: InterviewQuestion[];
+    question_count: number;
+  }> {
+    return this.request(`/api/packs/${packId}`);
+  }
+
+  async createPackSession(packId: string, userId: string, sessionType: string = 'practice'): Promise<{
+    session_id: string;
+    pack: {
+      id: string;
+      name: string;
+      description: string | null;
+    };
+    questions: InterviewQuestion[];
+    status: string;
+  }> {
+    return this.request(`/api/packs/${packId}/sessions`, {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId, session_type: sessionType }),
+    });
+  }
+
+  async getUserSessions(userId: string): Promise<{
+    user_id: string;
+    sessions: InterviewSession[];
+    total: number;
+  }> {
+    return this.request(`/api/users/${userId}/sessions`);
   }
 }
 
