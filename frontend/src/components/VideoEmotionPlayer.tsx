@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { api, EmotionTimelineItem } from '../lib/api';
+import { api, EmotionTimelineItem, TranscriptHighlight } from '../lib/api';
 import { EMOTION_COLORS, getEmotionColor } from '../lib/emotions';
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, FileText, X } from 'lucide-react';
+import { PlayfulButton } from './PlayfulUI';
 
 export interface VideoEmotionPlayerProps {
   conversationId: string;
@@ -11,6 +12,7 @@ export interface VideoEmotionPlayerProps {
   onTimeUpdate?: (timeMs: number) => void;
   onEmotionUpdate?: (payload: { timeMs: number; emotions: CurrentEmotions }) => void;
   showLiveEmotions?: boolean;
+  onReviewTranscript?: () => void;
 }
 
 export interface VideoEmotionPlayerRef {
@@ -36,6 +38,12 @@ interface EmotionData {
   prosody: EmotionTimelineItem[];
 }
 
+interface TranscriptItem {
+  role: 'agent' | 'user';
+  message: string | null;
+  time_in_call_secs?: number;
+}
+
 const formatTime = (ms: number): string => {
   if (!ms || !isFinite(ms) || isNaN(ms)) return '0:00';
   const totalSeconds = Math.floor(ms / 1000);
@@ -45,10 +53,11 @@ const formatTime = (ms: number): string => {
 };
 
 const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerProps>(
-  ({ conversationId, videoUrl, audioUrl, humeJobId, onTimeUpdate, onEmotionUpdate, showLiveEmotions = true }, ref) => {
+  ({ conversationId, videoUrl, audioUrl, humeJobId, onTimeUpdate, onEmotionUpdate, showLiveEmotions = true, onReviewTranscript }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
+    const wasPlayingBeforePause = useRef(false);
 
     useImperativeHandle(ref, () => ({
       play: () => {
@@ -79,29 +88,74 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
   const [currentEmotions, setCurrentEmotions] = useState<CurrentEmotions>({});
   const [isLoading, setIsLoading] = useState(true);
   const [videoError, setVideoError] = useState(false);
+  const [highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
+  const [activeHighlight, setActiveHighlight] = useState<TranscriptHighlight | null>(null);
+  const [shownHighlightIds, setShownHighlightIds] = useState<Set<string>>(new Set());
+  const [transcriptJson, setTranscriptJson] = useState<TranscriptItem[]>([]);
+  const [highlightTimestamps, setHighlightTimestamps] = useState<Map<string, number>>(new Map());
 
-  // Load emotion timeline data
+  // Load emotion timeline data, highlights, and transcript
   useEffect(() => {
-    const loadEmotionData = async () => {
+    const loadData = async () => {
       try {
         setIsLoading(true);
         const fallbackJobId = humeJobId?.trim() || undefined;
-        const data = await api.getEmotionTimeline(conversationId, {
-          models: ['face', 'prosody'],
-          fallbackJobId
-        });
+
+        const [emotionData, highlightsData, transcriptData] = await Promise.all([
+          api.getEmotionTimeline(conversationId, {
+            models: ['face', 'prosody'],
+            fallbackJobId
+          }),
+          api.getHighlights(conversationId).catch(() => ({ highlights: [] })),
+          api.getAnnotatedTranscript(conversationId).catch(() => ({ transcript_json: [] }))
+        ]);
+
         setEmotionData({
-          face: data.timeline.face || [],
-          prosody: data.timeline.prosody || []
+          face: emotionData.timeline.face || [],
+          prosody: emotionData.timeline.prosody || []
         });
+
+        // Process transcript
+        let items: TranscriptItem[] = [];
+        if (transcriptData.transcript_json && Array.isArray(transcriptData.transcript_json) && transcriptData.transcript_json.length > 0) {
+          items = transcriptData.transcript_json;
+          if (items.length === 1 && Array.isArray(items[0])) {
+            items = items[0];
+          }
+        }
+        setTranscriptJson(items);
+
+        // Build highlight timestamp map
+        const timestampMap = new Map<string, number>();
+        const receivedHighlights = highlightsData.highlights || [];
+
+        receivedHighlights.forEach(highlight => {
+          // Find the transcript entry that contains this highlighted sentence
+          const matchingEntry = items.find(item =>
+            item.message && (
+              item.message.includes(highlight.highlighted_sentence) ||
+              highlight.highlighted_sentence.includes(item.message)
+            )
+          );
+
+          if (matchingEntry && matchingEntry.time_in_call_secs !== undefined) {
+            // Store timestamp in milliseconds
+            timestampMap.set(highlight.id, matchingEntry.time_in_call_secs * 1000);
+          }
+        });
+
+        setHighlightTimestamps(timestampMap);
+        setHighlights(receivedHighlights);
+
+        console.log('Loaded highlights with timestamps:', Array.from(timestampMap.entries()));
       } catch (err) {
-        console.error('Failed to load emotion timeline:', err);
+        console.error('Failed to load data:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadEmotionData();
+    loadData();
   }, [conversationId, humeJobId]);
 
   // Update current emotions based on video time
@@ -142,7 +196,55 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
     onEmotionUpdate?.({ timeMs, emotions: updatedEmotions });
 
     onTimeUpdate?.(timeMs);
+
+    // Check for highlights at current time
+    checkForHighlights(timeMs);
   }, [emotionData, onEmotionUpdate, onTimeUpdate]);
+
+  // Check if there's a highlight at the current time
+  const checkForHighlights = useCallback((timeMs: number) => {
+    if (highlights.length === 0 || highlightTimestamps.size === 0) return;
+
+    // Find a highlight that hasn't been shown yet and matches the current time
+    const matchingHighlight = highlights.find(h => {
+      // Skip if already shown
+      if (shownHighlightIds.has(h.id)) return false;
+
+      // Get the timestamp for this highlight from our map
+      const highlightTimeMs = highlightTimestamps.get(h.id);
+      if (!highlightTimeMs) return false;
+
+      // Check if we're within 1 second of the highlight time and past it
+      // This ensures we show it once when we reach that timestamp
+      return timeMs >= highlightTimeMs && timeMs < highlightTimeMs + 1000;
+    });
+
+    if (matchingHighlight && !activeHighlight) {
+      // Pause the video
+      wasPlayingBeforePause.current = isPlaying;
+      videoRef.current?.pause();
+      audioRef.current?.pause();
+      setIsPlaying(false);
+
+      // Show the highlight
+      setActiveHighlight(matchingHighlight);
+      setShownHighlightIds(prev => new Set([...prev, matchingHighlight.id]));
+
+      console.log('Showing highlight at time:', timeMs, 'Highlight:', matchingHighlight.highlighted_sentence);
+    }
+  }, [highlights, highlightTimestamps, shownHighlightIds, activeHighlight, isPlaying]);
+
+  // Close highlight and resume playback
+  const closeHighlight = () => {
+    setActiveHighlight(null);
+
+    // Resume if was playing before
+    if (wasPlayingBeforePause.current) {
+      videoRef.current?.play();
+      audioRef.current?.play();
+      setIsPlaying(true);
+    }
+  };
 
   // Video event handlers
   const handleTimeUpdate = () => {
@@ -217,65 +319,31 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
     }
   };
 
-  // Generate emotion timeline visualization
-  const renderEmotionTimeline = (data: EmotionTimelineItem[], label: string) => {
-    if (data.length === 0 || duration === 0) return null;
 
-    return (
-      <div className="mt-2">
-        <div className="text-xs text-gray-500 mb-1">{label}</div>
-        <div className="h-4 bg-gray-100 rounded overflow-hidden relative">
-          {data.map((item, idx) => {
-            const left = (item.start_timestamp_ms / duration) * 100;
-            const width = ((item.end_timestamp_ms - item.start_timestamp_ms) / duration) * 100;
-            return (
-              <div
-                key={idx}
-                className="absolute h-full"
-                style={{
-                  left: `${left}%`,
-                  width: `${Math.max(width, 0.5)}%`,
-                  backgroundColor: getEmotionColor(item.top_emotion_name),
-                  opacity: 0.3 + item.top_emotion_score * 0.7
-                }}
-                title={`${item.top_emotion_name} (${(item.top_emotion_score * 100).toFixed(0)}%)`}
-              />
-            );
-          })}
-          {/* Playhead */}
-          <div
-            className="absolute top-0 h-full w-0.5 bg-white shadow-md z-10"
-            style={{ left: `${(currentTime / duration) * 100}%` }}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const EmotionPanel = ({
+  const EmotionBadge = ({
     title,
     emotion
   }: {
     title: string;
     emotion?: { name: string; score: number; allEmotions: Array<{ name: string; score: number }> }
   }) => (
-    <div className="bg-gray-50 rounded-lg p-4">
-      <h4 className="text-sm font-medium text-gray-700 mb-3">{title}</h4>
+    <div className="bg-cream-50 rounded-2xl p-4 border-2 border-gray-100 shadow-soft flex-1">
+      <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-3">{title}</h4>
       {emotion ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
             <div
-              className="w-4 h-4 rounded-full"
+              className="w-6 h-6 rounded-full shadow-sm"
               style={{ backgroundColor: getEmotionColor(emotion.name) }}
             />
-            <span className="font-medium text-gray-900 capitalize">{emotion.name}</span>
-            <span className="ml-auto text-sm text-gray-500">
+            <span className="font-bold text-gray-900 capitalize text-lg">{emotion.name}</span>
+            <span className="ml-auto text-sm font-semibold text-primary-600">
               {(emotion.score * 100).toFixed(0)}%
             </span>
           </div>
-          <div className="space-y-2">
-            {emotion.allEmotions.map((e, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-sm">
+          <div className="space-y-1.5">
+            {emotion.allEmotions.slice(0, 3).map((e, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-xs">
                 <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-300"
@@ -285,8 +353,8 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
                     }}
                   />
                 </div>
-                <span className="w-20 text-gray-600 capitalize truncate">{e.name}</span>
-                <span className="w-10 text-right text-gray-400">
+                <span className="w-16 text-gray-600 capitalize truncate font-medium">{e.name}</span>
+                <span className="w-8 text-right text-gray-500 font-semibold">
                   {(e.score * 100).toFixed(0)}%
                 </span>
               </div>
@@ -300,10 +368,9 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className={`grid grid-cols-1 ${showLiveEmotions ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-0`}>
-        {/* Video Section */}
-        <div className={showLiveEmotions ? 'lg:col-span-2' : ''}>
+    <div className="bg-white rounded-3xl shadow-soft border-2 border-gray-200 overflow-hidden relative">
+      {/* Full-width Video Section */}
+      <div className="w-full">
           <div className="relative bg-black aspect-video flex items-center justify-center">
             {/* Hidden audio element for AI interviewer voice */}
             {audioUrl && (
@@ -422,85 +489,101 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
             </div>
             )}
           </div>
+        </div>
 
-          {/* Emotion Timeline Bars */}
-          <div className="p-4 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Emotion Timeline</h3>
-            {isLoading ? (
-              <div className="h-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-500 border-t-transparent" />
-              </div>
-            ) : (
-              <>
-                {renderEmotionTimeline(emotionData.face, 'Facial Expression')}
-                {renderEmotionTimeline(emotionData.prosody, 'Voice Prosody')}
-              </>
+      {/* Live Emotions - Horizontal below video */}
+      {showLiveEmotions && (
+        <div className="border-t-2 border-gray-100 p-5 bg-cream-50/50">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                Live Emotions
+                <span className="text-sm font-normal text-gray-500">
+                  at {formatTime(currentTime)}
+                </span>
+              </h3>
+            </div>
+            {onReviewTranscript && (
+              <PlayfulButton
+                onClick={onReviewTranscript}
+                variant="secondary"
+                size="sm"
+                icon={FileText}
+              >
+                Review Transcript
+              </PlayfulButton>
             )}
           </div>
 
-          {/* Audio Sync Control - only show if audio is available */}
-          {audioUrl && (
-            <div className="px-4 pb-4 border-t border-gray-200 pt-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Audio Sync Offset</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setAudioOffset(prev => prev - 0.1)}
-                    className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
-                  >
-                    -0.1s
-                  </button>
-                  <span className="text-sm font-mono w-16 text-center">
-                    {audioOffset >= 0 ? '+' : ''}{audioOffset.toFixed(1)}s
-                  </span>
-                  <button
-                    onClick={() => setAudioOffset(prev => prev + 0.1)}
-                    className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
-                  >
-                    +0.1s
-                  </button>
-                  <button
-                    onClick={() => setAudioOffset(0)}
-                    className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded ml-2"
-                  >
-                    Reset
-                  </button>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Adjust if audio is ahead (+) or behind (-) the video</p>
+          {isLoading ? (
+            <div className="h-24 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-3 border-primary-500 border-t-transparent" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <EmotionBadge title="Facial Expression" emotion={currentEmotions.face} />
+              <EmotionBadge title="Voice Prosody" emotion={currentEmotions.prosody} />
             </div>
           )}
         </div>
+      )}
 
-        {/* Emotion Panel */}
-        {showLiveEmotions && (
-          <div className="lg:border-l border-gray-200 p-4 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Live Emotions</h3>
-            <p className="text-sm text-gray-500">
-              Emotions detected at {formatTime(currentTime)}
-            </p>
-
-            <EmotionPanel title="Facial Expression" emotion={currentEmotions.face} />
-            <EmotionPanel title="Voice Prosody" emotion={currentEmotions.prosody} />
-
-            {/* Emotion Legend */}
-            <div className="mt-6">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Emotion Legend</h4>
-              <div className="grid grid-cols-2 gap-1 text-xs">
-                {Object.entries(EMOTION_COLORS).slice(0, 12).map(([name, color]) => (
-                  <div key={name} className="flex items-center gap-1.5">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="capitalize text-gray-600">{name}</span>
-                  </div>
-                ))}
+      {/* Highlight Popup Overlay */}
+      {activeHighlight && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-soft-lg p-8 max-w-lg w-full mx-4 animate-scale-in">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <div className="inline-block px-3 py-1 bg-sunshine-100 text-sunshine-700 rounded-full text-xs font-bold uppercase tracking-wide mb-3">
+                  AI Highlight
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                  "{activeHighlight.highlighted_sentence}"
+                </h3>
               </div>
+              <button
+                onClick={closeHighlight}
+                className="p-2 hover:bg-gray-100 rounded-2xl transition-all duration-300 hover:scale-110 ml-4"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {activeHighlight.comment && (
+              <div className="mt-4 p-4 bg-sky-50 border-2 border-sky-200 rounded-2xl">
+                <p className="text-sm text-gray-700 leading-relaxed font-medium">
+                  {activeHighlight.comment}
+                </p>
+              </div>
+            )}
+
+            <div className="mt-6 flex gap-3">
+              <PlayfulButton
+                onClick={closeHighlight}
+                variant="primary"
+                size="md"
+                className="flex-1"
+              >
+                Continue Watching
+              </PlayfulButton>
+              {onReviewTranscript && (
+                <PlayfulButton
+                  onClick={() => {
+                    closeHighlight();
+                    onReviewTranscript();
+                  }}
+                  variant="secondary"
+                  size="md"
+                  className="flex-1"
+                  icon={FileText}
+                >
+                  Review Full Transcript
+                </PlayfulButton>
+              )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 });

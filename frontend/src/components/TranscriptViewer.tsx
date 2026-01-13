@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, EmotionTimelineItem, TranscriptHighlight } from '../lib/api';
-import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal, Database, Smile, Mic, Highlighter, X, Plus, Trash2 } from 'lucide-react';
+import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal, Database, Smile, Mic, Highlighter, X, Sparkles } from 'lucide-react';
+import { PlayfulCard, Badge, PlayfulButton, LoadingSpinner } from './PlayfulUI';
 
 interface TranscriptViewerProps {
   conversationId: string;
@@ -35,39 +37,39 @@ interface EmotionData {
 }
 
 const EMOTION_COLORS: Record<string, string> = {
-  joy: '#22c55e',
-  happiness: '#22c55e',
-  amusement: '#84cc16',
-  excitement: '#eab308',
-  interest: '#3b82f6',
-  surprise: '#f59e0b',
-  concentration: '#6366f1',
-  contemplation: '#8b5cf6',
-  determination: '#0ea5e9',
-  calmness: '#06b6d4',
-  contentment: '#14b8a6',
-  realization: '#10b981',
-  admiration: '#ec4899',
-  sadness: '#64748b',
-  disappointment: '#475569',
-  tiredness: '#94a3b8',
-  confusion: '#a855f7',
-  anxiety: '#dc2626',
-  fear: '#991b1b',
-  anger: '#ef4444',
-  disgust: '#78716c',
-  contempt: '#57534e',
-  embarrassment: '#fb923c',
-  awkwardness: '#fdba74',
-  neutral: '#9ca3af',
+  joy: '#06A77D',
+  happiness: '#06A77D',
+  amusement: '#FFC857',
+  excitement: '#FF6B35',
+  interest: '#4D9DE0',
+  surprise: '#FF9B71',
+  concentration: '#4D9DE0',
+  contemplation: '#9B59B6',
+  determination: '#FF6B35',
+  calmness: '#4D9DE0',
+  contentment: '#06A77D',
+  realization: '#FFC857',
+  admiration: '#FF9B71',
+  sadness: '#7B8794',
+  disappointment: '#95A5A6',
+  tiredness: '#BDC3C7',
+  confusion: '#9B59B6',
+  anxiety: '#E74C3C',
+  fear: '#C0392B',
+  anger: '#E74C3C',
+  disgust: '#95A5A6',
+  contempt: '#7F8C8D',
+  embarrassment: '#FF9B71',
+  awkwardness: '#FFC857',
+  neutral: '#BDC3C7',
 };
 
 const HIGHLIGHT_COLORS = {
-  yellow: { bg: 'bg-yellow-100', border: 'border-yellow-300', text: 'text-yellow-800', light: 'bg-yellow-50' },
-  green: { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-800', light: 'bg-green-50' },
-  blue: { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-800', light: 'bg-blue-50' },
-  pink: { bg: 'bg-pink-100', border: 'border-pink-300', text: 'text-pink-800', light: 'bg-pink-50' },
-  orange: { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-800', light: 'bg-orange-50' },
+  yellow: { bg: 'bg-sunshine-100', border: 'border-sunshine-300', text: 'text-sunshine-800', light: 'bg-sunshine-50' },
+  green: { bg: 'bg-mint-100', border: 'border-mint-300', text: 'text-mint-800', light: 'bg-mint-50' },
+  blue: { bg: 'bg-sky-100', border: 'border-sky-300', text: 'text-sky-800', light: 'bg-sky-50' },
+  pink: { bg: 'bg-coral-100', border: 'border-coral-300', text: 'text-coral-800', light: 'bg-coral-50' },
+  orange: { bg: 'bg-primary-100', border: 'border-primary-300', text: 'text-primary-800', light: 'bg-primary-50' },
 };
 
 const getEmotionColor = (emotionName: string): string => {
@@ -87,6 +89,7 @@ export default function TranscriptViewer({
   humeJobId,
   onSegmentClick
 }: TranscriptViewerProps) {
+  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const activeSegmentRef = useRef<HTMLDivElement>(null);
 
@@ -98,13 +101,12 @@ export default function TranscriptViewer({
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+  const [actionHighlight, setActionHighlight] = useState<TranscriptHighlight | null>(null);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Highlight creation state
-  const [selectedText, setSelectedText] = useState<string | null>(null);
-  const [showHighlightForm, setShowHighlightForm] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [newColor, setNewColor] = useState<'yellow' | 'green' | 'blue' | 'pink' | 'orange'>('yellow');
-  const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
+  const REVIEW_PRACTICE_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/a0894027-a899-473b-b864-e0a2d18950d3';
 
   // Load transcript, emotion data, and highlights
   useEffect(() => {
@@ -168,42 +170,134 @@ export default function TranscriptViewer({
     }
   }, [currentTimeMs, autoScroll]);
 
-  // Handle text selection
-  const handleTextSelection = () => {
-    const selection = window.getSelection();
-    if (selection && selection.toString().trim().length > 0) {
-      setSelectedText(selection.toString().trim());
-      setShowHighlightForm(true);
-    }
+  const getHighlightTranscriptEntry = (highlight: TranscriptHighlight) => {
+    return transcriptJson.find(item => {
+      if (!item.message) return false;
+      return item.message.includes(highlight.highlighted_sentence) || highlight.highlighted_sentence.includes(item.message);
+    });
   };
 
-  // Create highlight
-  const handleCreateHighlight = async () => {
-    if (!selectedText) return;
+  const getHighlightMessage = (highlight: TranscriptHighlight) => {
+    const match = getHighlightTranscriptEntry(highlight);
+    return match?.message || highlight.comment || highlight.highlighted_sentence;
+  };
+
+  const getHighlightTimestampMs = (highlight: TranscriptHighlight) => {
+    const match = getHighlightTranscriptEntry(highlight);
+    if (match?.time_in_call_secs === undefined || match?.time_in_call_secs === null) {
+      return null;
+    }
+    return Math.round(match.time_in_call_secs * 1000);
+  };
+
+  const getNearestEmotionSegment = (segments: EmotionTimelineItem[], timeMs: number | null) => {
+    if (!segments.length || timeMs === null) return null;
+    const exact = segments.find(segment => segment.start_timestamp_ms <= timeMs && segment.end_timestamp_ms >= timeMs);
+    if (exact) return exact;
+    for (let i = segments.length - 1; i >= 0; i -= 1) {
+      if (segments[i].start_timestamp_ms <= timeMs) {
+        return segments[i];
+      }
+    }
+    return null;
+  };
+
+  const getTopEmotions = (emotions: Array<{ name: string; score: number }>, limit = 5) => {
+    return [...emotions].sort((a, b) => b.score - a.score).slice(0, limit);
+  };
+
+  const getActionId = () => {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID();
+    }
+    return `${conversationId}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
+
+  const buildTranscriptMessages = () => {
+    return transcriptJson
+      .filter(item => item.message && item.message.trim().length > 0)
+      .map(item => ({
+        role: item.role === 'agent' ? 'assistant' : 'user',
+        content: item.message,
+        time_in_call_secs: item.time_in_call_secs ?? null
+      }));
+  };
+
+  const openActionModal = (highlight: TranscriptHighlight) => {
+    setActiveHighlightId(highlight.id);
+    setActionHighlight(highlight);
+    setActionError(null);
+  };
+
+  const closeActionModal = () => {
+    setActionHighlight(null);
+    setIsSubmittingAction(false);
+    setActionError(null);
+    setActiveHighlightId(null);
+  };
+
+  const sendReviewPracticeAction = async (actionType: 'practice' | 'analyze') => {
+    if (!actionHighlight) return;
+    setIsSubmittingAction(true);
+    setActionError(null);
+
+    const payload = {
+      id: getActionId(),
+      conversation_id: conversationId,
+      highlighted_text: actionHighlight.highlighted_sentence,
+      messages: buildTranscriptMessages(),
+      type: actionType,
+      highlight_id: actionHighlight.id,
+      highlight_message: getHighlightMessage(actionHighlight),
+      emotions_at_time: (() => {
+        const timestampMs = getHighlightTimestampMs(actionHighlight);
+        const faceSegment = getNearestEmotionSegment(emotionData.face, timestampMs);
+        const prosodySegment = getNearestEmotionSegment(emotionData.prosody, timestampMs);
+        return {
+          timestamp_ms: timestampMs,
+          face_top5: faceSegment ? getTopEmotions(faceSegment.emotions) : [],
+          prosody_top5: prosodySegment ? getTopEmotions(prosodySegment.emotions) : []
+        };
+      })()
+    };
 
     try {
-      const newHighlight = await api.createHighlight(conversationId, {
-        highlighted_sentence: selectedText,
-        comment: newComment || undefined,
-        color: newColor
+      const response = await fetch(REVIEW_PRACTICE_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-      setHighlights(prev => [...prev, newHighlight]);
-      setShowHighlightForm(false);
-      setSelectedText(null);
-      setNewComment('');
-      setNewColor('yellow');
-    } catch (err) {
-      console.error('Failed to create highlight:', err);
-    }
-  };
 
-  // Delete highlight
-  const handleDeleteHighlight = async (highlightId: string) => {
-    try {
-      await api.deleteHighlight(conversationId, highlightId);
-      setHighlights(prev => prev.filter(h => h.id !== highlightId));
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || `Webhook error (${response.status})`);
+      }
+
+      const raw = await response.text();
+      let data: any = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch (parseError) {
+        data = null;
+      }
+
+      const reviewPracticeId = (
+        data?.review_practice_id ||
+        data?.reviewPracticeId ||
+        data?.review_practice?.id ||
+        data?.id
+      )?.toString().trim();
+      const nextChatId = (reviewPracticeId || data?.chat_id || data?.conversation_id || raw)?.toString().trim();
+      if (!nextChatId) {
+        throw new Error('No conversation id returned from webhook');
+      }
+
+      closeActionModal();
+      const query = reviewPracticeId ? `?review_practice_id=${encodeURIComponent(reviewPracticeId)}` : '';
+      navigate(`/chat/${nextChatId}${query}`);
     } catch (err) {
-      console.error('Failed to delete highlight:', err);
+      setActionError(err instanceof Error ? err.message : 'Failed to send action');
+      setIsSubmittingAction(false);
     }
   };
 
@@ -246,46 +340,46 @@ export default function TranscriptViewer({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent" />
-          <span className="ml-3 text-gray-500">Loading transcript...</span>
+      <PlayfulCard variant="white" className="animate-fade-in">
+        <div className="flex flex-col items-center justify-center py-12">
+          <LoadingSpinner size="lg" color="primary" />
+          <span className="mt-4 text-gray-600 font-medium">Loading transcript...</span>
         </div>
-      </div>
+      </PlayfulCard>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-3 text-red-600">
+      <PlayfulCard variant="white" className="animate-fade-in">
+        <div className="flex items-center gap-3 text-red-600 p-4 bg-red-50 rounded-2xl border-2 border-red-200">
           <AlertCircle className="w-5 h-5" />
-          <span>{error}</span>
+          <span className="font-medium">{error}</span>
         </div>
-      </div>
+      </PlayfulCard>
     );
   }
 
   // Emotion badge component
   const EmotionBadge = ({ emotion, type }: { emotion: EmotionTimelineItem; type: 'face' | 'prosody' }) => (
-    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+    <div className="flex items-center gap-2 px-3 py-2 bg-cream-50 rounded-2xl border-2 border-gray-100 shadow-soft">
       <div className="flex items-center gap-1.5">
         {type === 'face' ? (
-          <Smile className="w-3.5 h-3.5 text-gray-400" />
+          <Smile className="w-4 h-4 text-primary-500" />
         ) : (
-          <Mic className="w-3.5 h-3.5 text-gray-400" />
+          <Mic className="w-4 h-4 text-sky-500" />
         )}
-        <span className="text-xs text-gray-500 uppercase tracking-wide">{type}</span>
+        <span className="text-xs text-gray-600 uppercase tracking-wide font-semibold">{type}</span>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <div
-          className="w-2.5 h-2.5 rounded-full"
+          className="w-3 h-3 rounded-full shadow-sm"
           style={{ backgroundColor: getEmotionColor(emotion.top_emotion_name) }}
         />
-        <span className="text-sm font-medium text-gray-700 capitalize">
+        <span className="text-sm font-bold text-gray-800 capitalize">
           {emotion.top_emotion_name}
         </span>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-500 font-semibold">
           {(emotion.top_emotion_score * 100).toFixed(0)}%
         </span>
       </div>
@@ -294,7 +388,7 @@ export default function TranscriptViewer({
 
   // Render transcript with emotions
   const renderTranscriptWithEmotions = () => (
-    <div className="space-y-4" onMouseUp={handleTextSelection}>
+    <div className="space-y-4">
       {transcriptJson.map((item, index) => {
         const isUser = item.role === 'user';
         const isActive = index === activeIndex;
@@ -317,30 +411,30 @@ export default function TranscriptViewer({
             className={`transition-all duration-200 ${isActive ? 'scale-[1.01]' : ''}`}
           >
             <div
-              className={`rounded-xl border-2 transition-colors ${
+              className={`rounded-3xl border-2 transition-all duration-300 shadow-soft ${
                 highlightColors
                   ? `${highlightColors.border} ${highlightColors.light}`
                   : isActive
-                  ? 'border-primary-400 bg-primary-50/50'
+                  ? 'border-primary-400 bg-primary-50/50 shadow-soft-lg'
                   : isUser
-                  ? 'border-blue-100 bg-white hover:border-blue-200'
-                  : 'border-purple-100 bg-white hover:border-purple-200'
+                  ? 'border-sky-100 bg-white hover:border-sky-300 hover:shadow-sky'
+                  : 'border-coral-100 bg-white hover:border-coral-300 hover:shadow-soft-lg'
               }`}
-              onClick={() => highlight && setActiveHighlight(highlight.id)}
+              onClick={() => highlight && openActionModal(highlight)}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
-                    isUser ? 'bg-blue-100' : 'bg-purple-100'
+              <div className="flex items-center justify-between px-5 py-3 border-b-2 border-gray-100 bg-cream-50/50">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shadow-soft ${
+                    isUser ? 'bg-sky-400' : 'bg-coral-400'
                   }`}>
                     {isUser ? (
-                      <User className="w-3.5 h-3.5 text-blue-600" />
+                      <User className="w-4.5 h-4.5 text-white" />
                     ) : (
-                      <Bot className="w-3.5 h-3.5 text-purple-600" />
+                      <Bot className="w-4.5 h-4.5 text-white" />
                     )}
                   </div>
-                  <span className={`text-sm font-medium ${isUser ? 'text-blue-700' : 'text-purple-700'}`}>
+                  <span className={`text-sm font-bold ${isUser ? 'text-sky-700' : 'text-coral-700'}`}>
                     {isUser ? 'You' : 'Interviewer'}
                   </span>
                   {item.time_in_call_secs !== undefined && (
@@ -457,59 +551,54 @@ export default function TranscriptViewer({
 
   // Highlights panel
   const renderHighlightsPanel = () => (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <Highlighter className="w-4 h-4" />
-          Highlights & Notes
+        <h3 className="font-bold text-gray-900 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-sunshine-100 flex items-center justify-center">
+            <Highlighter className="w-4 h-4 text-sunshine-600" />
+          </div>
+          Highlights
         </h3>
-        <span className="text-xs text-gray-500">{highlights.length} notes</span>
+        <Badge variant="sunshine">{highlights.length}</Badge>
       </div>
 
       {highlights.length === 0 ? (
-        <div className="text-center py-8">
-          <Highlighter className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">No highlights yet</p>
-          <p className="text-xs text-gray-400 mt-1">Select text in the transcript to add a highlight</p>
+        <div className="text-center py-12 animate-fade-in">
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <Highlighter className="w-8 h-8 text-gray-300" />
+          </div>
+          <p className="text-sm font-semibold text-gray-600">No highlights yet</p>
+          <p className="text-xs text-gray-500 mt-1">Highlights appear after review</p>
         </div>
       ) : (
         <div className="space-y-3">
           {highlights.map((highlight) => {
             const colors = HIGHLIGHT_COLORS[highlight.color];
-            const isActive = activeHighlight === highlight.id;
+            const isActive = activeHighlightId === highlight.id;
 
             return (
               <div
                 key={highlight.id}
-                className={`rounded-lg border-2 p-3 cursor-pointer transition-all ${
+                className={`rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300 shadow-soft hover:shadow-soft-lg hover:scale-105 ${
                   isActive
-                    ? `${colors.border} ${colors.bg} shadow-sm`
-                    : `border-gray-100 hover:${colors.border} ${colors.light}`
+                    ? `${colors.border} ${colors.bg}`
+                    : `border-gray-100 ${colors.light} hover:${colors.border}`
                 }`}
-                onClick={() => setActiveHighlight(isActive ? null : highlight.id)}
+                onClick={() => openActionModal(highlight)}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className={`text-sm ${colors.text} font-medium line-clamp-2`}>
+                  <p className={`text-sm ${colors.text} font-semibold line-clamp-2 leading-relaxed`}>
                     "{highlight.highlighted_sentence}"
                   </p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteHighlight(highlight.id);
-                    }}
-                    className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-red-500"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
                 </div>
                 {highlight.comment && (
-                  <p className="text-xs text-gray-600 mt-2 bg-white/50 rounded p-2">
+                  <p className="text-xs text-gray-700 mt-3 bg-white/70 rounded-xl p-2 border border-gray-100">
                     {highlight.comment}
                   </p>
                 )}
-                <div className="flex items-center gap-2 mt-2">
-                  <div className={`w-3 h-3 rounded-full ${colors.bg} border ${colors.border}`} />
-                  <span className="text-xs text-gray-400">
+                <div className="flex items-center gap-2 mt-3">
+                  <div className={`w-3 h-3 rounded-full ${colors.bg} border-2 ${colors.border} shadow-sm`} />
+                  <span className="text-xs text-gray-500 font-medium">
                     {new Date(highlight.created_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -522,51 +611,60 @@ export default function TranscriptViewer({
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
+    <PlayfulCard variant="white" className="overflow-hidden h-full flex flex-col animate-fade-in">
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
+        className="w-full p-5 flex items-center justify-between hover:bg-cream-50 transition-all duration-300 rounded-t-3xl"
       >
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary-100 flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-primary-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">
             Conversation Transcript
           </h2>
           {emotionData.face.length > 0 && (
-            <span className="text-sm font-normal text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+            <Badge variant="primary" icon={Sparkles}>
               with emotions
-            </span>
+            </Badge>
           )}
           {highlights.length > 0 && (
-            <span className="text-sm font-normal text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">
+            <Badge variant="sunshine" icon={Highlighter}>
               {highlights.length} highlights
-            </span>
+            </Badge>
           )}
         </div>
-        {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-400" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        )}
+        <div className={`p-2 rounded-xl transition-all duration-300 ${isExpanded ? 'bg-primary-100' : 'bg-gray-100'}`}>
+          {isExpanded ? (
+            <ChevronUp className="w-5 h-5 text-primary-600" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-600" />
+          )}
+        </div>
       </button>
 
       {isExpanded && (
-        <div className="border-t border-gray-200 flex-1 min-h-0 flex flex-col">
+        <div className="border-t-2 border-gray-100 flex-1 min-h-0 flex flex-col">
           {/* Controls */}
-          <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              {transcriptJson.length} messages
-              {emotionData.face.length > 0 && ` • ${emotionData.face.length} emotion readings`}
+          <div className="px-5 py-3 bg-cream-50/50 border-b-2 border-gray-100 flex items-center justify-between">
+            <div className="text-sm text-gray-700 font-medium">
+              <span className="text-primary-600 font-bold">{transcriptJson.length}</span> messages
+              {emotionData.face.length > 0 && (
+                <>
+                  {' • '}
+                  <span className="text-sky-600 font-bold">{emotionData.face.length}</span> emotion readings
+                </>
+              )}
             </div>
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-primary-600 transition-colors">
               <input
                 type="checkbox"
                 checked={autoScroll}
                 onChange={(e) => setAutoScroll(e.target.checked)}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="rounded-lg border-2 border-gray-300 text-primary-600 focus:ring-2 focus:ring-primary-500 w-5 h-5"
               />
-              Auto-scroll
+              <span className="font-semibold">Auto-scroll</span>
             </label>
           </div>
 
@@ -591,75 +689,62 @@ export default function TranscriptViewer({
             </div>
 
             {/* Highlights Panel - Right side */}
-            <div className="w-80 min-h-0 overflow-y-auto p-4 bg-gray-50/50">
+            <div className="w-80 min-h-0 overflow-y-auto p-5 bg-sunshine-50/30">
               {renderHighlightsPanel()}
             </div>
           </div>
         </div>
       )}
 
-      {/* Highlight creation modal */}
-      {showHighlightForm && selectedText && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowHighlightForm(false)}>
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Highlighter className="w-5 h-5 text-yellow-500" />
-                Add Highlight
+      {actionHighlight && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onClick={closeActionModal}>
+          <div className="bg-white rounded-3xl shadow-soft-lg p-8 max-w-md w-full mx-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <div className="w-10 h-10 rounded-2xl bg-sunshine-100 flex items-center justify-center">
+                  <Highlighter className="w-5 h-5 text-sunshine-600" />
+                </div>
+                What would you like to do?
               </h3>
-              <button onClick={() => setShowHighlightForm(false)} className="p-1 hover:bg-gray-100 rounded">
+              <button onClick={closeActionModal} className="p-2 hover:bg-gray-100 rounded-2xl transition-all duration-300 hover:scale-110">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800 font-medium">"{selectedText}"</p>
+            <div className="mb-6 p-4 bg-sunshine-50 border-2 border-sunshine-200 rounded-2xl">
+              <p className="text-sm text-sunshine-900 font-semibold leading-relaxed">"{actionHighlight.highlighted_sentence}"</p>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-              <div className="flex gap-2">
-                {(Object.keys(HIGHLIGHT_COLORS) as Array<keyof typeof HIGHLIGHT_COLORS>).map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setNewColor(color)}
-                    className={`w-8 h-8 rounded-full ${HIGHLIGHT_COLORS[color].bg} border-2 ${
-                      newColor === color ? 'border-gray-800 ring-2 ring-offset-2 ring-gray-300' : 'border-transparent'
-                    }`}
-                  />
-                ))}
+            {actionError && (
+              <div className="mb-6 text-sm text-red-700 bg-red-50 border-2 border-red-200 rounded-2xl p-4 flex items-center gap-2 animate-slide-down">
+                <span className="text-lg">⚠️</span>
+                {actionError}
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Comment (optional)</label>
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a note about this highlight..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary-500 focus:border-primary-500"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowHighlightForm(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+            <div className="flex flex-col gap-3">
+              <PlayfulButton
+                onClick={() => sendReviewPracticeAction('practice')}
+                disabled={isSubmittingAction}
+                variant="primary"
+                size="lg"
+                className="w-full"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateHighlight}
-                className="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
+                Practice this question again
+              </PlayfulButton>
+              <PlayfulButton
+                onClick={() => sendReviewPracticeAction('analyze')}
+                disabled={isSubmittingAction}
+                variant="secondary"
+                size="lg"
+                className="w-full"
               >
-                <Plus className="w-4 h-4" />
-                Add Highlight
-              </button>
+                Analyze this turn
+              </PlayfulButton>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PlayfulCard>
   );
 }
