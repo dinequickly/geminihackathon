@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { PlayfulButton, PlayfulCard, MessageBubble, PlayfulTextarea, LoadingSpinner, PlayfulCharacter } from '../components/PlayfulUI';
 
 interface ChatMessage {
@@ -260,13 +260,6 @@ export default function Chat() {
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  };
-
   return (
     <div className="min-h-screen bg-cream-100 relative">
       {/* Playful background blobs */}
@@ -309,7 +302,7 @@ export default function Chat() {
                 </p>
               </div>
             ) : (
-              messages.map((message, index) => (
+              messages.map((message) => (
                 <MessageBubble
                   key={message.id}
                   message={message.content}

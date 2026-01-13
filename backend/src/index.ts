@@ -2139,11 +2139,19 @@ app.get('/api/users/:userId/packs/available', async (req, res) => {
 
     // Get all packs that user can access
     // This includes: custom packs created by user, packs they have access to, and free packs
-    const { data: packs, error } = await supabase
+    let query = supabase
       .from('interview_packs')
       .select('*, interview_questions(count)')
-      .or(`created_by.eq.${userId},id.in.(${accessiblePackIds.join(',')}),is_subscription_only.eq.false`)
       .order('created_at', { ascending: false });
+
+    // Build OR filter based on available conditions
+    const conditions = [`created_by.eq.${userId}`, `is_subscription_only.eq.false`];
+    if (accessiblePackIds.length > 0) {
+      conditions.push(`id.in.(${accessiblePackIds.join(',')})`);
+    }
+    query = query.or(conditions.join(','));
+
+    const { data: packs, error } = await query;
 
     if (error) throw error;
 

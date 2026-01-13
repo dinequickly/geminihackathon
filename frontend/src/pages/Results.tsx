@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Loader2,
   Award,
   Brain,
   Heart,
@@ -13,7 +12,6 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Activity,
   Mic,
   AlertCircle
 } from 'lucide-react';

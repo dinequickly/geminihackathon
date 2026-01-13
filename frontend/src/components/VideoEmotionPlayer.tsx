@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { api, EmotionTimelineItem, TranscriptHighlight } from '../lib/api';
-import { EMOTION_COLORS, getEmotionColor } from '../lib/emotions';
+import { getEmotionColor } from '../lib/emotions';
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, FileText, X } from 'lucide-react';
 import { PlayfulButton } from './PlayfulUI';
 
@@ -82,7 +82,7 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [audioOffset, setAudioOffset] = useState(0); // Offset in seconds to sync audio with video
+  const [_audioOffset, _setAudioOffset] = useState(0); // Offset in seconds to sync audio with video
   const [duration, setDuration] = useState(0);
   const [emotionData, setEmotionData] = useState<EmotionData>({ face: [], prosody: [] });
   const [currentEmotions, setCurrentEmotions] = useState<CurrentEmotions>({});
@@ -91,7 +91,7 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
   const [highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
   const [activeHighlight, setActiveHighlight] = useState<TranscriptHighlight | null>(null);
   const [shownHighlightIds, setShownHighlightIds] = useState<Set<string>>(new Set());
-  const [transcriptJson, setTranscriptJson] = useState<TranscriptItem[]>([]);
+  const [_transcriptJson, setTranscriptJson] = useState<TranscriptItem[]>([]);
   const [highlightTimestamps, setHighlightTimestamps] = useState<Map<string, number>>(new Map());
 
   // Load emotion timeline data, highlights, and transcript

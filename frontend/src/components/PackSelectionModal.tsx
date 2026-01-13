@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, BookOpen, Plus, Sparkles, Lock, ChevronRight, Loader2, Package } from 'lucide-react';
+import { X, BookOpen, Plus, Sparkles, Lock, ChevronRight, Package } from 'lucide-react';
 import { api, InterviewPack, UserSubscription } from '../lib/api';
-import { PlayfulButton, PlayfulCard, Badge, LoadingSpinner } from './PlayfulUI';
+import { PlayfulButton, Badge, LoadingSpinner } from './PlayfulUI';
 
 interface PackSelectionModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export default function PackSelectionModal({
 }: PackSelectionModalProps) {
   const [mode, setMode] = useState<'choose' | 'existing' | 'custom'>('choose');
   const [packs, setPacks] = useState<InterviewPack[]>([]);
-  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [_subscription, _setSubscription] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +41,7 @@ export default function PackSelectionModal({
       ]);
 
       setPacks(packsData.packs);
-      setSubscription(subData);
+      _setSubscription(subData);
     } catch (err) {
       console.error('Failed to load packs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load packs');
