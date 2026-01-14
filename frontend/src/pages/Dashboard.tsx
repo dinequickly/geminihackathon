@@ -9,10 +9,12 @@ import {
   ChevronRight,
   Loader2,
   Video,
-  Package
+  Package,
+  Settings,
+  ShoppingBag
 } from 'lucide-react';
 import { api, Conversation } from '../lib/api';
-import { PackSelectionModal } from '../components';
+import { PackSelectionModal, ShopModal, PromoPopup } from '../components';
 
 interface DashboardProps {
   userId: string;
@@ -25,6 +27,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [showPackModal, setShowPackModal] = useState(false);
+  const [showShopModal, setShowShopModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -124,13 +127,29 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
             <h1 className="text-xl font-bold text-gray-900">InterviewPro</h1>
             <p className="text-sm text-gray-500">Welcome back, {userName}</p>
           </div>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowShopModal(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sunshine-600 hover:bg-sunshine-50 rounded-xl transition border-2 border-sunshine-200"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Shop
+            </button>
+            <button
+              onClick={() => navigate('/interview-settings')}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition"
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </button>
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -281,6 +300,16 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         onSelectPack={handleSelectPack}
         onCreateCustomPack={handleCreateCustomPack}
       />
+
+      {/* Shop Modal */}
+      <ShopModal
+        isOpen={showShopModal}
+        onClose={() => setShowShopModal(false)}
+        userId={userId}
+      />
+
+      {/* Promotional Popup */}
+      <PromoPopup onOpenShop={() => setShowShopModal(true)} />
     </div>
   );
 }
