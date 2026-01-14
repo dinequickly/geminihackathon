@@ -5,6 +5,7 @@ import Interview from './pages/Interview';
 import Results from './pages/Results';
 import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
+import InterviewSettings from './pages/InterviewSettings';
 
 // Simple user context - in production, use proper state management
 interface UserContext {
@@ -74,6 +75,12 @@ function App() {
           <Route
             path="/chat/:chatId"
             element={<Chat />}
+          />
+          <Route
+            path="/interview-settings"
+            element={
+              userId ? <InterviewSettings userId={userId} /> : <Navigate to="/" replace />
+            }
           />
         </Routes>
         </div>

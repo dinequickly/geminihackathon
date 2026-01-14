@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import Stripe from 'stripe';
 import { runFullAnalysis } from './analysis/orchestrator.js';
 
 dotenv.config();
@@ -57,6 +58,14 @@ const N8N_USER_CREATED_WEBHOOK = process.env.N8N_USER_CREATED_WEBHOOK || 'https:
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
 const HUGGING_FACE_AUDIO_URL = process.env.HUGGING_FACE_AUDIO_URL || '';
 const HUME_API_KEY = process.env.HUME_API_KEY || '';
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+
+// Stripe client
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, {
+  apiVersion: '2024-12-18.acacia' as any,
+}) : null;
 
 // Supabase client
 const supabase = createClient(
@@ -2082,32 +2091,83 @@ app.get('/api/hume/jobs/:jobId/predictions', async (req, res) => {
 // INTERVIEW PACKS
 // ============================================
 
-// Get user's subscription status (placeholder - extend based on your subscription logic)
+// Get user's subscription status
 app.get('/api/users/:userId/subscription', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // For now, return a basic subscription status
-    // TODO: Integrate with actual subscription service (Stripe, etc.)
-    const { data: user, error } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .single();
 
-    if (error) throw error;
+    if (userError) throw userError;
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Placeholder logic - you can extend this based on a subscription table
+    // Check for active subscription
+    const { data: subscriptions, error: subError } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (subError) throw subError;
+
+    const hasActiveSubscription = subscriptions && subscriptions.length > 0;
+    const subscription = hasActiveSubscription ? subscriptions[0] : null;
+
+    // Determine plan tier based on subscription
+    let plan = 'free';
+    let features = {
+      can_create_custom_packs: true,
+      max_custom_packs: 3,
+      access_premium_packs: false,
+      dynamic_behavior: false
+    };
+
+    if (subscription) {
+      // Map plan names to tiers
+      const planName = subscription.plan_name?.toLowerCase() || '';
+      if (planName.includes('enterprise')) {
+        plan = 'enterprise';
+        features = {
+          can_create_custom_packs: true,
+          max_custom_packs: -1, // unlimited
+          access_premium_packs: true,
+          dynamic_behavior: true
+        };
+      } else if (planName.includes('premium')) {
+        plan = 'premium';
+        features = {
+          can_create_custom_packs: true,
+          max_custom_packs: 10,
+          access_premium_packs: true,
+          dynamic_behavior: true
+        };
+      } else if (planName.includes('basic')) {
+        plan = 'basic';
+        features = {
+          can_create_custom_packs: true,
+          max_custom_packs: 5,
+          access_premium_packs: false,
+          dynamic_behavior: false
+        };
+      }
+    }
+
     res.json({
       user_id: userId,
-      has_subscription: false, // TODO: Check subscription status
-      plan: 'free', // Options: 'free', 'basic', 'premium', 'enterprise'
-      features: {
-        can_create_custom_packs: true,
-        max_custom_packs: 3,
-        access_premium_packs: false
-      }
+      has_subscription: hasActiveSubscription,
+      plan,
+      features,
+      subscription: subscription ? {
+        plan_name: subscription.plan_name,
+        status: subscription.status,
+        current_period_end: subscription.current_period_end
+      } : null
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -2319,6 +2379,446 @@ app.get('/api/users/:userId/sessions', async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// INTERVIEW CUSTOMIZATION
+// ============================================
+
+// Get interviewer mood presets
+app.get('/api/interviewer-moods', async (req, res) => {
+  try {
+    const { data: presets, error } = await supabase
+      .from('interviewer_mood_presets')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({
+      presets: presets || [],
+      total: presets?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's custom agents
+app.get('/api/users/:userId/agents', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: agents, error } = await supabase
+      .from('user_interview_agents')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      user_id: userId,
+      agents: agents || [],
+      total: agents?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create custom agent
+app.post('/api/users/:userId/agents', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { agent_name, system_prompt, elevenlabs_agent_id } = req.body;
+
+    if (!agent_name || !system_prompt) {
+      return res.status(400).json({ error: 'agent_name and system_prompt required' });
+    }
+
+    const { data: agent, error } = await supabase
+      .from('user_interview_agents')
+      .insert({
+        user_id: userId,
+        agent_name,
+        system_prompt,
+        elevenlabs_agent_id,
+        is_active: false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      agent,
+      message: 'Agent created successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update custom agent
+app.patch('/api/users/:userId/agents/:agentId', async (req, res) => {
+  try {
+    const { userId, agentId } = req.params;
+    const { agent_name, system_prompt, elevenlabs_agent_id, is_active } = req.body;
+
+    const updateData: any = { updated_at: new Date().toISOString() };
+    if (agent_name !== undefined) updateData.agent_name = agent_name;
+    if (system_prompt !== undefined) updateData.system_prompt = system_prompt;
+    if (elevenlabs_agent_id !== undefined) updateData.elevenlabs_agent_id = elevenlabs_agent_id;
+    if (is_active !== undefined) updateData.is_active = is_active;
+
+    const { data: agent, error } = await supabase
+      .from('user_interview_agents')
+      .update(updateData)
+      .eq('id', agentId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!agent) return res.status(404).json({ error: 'Agent not found' });
+
+    res.json({ agent });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete custom agent
+app.delete('/api/users/:userId/agents/:agentId', async (req, res) => {
+  try {
+    const { userId, agentId } = req.params;
+
+    const { error } = await supabase
+      .from('user_interview_agents')
+      .delete()
+      .eq('id', agentId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    res.json({ success: true, message: 'Agent deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's interview preferences
+app.get('/api/users/:userId/interview-preferences', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: prefs, error } = await supabase
+      .from('user_interview_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    // Return default preferences if none exist
+    if (!prefs) {
+      return res.json({
+        user_id: userId,
+        use_dynamic_behavior: false,
+        selected_mood_preset_id: null,
+        custom_agent_id: null
+      });
+    }
+
+    res.json(prefs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user's interview preferences
+app.put('/api/users/:userId/interview-preferences', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { use_dynamic_behavior, selected_mood_preset_id, custom_agent_id } = req.body;
+
+    const { data: prefs, error } = await supabase
+      .from('user_interview_preferences')
+      .upsert({
+        user_id: userId,
+        use_dynamic_behavior: use_dynamic_behavior ?? false,
+        selected_mood_preset_id: selected_mood_preset_id || null,
+        custom_agent_id: custom_agent_id || null,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(prefs);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's progress metrics
+app.get('/api/users/:userId/progress', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { metric_type, days = 30 } = req.query;
+
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - parseInt(days as string));
+
+    let query = supabase
+      .from('user_progress_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('measured_at', daysAgo.toISOString())
+      .order('measured_at', { ascending: true });
+
+    if (metric_type) {
+      query = query.eq('metric_type', metric_type);
+    }
+
+    const { data: metrics, error } = await query;
+    if (error) throw error;
+
+    res.json({
+      user_id: userId,
+      metrics: metrics || [],
+      total: metrics?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's progress summary
+app.get('/api/users/:userId/progress/summary', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: summary, error } = await supabase
+      .from('user_progress_summary')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    res.json({
+      user_id: userId,
+      summary: summary || []
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// STRIPE INTEGRATION
+// ============================================
+
+// Get available products/subscriptions
+app.get('/api/stripe/products', async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(400).json({ error: 'Stripe not configured' });
+    }
+
+    const products = await stripe.products.list({
+      active: true,
+      expand: ['data.default_price']
+    });
+
+    const formattedProducts = products.data.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      metadata: product.metadata,
+      price: product.default_price ? {
+        id: (product.default_price as any).id,
+        unit_amount: (product.default_price as any).unit_amount,
+        currency: (product.default_price as any).currency,
+        recurring: (product.default_price as any).recurring
+      } : null
+    }));
+
+    res.json({
+      products: formattedProducts,
+      total: formattedProducts.length
+    });
+  } catch (error: any) {
+    console.error('Stripe products error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create checkout session
+app.post('/api/stripe/create-checkout-session', async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(400).json({ error: 'Stripe not configured' });
+    }
+
+    const { price_id, user_id, success_url, cancel_url } = req.body;
+
+    if (!price_id || !user_id) {
+      return res.status(400).json({ error: 'price_id and user_id required' });
+    }
+
+    // Get user email
+    const { data: user } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', user_id)
+      .single();
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{
+        price: price_id,
+        quantity: 1,
+      }],
+      success_url: success_url || `${CLIENT_URL}/dashboard?checkout=success`,
+      cancel_url: cancel_url || `${CLIENT_URL}/dashboard?checkout=cancel`,
+      customer_email: user?.email,
+      client_reference_id: user_id,
+      metadata: {
+        user_id: user_id
+      }
+    });
+
+    res.json({
+      session_id: session.id,
+      url: session.url
+    });
+  } catch (error: any) {
+    console.error('Create checkout session error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's subscriptions
+app.get('/api/users/:userId/subscriptions', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: subscriptions, error } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      user_id: userId,
+      subscriptions: subscriptions || [],
+      total: subscriptions?.length || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Stripe webhook handler
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+
+  if (!stripe || !sig || !STRIPE_WEBHOOK_SECRET) {
+    return res.status(400).send('Webhook signature or config missing');
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+  } catch (err: any) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  console.log('Stripe webhook event:', event.type);
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.client_reference_id || session.metadata?.user_id;
+
+        if (!userId) {
+          console.error('No user_id in checkout session');
+          break;
+        }
+
+        // Get subscription details
+        const subscriptionId = session.subscription as string;
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
+
+        // Store subscription in database
+        await supabase.from('user_subscriptions').insert({
+          user_id: userId,
+          stripe_subscription_id: subscriptionId,
+          stripe_customer_id: session.customer as string,
+          stripe_price_id: subscription.items.data[0].price.id,
+          status: subscription.status,
+          current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+          current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
+          plan_name: subscription.items.data[0].price.nickname || 'Premium Plan'
+        });
+
+        console.log(`Subscription created for user ${userId}`);
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as any;
+
+        await supabase
+          .from('user_subscriptions')
+          .update({
+            status: subscription.status,
+            current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+            current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        console.log(`Subscription updated: ${subscription.id}`);
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+
+        await supabase
+          .from('user_subscriptions')
+          .update({
+            status: 'canceled',
+            canceled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        console.log(`Subscription canceled: ${subscription.id}`);
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    res.json({ received: true });
+  } catch (err: any) {
+    console.error('Webhook handler error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
