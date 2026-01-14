@@ -2760,7 +2760,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
         // Get subscription details
         const subscriptionId = session.subscription as string;
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
 
         // Store subscription in database
         await supabase.from('user_subscriptions').insert({
@@ -2769,8 +2769,8 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           stripe_customer_id: session.customer as string,
           stripe_price_id: subscription.items.data[0].price.id,
           status: subscription.status,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+          current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
           plan_name: subscription.items.data[0].price.nickname || 'Premium Plan'
         });
 
@@ -2779,14 +2779,14 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as any;
 
         await supabase
           .from('user_subscriptions')
           .update({
             status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+            current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
             updated_at: new Date().toISOString()
           })
           .eq('stripe_subscription_id', subscription.id);
