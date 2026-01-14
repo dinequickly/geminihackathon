@@ -49,10 +49,9 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   };
 
   const handleSelectPack = async (packId: string) => {
-    // TODO: Navigate to pack interview page or create session
-    console.log('Selected pack:', packId);
-    // For now, just show an alert
-    alert(`Selected pack: ${packId}. Pack interview flow coming soon!`);
+    // Navigate to pack details page
+    setShowPackModal(false);
+    navigate(`/pack/${packId}`);
   };
 
   const handleCreateCustomPack = () => {
