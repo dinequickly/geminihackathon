@@ -8,6 +8,7 @@ import Chat from './pages/Chat';
 import InterviewSettings from './pages/InterviewSettings';
 import PackDetails from './pages/PackDetails';
 import FlashcardPractice from './pages/FlashcardPractice';
+import LiveAvatarInterview from './pages/LiveAvatarInterview';
 
 // Simple user context - in production, use proper state management
 interface UserContext {
@@ -94,6 +95,12 @@ function App() {
             path="/pack/:packId/flashcards"
             element={
               userId ? <FlashcardPractice userId={userId} /> : <Navigate to="/" replace />
+            }
+          />
+          <Route
+            path="/live-avatar-interview"
+            element={
+              userId ? <LiveAvatarInterview userId={userId} /> : <Navigate to="/" replace />
             }
           />
         </Routes>

@@ -460,6 +460,87 @@ app.post('/api/interviews/:conversationId/end', async (req, res) => {
 });
 
 // ============================================
+// HEYGEN LIVEAVATAR
+// ============================================
+app.post('/api/heygen/create-session', async (req, res) => {
+  try {
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id required' });
+    }
+
+    // Verify user exists and has premium subscription
+    const { data: subscription, error: subError } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', user_id)
+      .single();
+
+    if (subError || !subscription) {
+      return res.status(403).json({
+        error: 'Premium subscription required',
+        message: 'LiveAvatar interviews are available for premium members only'
+      });
+    }
+
+    // Check subscription is active
+    if (!['active', 'trialing'].includes(subscription.status)) {
+      return res.status(403).json({
+        error: 'Active subscription required',
+        message: 'Your subscription is not active. Please upgrade to access this feature.'
+      });
+    }
+
+    const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY;
+
+    if (!HEYGEN_API_KEY) {
+      return res.status(500).json({ error: 'HeyGen API key not configured' });
+    }
+
+    // Call HeyGen API to create session
+    const heygenResponse = await fetch(
+      'https://api.heygen.com/v1/streaming.new',
+      {
+        method: 'POST',
+        headers: {
+          'x-api-key': HEYGEN_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          quality: 'high',
+          avatar_id: 'default',
+          voice: {
+            voice_id: 'default'
+          },
+          video_encoding: 'H264'
+        })
+      }
+    );
+
+    if (!heygenResponse.ok) {
+      const errorData = await heygenResponse.json().catch(() => ({}));
+      console.error('HeyGen API error:', errorData);
+      throw new Error('Failed to create HeyGen session');
+    }
+
+    const heygenData = await heygenResponse.json();
+
+    // Return session details
+    res.json({
+      session_id: heygenData.data.session_id,
+      access_token: heygenData.data.access_token,
+      url: heygenData.data.url,
+      session_duration_limit: heygenData.data.session_duration_limit,
+      is_paid: heygenData.data.is_paid
+    });
+  } catch (error: any) {
+    console.error('Create HeyGen session error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
 // CONVERSATIONS
 // ============================================
 app.get('/api/conversations/user/:userId', async (req, res) => {
