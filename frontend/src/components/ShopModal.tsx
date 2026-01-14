@@ -185,6 +185,12 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                 <h3 className="text-lg font-bold text-gray-900 mb-3">Available Plans</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {products.map((product) => {
+                    // Safety check for prices
+                    if (!product.prices || product.prices.length === 0) {
+                      console.warn(`Product ${product.name} has no prices`, product);
+                      return null;
+                    }
+
                     const price = product.prices[0];
                     if (!price) return null;
 

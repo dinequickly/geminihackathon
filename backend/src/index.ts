@@ -2640,13 +2640,15 @@ app.get('/api/stripe/products', async (req, res) => {
       id: product.id,
       name: product.name,
       description: product.description,
-      metadata: product.metadata,
-      price: product.default_price ? {
+      active: product.active,
+      metadata: product.metadata || {},
+      prices: product.default_price ? [{
         id: (product.default_price as any).id,
-        unit_amount: (product.default_price as any).unit_amount,
-        currency: (product.default_price as any).currency,
-        recurring: (product.default_price as any).recurring
-      } : null
+        product: product.id,
+        unit_amount: (product.default_price as any).unit_amount || 0,
+        currency: (product.default_price as any).currency || 'usd',
+        recurring: (product.default_price as any).recurring || null
+      }] : []
     }));
 
     res.json({
