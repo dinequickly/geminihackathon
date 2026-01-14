@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -7,8 +7,7 @@ import {
   RotateCcw,
   Flag,
   CheckCircle2,
-  BookOpen,
-  Sparkles
+  BookOpen
 } from 'lucide-react';
 import {
   PlayfulButton,
@@ -23,7 +22,7 @@ interface FlashcardPracticeProps {
   userId: string;
 }
 
-export default function FlashcardPractice({ userId }: FlashcardPracticeProps) {
+export default function FlashcardPractice({ userId: _userId }: FlashcardPracticeProps) {
   const { packId } = useParams<{ packId: string }>();
   const navigate = useNavigate();
 
@@ -401,7 +400,7 @@ export default function FlashcardPractice({ userId }: FlashcardPracticeProps) {
           </PlayfulButton>
 
           <PlayfulButton
-            variant={isDifficult ? 'coral' : 'secondary'}
+            variant={isDifficult ? 'sunshine' : 'secondary'}
             icon={Flag}
             onClick={handleMarkDifficult}
           >

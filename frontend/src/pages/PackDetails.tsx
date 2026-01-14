@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -22,7 +22,7 @@ interface PackDetailsProps {
   userId: string;
 }
 
-export default function PackDetails({ userId }: PackDetailsProps) {
+export default function PackDetails({ userId: _userId }: PackDetailsProps) {
   const { packId } = useParams<{ packId: string }>();
   const navigate = useNavigate();
 
@@ -68,10 +68,6 @@ export default function PackDetails({ userId }: PackDetailsProps) {
 
   const handleFlashcardPractice = () => {
     navigate(`/pack/${packId}/flashcards`);
-  };
-
-  const handleAudioPractice = () => {
-    // Coming soon
   };
 
   if (loading) {
@@ -169,28 +165,30 @@ export default function PackDetails({ userId }: PackDetailsProps) {
         {/* Practice Mode Cards */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Flashcard Mode */}
-          <PlayfulCard variant="sky" hover className="cursor-pointer" onClick={handleFlashcardPractice}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="bg-sky-500 text-white p-3 rounded-2xl">
-                <BookOpen className="w-6 h-6" />
+          <div onClick={handleFlashcardPractice}>
+            <PlayfulCard variant="sky" hover className="cursor-pointer">
+              <div className="flex items-start justify-between mb-4">
+                <div className="bg-sky-500 text-white p-3 rounded-2xl">
+                  <BookOpen className="w-6 h-6" />
+                </div>
               </div>
-            </div>
 
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Flashcard Practice
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Review questions at your own pace. Perfect for quick prep and memorization.
-            </p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Flashcard Practice
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Review questions at your own pace. Perfect for quick prep and memorization.
+              </p>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Clock className="w-4 h-4" />
-                <span>~{Math.round(avgDuration / 60)} min per question</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Clock className="w-4 h-4" />
+                  <span>~{Math.round(avgDuration / 60)} min per question</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-sky-600" />
               </div>
-              <ChevronRight className="w-5 h-5 text-sky-600" />
-            </div>
-          </PlayfulCard>
+            </PlayfulCard>
+          </div>
 
           {/* Audio Mode - Coming Soon */}
           <PlayfulCard variant="sunshine" className="opacity-75 relative overflow-hidden">
