@@ -70,11 +70,33 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
     return Sparkles;
   };
 
-  const getPlanColor = (planName: string) => {
+  const getPlanColor = (planName: string): 'sunshine' | 'sky' | 'mint' | 'primary' => {
     const lower = planName.toLowerCase();
     if (lower.includes('premium')) return 'sunshine';
     if (lower.includes('basic')) return 'sky';
     return 'mint';
+  };
+
+  const getColorClasses = (variant: 'sunshine' | 'sky' | 'mint' | 'primary') => {
+    const colorMap = {
+      sunshine: {
+        bg: 'bg-sunshine-400',
+        badge: 'sunshine' as const
+      },
+      sky: {
+        bg: 'bg-sky-400',
+        badge: 'sky' as const
+      },
+      mint: {
+        bg: 'bg-mint-400',
+        badge: 'mint' as const
+      },
+      primary: {
+        bg: 'bg-primary-400',
+        badge: 'primary' as const
+      }
+    };
+    return colorMap[variant];
   };
 
   const isSubscribed = (productId: string) => {
@@ -163,12 +185,26 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                 <h3 className="text-lg font-bold text-gray-900 mb-3">Available Plans</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {products.map((product) => {
-                    const price = product.prices[0];
+                    // Handle both old format (price) and new format (prices array)
+                    const productAny = product as any;
+                    let price;
+
+                    if (product.prices && product.prices.length > 0) {
+                      price = product.prices[0];
+                    } else if (productAny.price) {
+                      // Fallback for old backend format
+                      price = productAny.price;
+                    } else {
+                      console.warn(`Product ${product.name} has no price`, product);
+                      return null;
+                    }
+
                     if (!price) return null;
 
                     const planName = product.name;
                     const Icon = getPlanIcon(planName);
                     const colorVariant = getPlanColor(planName);
+                    const colorClasses = getColorClasses(colorVariant);
                     const subscribed = isSubscribed(product.id);
                     const loading = checkoutLoading === price.id;
 
@@ -185,13 +221,13 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-2xl bg-${colorVariant}-400 flex items-center justify-center`}>
+                            <div className={`w-10 h-10 rounded-2xl ${colorClasses.bg} flex items-center justify-center`}>
                               <Icon className="w-5 h-5 text-white" />
                             </div>
                             <div>
                               <h4 className="text-lg font-bold text-gray-900">{product.name}</h4>
                               {product.metadata.tier && (
-                                <Badge variant={colorVariant as any}>
+                                <Badge variant={colorClasses.badge}>
                                   {product.metadata.tier}
                                 </Badge>
                               )}
@@ -235,7 +271,7 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                           ) : (
                             <PlayfulButton
                               onClick={() => handleSubscribe(price.id, planName)}
-                              variant={colorVariant as any}
+                              variant={colorClasses.badge}
                               size="md"
                               disabled={loading}
                               className="w-full"
