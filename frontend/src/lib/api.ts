@@ -788,6 +788,20 @@ class ApiClient {
   }> {
     return this.request(`/api/users/${userId}/subscriptions`);
   }
+
+  // HeyGen LiveAvatar endpoints
+  async createHeyGenSession(userId: string): Promise<{
+    session_id: string;
+    access_token: string;
+    url: string;
+    session_duration_limit: number;
+    is_paid: boolean;
+  }> {
+    return this.request('/api/heygen/create-session', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId }),
+    });
+  }
 }
 
 // Emotion timeline types

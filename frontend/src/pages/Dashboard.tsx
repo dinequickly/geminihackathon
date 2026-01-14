@@ -193,7 +193,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Start New Interview */}
           <button
             onClick={() => navigate('/interview')}
@@ -223,6 +223,28 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
               <div className="text-left">
                 <h3 className="text-lg font-semibold">Practice with Packs</h3>
                 <p className="text-gray-700 text-sm">Use curated question sets</p>
+              </div>
+            </div>
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Video Call Interview */}
+          <button
+            onClick={() => navigate('/live-avatar-interview')}
+            className="bg-gradient-to-br from-sky-500 to-mint-500 hover:from-sky-600 hover:to-mint-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-sky-500/20 relative overflow-hidden"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <Video className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg font-semibold">Video Call Interview</h3>
+                  <span className="px-2 py-0.5 bg-sunshine-400 text-gray-900 text-xs font-bold rounded-full">
+                    PREMIUM
+                  </span>
+                </div>
+                <p className="text-sky-100 text-sm">AI video interviewer</p>
               </div>
             </div>
             <ChevronRight className="w-6 h-6" />
