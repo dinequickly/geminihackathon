@@ -498,14 +498,18 @@ app.post('/api/heygen/create-session', async (req, res) => {
       return res.status(500).json({ error: 'HeyGen API key not configured' });
     }
 
-    // Call LiveAvatar API to create session token
+    // Call HeyGen Streaming API to create session
     const heygenResponse = await fetch(
-      'https://api.liveavatar.com/v1/sessions/token',
+      'https://api.heygen.com/v1/streaming.new',
       {
         method: 'POST',
         headers: {
-          'X-API-KEY': HEYGEN_API_KEY
-        }
+          'x-api-key': HEYGEN_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          quality: 'high'
+        })
       }
     );
 
@@ -517,17 +521,15 @@ app.post('/api/heygen/create-session', async (req, res) => {
 
     const heygenData = await heygenResponse.json();
 
-    console.log('LiveAvatar session created:', heygenData);
+    console.log('HeyGen session created:', heygenData);
 
-    // Return session details
-    // LiveAvatar returns: { data: { session_token, ... } }
+    // Return session details from streaming.new API
     res.json({
-      session_token: heygenData.data?.session_token || heygenData.session_token,
-      access_token: heygenData.data?.session_token || heygenData.session_token,
-      session_id: heygenData.data?.session_id,
-      url: heygenData.data?.url,
-      session_duration_limit: heygenData.data?.session_duration_limit,
-      is_paid: heygenData.data?.is_paid
+      session_id: heygenData.data.session_id,
+      access_token: heygenData.data.access_token,
+      url: heygenData.data.url,
+      session_duration_limit: heygenData.data.session_duration_limit,
+      is_paid: heygenData.data.is_paid
     });
   } catch (error: any) {
     console.error('Create HeyGen session error:', error);
