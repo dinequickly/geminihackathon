@@ -185,13 +185,20 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                 <h3 className="text-lg font-bold text-gray-900 mb-3">Available Plans</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {products.map((product) => {
-                    // Safety check for prices
-                    if (!product.prices || product.prices.length === 0) {
-                      console.warn(`Product ${product.name} has no prices`, product);
+                    // Handle both old format (price) and new format (prices array)
+                    const productAny = product as any;
+                    let price;
+
+                    if (product.prices && product.prices.length > 0) {
+                      price = product.prices[0];
+                    } else if (productAny.price) {
+                      // Fallback for old backend format
+                      price = productAny.price;
+                    } else {
+                      console.warn(`Product ${product.name} has no price`, product);
                       return null;
                     }
 
-                    const price = product.prices[0];
                     if (!price) return null;
 
                     const planName = product.name;
