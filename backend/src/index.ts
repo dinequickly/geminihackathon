@@ -11,6 +11,107 @@ import { runFullAnalysis } from './analysis/orchestrator.js';
 dotenv.config();
 
 const app = express();
+
+// Stripe webhook needs raw body - must be BEFORE express.json()
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+  const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, {
+    apiVersion: '2024-12-18.acacia' as any,
+  }) : null;
+
+  if (!stripe || !sig || !STRIPE_WEBHOOK_SECRET) {
+    return res.status(400).send('Webhook signature or config missing');
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig as string, STRIPE_WEBHOOK_SECRET);
+  } catch (err: any) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  try {
+    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.client_reference_id || session.metadata?.user_id;
+
+        if (!userId) {
+          console.error('No user_id in checkout session');
+          break;
+        }
+
+        // Get subscription details
+        const subscriptionId = session.subscription as string;
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
+
+        // Store subscription in database
+        await supabase.from('user_subscriptions').insert({
+          user_id: userId,
+          stripe_subscription_id: subscriptionId,
+          stripe_customer_id: session.customer as string,
+          stripe_price_id: subscription.items.data[0].price.id,
+          status: subscription.status,
+          current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+          current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
+          plan_name: subscription.items.data[0].price.nickname || 'Premium Plan'
+        });
+
+        console.log(`Subscription created for user ${userId}`);
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as any;
+
+        await supabase
+          .from('user_subscriptions')
+          .update({
+            status: subscription.status,
+            current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+            current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        console.log(`Subscription updated: ${subscription.id}`);
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+
+        await supabase
+          .from('user_subscriptions')
+          .update({
+            status: 'canceled',
+            canceled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        console.log(`Subscription canceled: ${subscription.id}`);
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({ received: true });
+  } catch (error: any) {
+    console.error('Webhook handler error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Use raw body for HMAC verification
 app.use(express.json({
   verify: (req: any, res, buf) => {
@@ -2727,100 +2828,6 @@ app.get('/api/users/:userId/subscriptions', async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
-  }
-});
-
-// Stripe webhook handler
-app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-
-  if (!stripe || !sig || !STRIPE_WEBHOOK_SECRET) {
-    return res.status(400).send('Webhook signature or config missing');
-  }
-
-  let event: Stripe.Event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  console.log('Stripe webhook event:', event.type);
-
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id || session.metadata?.user_id;
-
-        if (!userId) {
-          console.error('No user_id in checkout session');
-          break;
-        }
-
-        // Get subscription details
-        const subscriptionId = session.subscription as string;
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
-
-        // Store subscription in database
-        await supabase.from('user_subscriptions').insert({
-          user_id: userId,
-          stripe_subscription_id: subscriptionId,
-          stripe_customer_id: session.customer as string,
-          stripe_price_id: subscription.items.data[0].price.id,
-          status: subscription.status,
-          current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
-          current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
-          plan_name: subscription.items.data[0].price.nickname || 'Premium Plan'
-        });
-
-        console.log(`Subscription created for user ${userId}`);
-        break;
-      }
-
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as any;
-
-        await supabase
-          .from('user_subscriptions')
-          .update({
-            status: subscription.status,
-            current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
-            current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('stripe_subscription_id', subscription.id);
-
-        console.log(`Subscription updated: ${subscription.id}`);
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-
-        await supabase
-          .from('user_subscriptions')
-          .update({
-            status: 'canceled',
-            canceled_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('stripe_subscription_id', subscription.id);
-
-        console.log(`Subscription canceled: ${subscription.id}`);
-        break;
-      }
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
-    }
-
-    res.json({ received: true });
-  } catch (err: any) {
-    console.error('Webhook handler error:', err);
-    res.status(500).json({ error: err.message });
   }
 });
 
