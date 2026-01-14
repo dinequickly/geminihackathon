@@ -2289,6 +2289,16 @@ app.get('/api/users/:userId/packs/available', async (req, res) => {
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    // Check if user has active subscription
+    const { data: subscriptions } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active');
+
+    const hasActiveSubscription = subscriptions && subscriptions.length > 0;
+    const userPlanName = subscriptions?.[0]?.plan_name || '';
+
     // Get user's pack access
     const { data: userAccess } = await supabase
       .from('user_pack_access')
@@ -2299,7 +2309,7 @@ app.get('/api/users/:userId/packs/available', async (req, res) => {
     const accessiblePackIds = userAccess?.map(a => a.pack_id) || [];
 
     // Get all packs that user can access
-    // This includes: custom packs created by user, packs they have access to, and free packs
+    // This includes: custom packs created by user, packs they have access to, free packs, and subscription packs
     let query = supabase
       .from('interview_packs')
       .select('*, interview_questions(count)')
@@ -2309,6 +2319,10 @@ app.get('/api/users/:userId/packs/available', async (req, res) => {
     const conditions = [`created_by.eq.${userId}`, `is_subscription_only.eq.false`];
     if (accessiblePackIds.length > 0) {
       conditions.push(`id.in.(${accessiblePackIds.join(',')})`);
+    }
+    // If user has subscription, include subscription-only packs
+    if (hasActiveSubscription) {
+      conditions.push(`is_subscription_only.eq.true`);
     }
     query = query.or(conditions.join(','));
 
