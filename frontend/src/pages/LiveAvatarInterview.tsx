@@ -76,20 +76,18 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
       const sessionData = await api.createHeyGenSession(userId);
 
       console.log('Session data received:', {
-        session_id: sessionData.session_id,
         avatar_id: sessionData.avatar_id,
         voice_id: sessionData.voice_id,
-        token_expires_in: sessionData.token_expires_in
+        expires_in: sessionData.expires_in
       });
 
-      if (!sessionData.access_token) {
+      if (!sessionData.session_token) {
         throw new Error('LiveAvatar access token missing');
       }
-
-      console.log('Access token expires in seconds:', sessionData.token_expires_in);
+      console.log('Access token expires in seconds:', sessionData.expires_in);
 
       // Initialize LiveAvatar session
-      const avatarSession = new LiveAvatarSession(sessionData.access_token, {
+      const avatarSession = new LiveAvatarSession(sessionData.session_token, {
         voiceChat: true,
       });
 

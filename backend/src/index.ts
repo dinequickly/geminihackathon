@@ -553,13 +553,10 @@ app.post('/api/heygen/create-session', async (req, res) => {
     console.log('LiveAvatar access token received, expires_in:', tokenExpiresIn);
 
     res.json({
-      session_id: null,
-      session_token: null,
-      access_token: accessToken,
-      token_expires_in: tokenExpiresIn || null,
+      session_token: accessToken,
+      expires_in: tokenExpiresIn || null,
       avatar_id: AVATAR_ID,
-      voice_id: VOICE_ID,
-      is_paid: false
+      voice_id: VOICE_ID
     });
   } catch (error: any) {
     console.error('Create LiveAvatar session error:', error);
