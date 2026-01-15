@@ -464,25 +464,76 @@ app.post('/api/interviews/:conversationId/end', async (req, res) => {
 // HEYGEN LIVEAVATAR
 // ============================================
 
-async function mintLiveAvatarAccessToken(apiKey: string, payload: Record<string, any>) {
-  const response = await fetch('https://api.liveavatar.com/v1/token', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'accept': 'application/json',
-      'content-type': 'application/json'
+type TokenFetcher = {
+  name: string;
+  url: string;
+  body?: Record<string, unknown>;
+  fallbackOnNotFound?: boolean;
+};
+
+async function mintLiveAvatarAccessToken(apiKey: string, sessionId: string, payload?: Record<string, any>) {
+  const endpoints: TokenFetcher[] = [
+    {
+      name: 'session-specific',
+      url: `https://api.liveavatar.com/v1/sessions/${sessionId}/token`,
+      fallbackOnNotFound: true
     },
-    body: JSON.stringify(payload)
-  });
+    {
+      name: 'generic',
+      url: 'https://api.liveavatar.com/v1/token',
+      body: {
+        session_id: sessionId,
+        ...(payload || {})
+      }
+    }
+  ];
 
-  const data = await response.json().catch(() => ({}));
+  let lastError: Error | null = null;
 
-  if (!response.ok || !data?.token) {
-    const message = data?.message || data?.error || 'Failed to mint LiveAvatar access token';
-    throw new Error(`LiveAvatar token request failed (${response.status}): ${message}`);
+  for (const endpoint of endpoints) {
+    try {
+      console.log(`Requesting LiveAvatar access token from ${endpoint.name} endpoint`);
+      const response = await fetch(endpoint.url, {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': apiKey,
+          accept: 'application/json',
+          'content-type': 'application/json'
+        },
+        body: endpoint.body ? JSON.stringify(endpoint.body) : undefined
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const message = data?.message || data?.error || 'Failed to mint LiveAvatar access token';
+        if (response.status === 404 && endpoint.fallbackOnNotFound) {
+          console.warn(`Access token endpoint ${endpoint.name} returned 404, trying next`);
+          lastError = new Error(`LiveAvatar token endpoint ${endpoint.name} not found`);
+          continue;
+        }
+        throw new Error(`LiveAvatar token request failed (${response.status}): ${message}`);
+      }
+
+      if (!data?.token) {
+        throw new Error('LiveAvatar token response missing token');
+      }
+
+      return {
+        token: data.token,
+        expires_in: data.expires_in,
+        endpoint: endpoint.name
+      };
+    } catch (error: any) {
+      lastError = error;
+      if (endpoint.fallbackOnNotFound && (error.message || '').includes('not found')) {
+        continue;
+      }
+      throw error;
+    }
   }
 
-  return data;
+  throw lastError ?? new Error('Failed to mint LiveAvatar access token');
 }
 
 app.post('/api/heygen/create-session', async (req, res) => {
@@ -531,14 +582,7 @@ app.post('/api/heygen/create-session', async (req, res) => {
       }
     };
 
-    console.log('Requesting LiveAvatar access token...');
-    const accessTokenData = await mintLiveAvatarAccessToken(LIVEAVATAR_API_KEY, liveAvatarPayload);
-    const accessToken = accessTokenData.token;
-    const tokenExpiresIn = accessTokenData.expires_in;
-    console.log('LiveAvatar access token received, expires_in:', tokenExpiresIn);
-
     console.log('Creating LiveAvatar session with:', { avatar_id: AVATAR_ID, voice_id: VOICE_ID });
-
     const heygenResponse = await fetch(
       'https://api.liveavatar.com/v1/sessions/token',
       {
@@ -564,6 +608,12 @@ app.post('/api/heygen/create-session', async (req, res) => {
       session_id: heygenData.session_id,
       has_token: !!heygenData.session_token
     });
+
+    console.log('Requesting LiveAvatar access token for session:', heygenData.session_id);
+    const accessTokenData = await mintLiveAvatarAccessToken(LIVEAVATAR_API_KEY, heygenData.session_id, liveAvatarPayload);
+    const accessToken = accessTokenData.token;
+    const tokenExpiresIn = accessTokenData.expires_in;
+    console.log('LiveAvatar access token received from', accessTokenData.endpoint, 'expires_in:', tokenExpiresIn);
 
     res.json({
       session_id: heygenData.session_id,
