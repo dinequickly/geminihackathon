@@ -162,6 +162,7 @@ const HUME_API_KEY = process.env.HUME_API_KEY || '';
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const LIVEAVATAR_API_KEY = process.env.LIVEAVATAR_API_KEY || process.env.HEYGEN_API_KEY || '';
 
 // Stripe client
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, {
@@ -462,6 +463,28 @@ app.post('/api/interviews/:conversationId/end', async (req, res) => {
 // ============================================
 // HEYGEN LIVEAVATAR
 // ============================================
+
+async function mintLiveAvatarAccessToken(apiKey: string, payload: Record<string, any>) {
+  const response = await fetch('https://api.liveavatar.com/v1/token', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'accept': 'application/json',
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || !data?.token) {
+    const message = data?.message || data?.error || 'Failed to mint LiveAvatar access token';
+    throw new Error(`LiveAvatar token request failed (${response.status}): ${message}`);
+  }
+
+  return data;
+}
+
 app.post('/api/heygen/create-session', async (req, res) => {
   try {
     const { user_id } = req.body;
@@ -492,34 +515,27 @@ app.post('/api/heygen/create-session', async (req, res) => {
       });
     }
 
-    const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY;
-
-    if (!HEYGEN_API_KEY) {
-      return res.status(500).json({ error: 'HeyGen API key not configured' });
+    if (!LIVEAVATAR_API_KEY) {
+      return res.status(500).json({ error: 'LiveAvatar API key not configured' });
     }
 
-    // Debug: Log if API key exists (not the actual key)
-    console.log('HEYGEN_API_KEY exists:', !!HEYGEN_API_KEY);
-    console.log('HEYGEN_API_KEY length:', HEYGEN_API_KEY.length);
-    console.log('HEYGEN_API_KEY starts with:', HEYGEN_API_KEY.substring(0, 10));
-
-    // Test if API key works with a simple endpoint first
-    console.log('Testing API key with avatars list endpoint...');
-    const testResponse = await fetch('https://api.heygen.com/v2/avatars', {
-      headers: { 'x-api-key': HEYGEN_API_KEY }
-    });
-    console.log('Test response status:', testResponse.status);
-    if (!testResponse.ok) {
-      const testError = await testResponse.json().catch(() => ({}));
-      console.log('Test API call failed:', testError);
-    } else {
-      console.log('Test API call succeeded - key is valid for basic endpoints');
-    }
-
-    // Call LiveAvatar API to create session token
-    // Use environment variables for avatar and voice IDs
     const AVATAR_ID = process.env.LIVEAVATAR_AVATAR_ID || '246e8d9d-5826-4f49-b8a0-07cb73ff7556';
     const VOICE_ID = process.env.LIVEAVATAR_VOICE_ID || '246e8d9d-5826-4f49-b8a0-07cb73ff7556';
+
+    const liveAvatarPayload = {
+      mode: 'FULL',
+      avatar_id: AVATAR_ID,
+      avatar_persona: {
+        voice_id: VOICE_ID,
+        language: 'en'
+      }
+    };
+
+    console.log('Requesting LiveAvatar access token...');
+    const accessTokenData = await mintLiveAvatarAccessToken(LIVEAVATAR_API_KEY, liveAvatarPayload);
+    const accessToken = accessTokenData.token;
+    const tokenExpiresIn = accessTokenData.expires_in;
+    console.log('LiveAvatar access token received, expires_in:', tokenExpiresIn);
 
     console.log('Creating LiveAvatar session with:', { avatar_id: AVATAR_ID, voice_id: VOICE_ID });
 
@@ -528,25 +544,18 @@ app.post('/api/heygen/create-session', async (req, res) => {
       {
         method: 'POST',
         headers: {
-          'X-API-KEY': HEYGEN_API_KEY,
+          'X-API-KEY': LIVEAVATAR_API_KEY,
           'accept': 'application/json',
           'content-type': 'application/json'
         },
-        body: JSON.stringify({
-          mode: 'FULL',
-          avatar_id: AVATAR_ID,
-          avatar_persona: {
-            voice_id: VOICE_ID,
-            language: 'en'
-          }
-        })
+        body: JSON.stringify(liveAvatarPayload)
       }
     );
 
     if (!heygenResponse.ok) {
       const errorData = await heygenResponse.json().catch(() => ({}));
-      console.error('HeyGen API error:', errorData);
-      throw new Error('Failed to create HeyGen session');
+      console.error('LiveAvatar session creation error:', errorData);
+      throw new Error('Failed to create LiveAvatar session');
     }
 
     const heygenData = await heygenResponse.json();
@@ -556,17 +565,17 @@ app.post('/api/heygen/create-session', async (req, res) => {
       has_token: !!heygenData.session_token
     });
 
-    // Return session token for LiveAvatar Web SDK
     res.json({
       session_id: heygenData.session_id,
       session_token: heygenData.session_token,
-      access_token: heygenData.session_token, // Use session_token as access_token for SDK
+      access_token: accessToken,
+      token_expires_in: tokenExpiresIn || null,
       url: heygenData.url || null,
       session_duration_limit: heygenData.session_duration_limit || null,
       is_paid: heygenData.is_paid || false
     });
   } catch (error: any) {
-    console.error('Create HeyGen session error:', error);
+    console.error('Create LiveAvatar session error:', error);
     res.status(500).json({ error: error.message });
   }
 });

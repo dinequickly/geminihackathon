@@ -793,8 +793,10 @@ class ApiClient {
   async createHeyGenSession(userId: string): Promise<{
     session_id: string;
     access_token: string;
-    url: string;
-    session_duration_limit: number;
+    session_token: string | null;
+    token_expires_in: number | null;
+    url: string | null;
+    session_duration_limit: number | null;
     is_paid: boolean;
   }> {
     return this.request('/api/heygen/create-session', {

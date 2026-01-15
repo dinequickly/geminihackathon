@@ -81,6 +81,12 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
         duration_limit: sessionData.session_duration_limit
       });
 
+      if (!sessionData.access_token) {
+        throw new Error('LiveAvatar access token missing');
+      }
+
+      console.log('Access token expires in seconds:', sessionData.token_expires_in);
+
       // Initialize LiveAvatar session
       const avatarSession = new LiveAvatarSession(sessionData.access_token, {
         voiceChat: true,
