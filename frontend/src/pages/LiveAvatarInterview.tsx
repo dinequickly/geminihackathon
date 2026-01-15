@@ -92,17 +92,22 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
 
       console.log('LiveAvatar session initialized:', avatarSession);
 
+      avatarSession.on(SessionEvent.SESSION_STREAM_READY, () => {
+        if (videoRef.current) {
+          avatarSession.attach(videoRef.current);
+          console.log('Attached LiveAvatar stream to video element (stream-ready)');
+        }
+      });
+
       // Start the session
       await avatarSession.start();
 
       console.log('Session started successfully');
 
-      avatarSession.on(SessionEvent.SESSION_STREAM_READY, () => {
-        if (videoRef.current) {
-          avatarSession.attach(videoRef.current);
-          console.log('Attached LiveAvatar stream to video element');
-        }
-      });
+      if (videoRef.current) {
+        avatarSession.attach(videoRef.current);
+        console.log('Attached LiveAvatar stream to video element (post-start)');
+      }
 
       setSession(avatarSession);
       setSessionActive(true);
