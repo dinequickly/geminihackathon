@@ -517,6 +517,12 @@ app.post('/api/heygen/create-session', async (req, res) => {
     }
 
     // Call LiveAvatar API to create session token
+    // Use environment variables for avatar and voice IDs
+    const AVATAR_ID = process.env.LIVEAVATAR_AVATAR_ID || '246e8d9d-5826-4f49-b8a0-07cb73ff7556';
+    const VOICE_ID = process.env.LIVEAVATAR_VOICE_ID || '246e8d9d-5826-4f49-b8a0-07cb73ff7556';
+
+    console.log('Creating LiveAvatar session with:', { avatar_id: AVATAR_ID, voice_id: VOICE_ID });
+
     const heygenResponse = await fetch(
       'https://api.liveavatar.com/v1/sessions/token',
       {
@@ -528,9 +534,9 @@ app.post('/api/heygen/create-session', async (req, res) => {
         },
         body: JSON.stringify({
           mode: 'FULL',
-          avatar_id: 'default',
+          avatar_id: AVATAR_ID,
           avatar_persona: {
-            voice_id: 'default',
+            voice_id: VOICE_ID,
             language: 'en'
           }
         })
