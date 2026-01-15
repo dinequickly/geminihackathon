@@ -15,7 +15,7 @@ import {
   PlayfulCharacter
 } from '../components/PlayfulUI';
 import { api } from '../lib/api';
-import { LiveAvatarSession } from '@heygen/liveavatar-web-sdk';
+import { LiveAvatarSession, SessionEvent } from '@heygen/liveavatar-web-sdk';
 
 interface LiveAvatarInterviewProps {
   userId: string;
@@ -97,7 +97,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
 
       console.log('Session started successfully');
 
-      avatarSession.on('stream-ready', () => {
+      avatarSession.on(SessionEvent.SESSION_STREAM_READY, () => {
         if (videoRef.current) {
           avatarSession.attach(videoRef.current);
           console.log('Attached LiveAvatar stream to video element');
