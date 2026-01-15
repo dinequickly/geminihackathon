@@ -97,6 +97,13 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
 
       console.log('Session started successfully');
 
+      avatarSession.on('stream-ready', () => {
+        if (videoRef.current) {
+          avatarSession.attach(videoRef.current);
+          console.log('Attached LiveAvatar stream to video element');
+        }
+      });
+
       setSession(avatarSession);
       setSessionActive(true);
 
