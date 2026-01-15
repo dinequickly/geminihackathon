@@ -516,17 +516,23 @@ app.post('/api/heygen/create-session', async (req, res) => {
       console.log('Test API call succeeded - key is valid for basic endpoints');
     }
 
-    // Call HeyGen Streaming API to create session
+    // Call LiveAvatar API to create session token
     const heygenResponse = await fetch(
-      'https://api.heygen.com/v1/streaming.new',
+      'https://api.liveavatar.com/v1/sessions/token',
       {
         method: 'POST',
         headers: {
-          'x-api-key': HEYGEN_API_KEY,
-          'Content-Type': 'application/json'
+          'X-API-KEY': HEYGEN_API_KEY,
+          'accept': 'application/json',
+          'content-type': 'application/json'
         },
         body: JSON.stringify({
-          quality: 'high'
+          mode: 'FULL',
+          avatar_id: 'default',
+          avatar_persona: {
+            voice_id: 'default',
+            language: 'en'
+          }
         })
       }
     );
@@ -539,15 +545,19 @@ app.post('/api/heygen/create-session', async (req, res) => {
 
     const heygenData = await heygenResponse.json();
 
-    console.log('HeyGen session created:', heygenData);
+    console.log('LiveAvatar session created successfully:', {
+      session_id: heygenData.session_id,
+      has_token: !!heygenData.session_token
+    });
 
-    // Return session details from streaming.new API
+    // Return session token for LiveAvatar Web SDK
     res.json({
-      session_id: heygenData.data.session_id,
-      access_token: heygenData.data.access_token,
-      url: heygenData.data.url,
-      session_duration_limit: heygenData.data.session_duration_limit,
-      is_paid: heygenData.data.is_paid
+      session_id: heygenData.session_id,
+      session_token: heygenData.session_token,
+      access_token: heygenData.session_token, // Use session_token as access_token for SDK
+      url: heygenData.url || null,
+      session_duration_limit: heygenData.session_duration_limit || null,
+      is_paid: heygenData.is_paid || false
     });
   } catch (error: any) {
     console.error('Create HeyGen session error:', error);
