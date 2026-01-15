@@ -499,6 +499,19 @@ app.post('/api/heygen/create-session', async (req, res) => {
     console.log('HEYGEN_API_KEY length:', HEYGEN_API_KEY?.length);
     console.log('HEYGEN_API_KEY starts with:', HEYGEN_API_KEY?.substring(0, 10));
 
+    // Test if API key works with a simple endpoint first
+    console.log('Testing API key with avatars list endpoint...');
+    const testResponse = await fetch('https://api.heygen.com/v2/avatars', {
+      headers: { 'x-api-key': HEYGEN_API_KEY }
+    });
+    console.log('Test response status:', testResponse.status);
+    if (!testResponse.ok) {
+      const testError = await testResponse.json().catch(() => ({}));
+      console.log('Test API call failed:', testError);
+    } else {
+      console.log('Test API call succeeded - key is valid for basic endpoints');
+    }
+
     if (!HEYGEN_API_KEY) {
       return res.status(500).json({ error: 'HeyGen API key not configured' });
     }
