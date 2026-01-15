@@ -494,6 +494,11 @@ app.post('/api/heygen/create-session', async (req, res) => {
 
     const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY;
 
+    // Debug: Log if API key exists (not the actual key)
+    console.log('HEYGEN_API_KEY exists:', !!HEYGEN_API_KEY);
+    console.log('HEYGEN_API_KEY length:', HEYGEN_API_KEY?.length);
+    console.log('HEYGEN_API_KEY starts with:', HEYGEN_API_KEY?.substring(0, 10));
+
     if (!HEYGEN_API_KEY) {
       return res.status(500).json({ error: 'HeyGen API key not configured' });
     }
