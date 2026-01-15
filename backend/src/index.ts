@@ -577,7 +577,7 @@ app.post('/api/heygen/create-session', async (req, res) => {
     const accessTokenData = await mintLiveAvatarAccessToken(LIVEAVATAR_API_KEY, liveAvatarPayload);
     const accessToken = accessTokenData.token;
     const tokenExpiresIn = accessTokenData.expires_in;
-    console.log('LiveAvatar access token received from', accessTokenData.endpoint, 'expires_in:', tokenExpiresIn);
+    console.log('LiveAvatar access token received, expires_in:', tokenExpiresIn);
 
     res.json({
       session_id: heygenData.session_id,
