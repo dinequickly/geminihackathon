@@ -791,12 +791,12 @@ class ApiClient {
 
   // HeyGen LiveAvatar endpoints
   async createHeyGenSession(userId: string): Promise<{
-    session_id: string;
-    access_token: string;
+    session_id: string | null;
     session_token: string | null;
+    access_token: string;
     token_expires_in: number | null;
-    url: string | null;
-    session_duration_limit: number | null;
+    avatar_id: string;
+    voice_id: string;
     is_paid: boolean;
   }> {
     return this.request('/api/heygen/create-session', {

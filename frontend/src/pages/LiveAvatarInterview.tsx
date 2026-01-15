@@ -77,8 +77,9 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
 
       console.log('Session data received:', {
         session_id: sessionData.session_id,
-        url: sessionData.url,
-        duration_limit: sessionData.session_duration_limit
+        avatar_id: sessionData.avatar_id,
+        voice_id: sessionData.voice_id,
+        token_expires_in: sessionData.token_expires_in
       });
 
       if (!sessionData.access_token) {

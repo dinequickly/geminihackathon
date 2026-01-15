@@ -476,7 +476,7 @@ async function mintLiveAvatarAccessToken(apiKey: string, payload: Record<string,
   const response = await fetch('https://api.liveavatar.com/v1/token', {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
+      'X-API-KEY': apiKey,
       accept: 'application/json',
       'content-type': 'application/json'
     },
@@ -546,33 +546,6 @@ app.post('/api/heygen/create-session', async (req, res) => {
       }
     };
 
-    console.log('Creating LiveAvatar session with:', { avatar_id: AVATAR_ID, voice_id: VOICE_ID });
-    const heygenResponse = await fetch(
-      'https://api.liveavatar.com/v1/sessions/token',
-      {
-        method: 'POST',
-        headers: {
-          'X-API-KEY': LIVEAVATAR_API_KEY,
-          'accept': 'application/json',
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify(liveAvatarPayload)
-      }
-    );
-
-    if (!heygenResponse.ok) {
-      const errorData = await heygenResponse.json().catch(() => ({}));
-      console.error('LiveAvatar session creation error:', errorData);
-      throw new Error('Failed to create LiveAvatar session');
-    }
-
-    const heygenData = await heygenResponse.json();
-
-    console.log('LiveAvatar session created successfully:', {
-      session_id: heygenData.session_id,
-      has_token: !!heygenData.session_token
-    });
-
     console.log('Requesting LiveAvatar access token');
     const accessTokenData = await mintLiveAvatarAccessToken(LIVEAVATAR_API_KEY, liveAvatarPayload);
     const accessToken = accessTokenData.token;
@@ -580,13 +553,13 @@ app.post('/api/heygen/create-session', async (req, res) => {
     console.log('LiveAvatar access token received, expires_in:', tokenExpiresIn);
 
     res.json({
-      session_id: heygenData.session_id,
-      session_token: heygenData.session_token,
+      session_id: null,
+      session_token: null,
       access_token: accessToken,
       token_expires_in: tokenExpiresIn || null,
-      url: heygenData.url || null,
-      session_duration_limit: heygenData.session_duration_limit || null,
-      is_paid: heygenData.is_paid || false
+      avatar_id: AVATAR_ID,
+      voice_id: VOICE_ID,
+      is_paid: false
     });
   } catch (error: any) {
     console.error('Create LiveAvatar session error:', error);
