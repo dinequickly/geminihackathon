@@ -460,17 +460,6 @@ app.post('/api/interviews/:conversationId/end', async (req, res) => {
   }
 });
 
-// ============================================
-// HEYGEN LIVEAVATAR
-// ============================================
-
-type TokenFetcher = {
-  name: string;
-  url: string;
-  body?: Record<string, unknown>;
-  fallbackOnNotFound?: boolean;
-};
-
 async function mintLiveAvatarAccessToken(apiKey: string, payload: Record<string, any>) {
   console.log('Requesting LiveAvatar access token from /v1/token');
   const response = await fetch('https://api.liveavatar.com/v1/token', {
