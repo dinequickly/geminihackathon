@@ -17,6 +17,7 @@ import {
   PlayfulCharacter
 } from '../components/PlayfulUI';
 import { api, InterviewPack, InterviewQuestion } from '../lib/api';
+import { posthog } from '../lib/posthog';
 
 interface FlashcardPracticeProps {
   userId: string;
@@ -59,6 +60,14 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
         });
 
         setQuestions(data.questions);
+
+        // Track flashcard practice started
+        posthog.capture('flashcard_practice_started', {
+          pack_id: packId,
+          pack_name: data.pack.name,
+          question_count: data.questions.length,
+          category: data.pack.category
+        });
       } catch (err) {
         console.error('Failed to load pack details:', err);
         setError('Failed to load pack details. Please try again.');
@@ -85,6 +94,15 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
       setIsFlipped(false);
     } else {
       setShowSummary(true);
+
+      // Track flashcard practice completed
+      posthog.capture('flashcard_practice_completed', {
+        pack_id: packId,
+        pack_name: pack?.name,
+        questions_reviewed: completed.size,
+        questions_marked_difficult: markedDifficult.size,
+        total_questions: questions.length
+      });
     }
   };
 

@@ -9,6 +9,7 @@ import InterviewSettings from './pages/InterviewSettings';
 import PackDetails from './pages/PackDetails';
 import FlashcardPractice from './pages/FlashcardPractice';
 import LiveAvatarInterview from './pages/LiveAvatarInterview';
+import { initPostHog, posthog } from './lib/posthog';
 
 // Simple user context - in production, use proper state management
 interface UserContext {
@@ -23,11 +24,21 @@ function App() {
     return localStorage.getItem('interviewpro_user_id');
   });
 
+  // Initialize PostHog on mount
+  useEffect(() => {
+    initPostHog();
+  }, []);
+
+  // Update user context and identify user in PostHog
   useEffect(() => {
     if (userId) {
       localStorage.setItem('interviewpro_user_id', userId);
+      // Identify user in PostHog
+      posthog.identify(userId);
     } else {
       localStorage.removeItem('interviewpro_user_id');
+      // Reset PostHog user
+      posthog.reset();
     }
     UserContext.userId = userId;
     UserContext.setUserId = setUserId;

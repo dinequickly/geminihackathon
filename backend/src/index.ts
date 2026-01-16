@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import Stripe from 'stripe';
 import { runFullAnalysis } from './analysis/orchestrator.js';
+import { trackEvent } from './posthog.js';
 
 dotenv.config();
 
@@ -62,6 +63,13 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
           current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
           plan_name: subscription.items.data[0].price.nickname || 'Premium Plan'
+        });
+
+        // Track subscription event
+        trackEvent(userId, 'subscription_created', {
+          plan_name: subscription.items.data[0].price.nickname || 'Premium Plan',
+          price_id: subscription.items.data[0].price.id,
+          status: subscription.status
         });
 
         console.log(`Subscription created for user ${userId}`);
@@ -319,6 +327,13 @@ app.post('/api/users/onboard', async (req, res) => {
       }).catch(err => console.error('LinkedIn webhook failed:', err));
     }
 
+    // Track user signup event
+    trackEvent(userId, existing ? 'user_profile_updated' : 'user_signed_up', {
+      email,
+      has_linkedin: !!linkedin_url,
+      profile_status: linkedin_url ? 'processing' : 'ready'
+    });
+
     res.json({
       user_id: userId,
       status: linkedin_url ? 'processing' : 'ready',
@@ -419,6 +434,12 @@ app.post('/api/interviews/start', async (req, res) => {
     }
 
     const elData = await elResponse.json();
+
+    // Track interview start event
+    trackEvent(user_id, 'interview_started', {
+      conversation_id: conversation.id,
+      agent_id: ELEVENLABS_AGENT_ID
+    });
 
     res.json({
       conversation_id: conversation.id,
@@ -539,6 +560,14 @@ app.post('/api/heygen/create-session', async (req, res) => {
     console.log('LiveAvatar session created successfully:', {
       session_id: sessionId,
       has_token: true
+    });
+
+    // Track LiveAvatar session creation
+    trackEvent(user_id, 'liveavatar_session_created', {
+      session_id: sessionId,
+      avatar_id: AVATAR_ID,
+      voice_id: VOICE_ID,
+      plan: subscription.plan_name
     });
 
     res.json({

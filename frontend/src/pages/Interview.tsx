@@ -13,6 +13,7 @@ import {
 import { api } from '../lib/api';
 import { useElevenLabs, ConnectionStatus } from '../hooks/useElevenLabs';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
+import { posthog } from '../lib/posthog';
 
 interface InterviewProps {
   userId: string;
@@ -204,6 +205,12 @@ export default function Interview({ userId }: InterviewProps) {
           // Continue even if upload fails
         }
       }
+
+      // Track interview completion
+      posthog.capture('interview_completed', {
+        conversation_id: conversationId,
+        duration_seconds: recordingBlobRef.current ? Math.floor(recordingBlobRef.current.size / 1000) : 0
+      });
 
       // Navigate to results (will show processing state)
       navigate(`/results/${conversationId}`);
