@@ -61,7 +61,7 @@ export function PlayfulButton({
 // Playful Card Component
 interface PlayfulCardProps {
   children: React.ReactNode;
-  variant?: 'white' | 'sky' | 'sunshine' | 'coral' | 'mint';
+  variant?: 'white' | 'primary' | 'sky' | 'sunshine' | 'coral' | 'mint';
   hover?: boolean;
   className?: string;
 }
@@ -74,6 +74,7 @@ export function PlayfulCard({
 }: PlayfulCardProps) {
   const variantClasses = {
     white: 'bg-white border-2 border-gray-100',
+    primary: 'bg-primary-50 border-2 border-primary-200',
     sky: 'bg-sky-50 border-2 border-sky-200',
     sunshine: 'bg-sunshine-50 border-2 border-sunshine-200',
     coral: 'bg-coral-50 border-2 border-coral-200',

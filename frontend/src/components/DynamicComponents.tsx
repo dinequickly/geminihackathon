@@ -1,13 +1,7 @@
-import React, { useState } from 'react';
-import { 
-  HelpCircle, 
-  List, 
-  Type, 
-  Sliders, 
-  Info, 
-  Hash, 
-  Clock, 
-  Star,
+import React from 'react';
+import {
+  Info,
+  Clock,
   Check,
   AlertTriangle,
   Lightbulb
@@ -23,11 +17,11 @@ export interface DynamicComponentProps {
 }
 
 // --- 1. QuestionCard ---
-export const QuestionCard: React.FC<DynamicComponentProps & { question: string }> = ({ 
-  id, onChange, value, question 
+export const QuestionCard: React.FC<DynamicComponentProps & { question: string }> = ({
+  onChange, value, question
 }) => {
   return (
-    <PlayfulCard className="border-2 border-primary-200" variant="primary">
+    <PlayfulCard className="border-2 border-primary-200">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center text-primary-700 font-bold text-lg">
           Q
@@ -62,7 +56,7 @@ export const QuestionCard: React.FC<DynamicComponentProps & { question: string }
 
 // --- 2. MultiChoiceCard ---
 export const MultiChoiceCard: React.FC<DynamicComponentProps & { question: string; options: string[] }> = ({
-  id, onChange, value, question, options
+  onChange, value, question, options
 }) => {
   return (
     <PlayfulCard className="border-2 border-sky-200" variant="sky">
@@ -100,7 +94,7 @@ export const MultiChoiceCard: React.FC<DynamicComponentProps & { question: strin
 
 // --- 3. TextInputCard ---
 export const TextInputCard: React.FC<DynamicComponentProps & { label: string; placeholder: string; maxLength?: number }> = ({
-  id, onChange, value = '', label, placeholder, maxLength = 100
+  onChange, value = '', label, placeholder, maxLength = 100
 }) => {
   return (
     <PlayfulCard className="border-2 border-sunshine-200" variant="sunshine">
@@ -129,7 +123,7 @@ export const TextInputCard: React.FC<DynamicComponentProps & { label: string; pl
 
 // --- 4. SliderCard ---
 export const SliderCard: React.FC<DynamicComponentProps & { label: string; min: number; max: number; unitLabels?: [string, string] }> = ({
-  id, onChange, value, label, min, max, unitLabels
+  onChange, value, label, min, max, unitLabels
 }) => {
   const currentValue = value ?? Math.floor((min + max) / 2);
 
@@ -191,7 +185,7 @@ export const InfoCard: React.FC<{ title: string; message: string; variant: 'info
 
 // --- 6. TagSelector ---
 export const TagSelector: React.FC<DynamicComponentProps & { label: string; availableTags: string[]; maxSelections?: number }> = ({
-  id, onChange, value = [], label, availableTags, maxSelections = 4
+  onChange, value = [], label, availableTags, maxSelections = 4
 }) => {
   const toggleTag = (tag: string) => {
     const current = Array.isArray(value) ? value : [];
@@ -237,7 +231,7 @@ export const TagSelector: React.FC<DynamicComponentProps & { label: string; avai
 
 // --- 7. TimeSelector ---
 export const TimeSelector: React.FC<DynamicComponentProps & { label: string; minMinutes?: number; maxMinutes?: number }> = ({
-  id, onChange, value = 30, label, minMinutes = 15, maxMinutes = 120
+  onChange, value = 30, label, minMinutes = 15, maxMinutes = 120
 }) => {
   const changeTime = (delta: number) => {
     const newVal = Math.max(minMinutes, Math.min(maxMinutes, (value || 30) + delta));
@@ -277,7 +271,7 @@ export const TimeSelector: React.FC<DynamicComponentProps & { label: string; min
 
 // --- 8. ScenarioCard ---
 export const ScenarioCard: React.FC<DynamicComponentProps & { title: string; description: string; includes: string[] }> = ({
-  id, onChange, value, title, description, includes
+  onChange, value, title, description, includes
 }) => {
   return (
     <div

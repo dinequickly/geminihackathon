@@ -632,7 +632,7 @@
             color: white;
         }
 
-        /* TimeSelector */
+        /* TimeSelector - Draggable */
         .time-selector-card {
             background: white;
             border: 2px solid var(--gray-200);
@@ -642,36 +642,98 @@
 
         .time-display {
             text-align: center;
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 900;
-            color: var(--primary-500);
+            background: linear-gradient(135deg, var(--primary-500), var(--coral-500));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin: 1rem 0;
             font-family: 'Outfit', sans-serif;
+            user-select: none;
         }
 
-        .time-controls {
+        .time-dial-container {
             display: flex;
             justify-content: center;
-            gap: 1rem;
+            align-items: center;
+            margin: 2rem 0;
+            position: relative;
         }
 
-        .time-btn {
-            width: 3rem;
-            height: 3rem;
+        .time-dial {
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
-            border: 2px solid var(--primary-300);
-            background: white;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-500);
-            cursor: pointer;
-            transition: all 0.2s ease;
+            background: linear-gradient(135deg, var(--primary-50), var(--coral-50));
+            border: 4px solid var(--primary-200);
+            position: relative;
+            cursor: grab;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.2), inset 0 0 30px rgba(255, 107, 53, 0.1);
         }
 
-        .time-btn:hover {
-            background: var(--primary-500);
-            color: white;
-            transform: scale(1.1);
+        .time-dial:active {
+            cursor: grabbing;
+            box-shadow: 0 12px 32px rgba(255, 107, 53, 0.3), inset 0 0 40px rgba(255, 107, 53, 0.15);
+            transform: scale(1.02);
+        }
+
+        .time-dial-indicator {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 35%;
+            background: linear-gradient(180deg, var(--primary-500), var(--coral-500));
+            border-radius: 3px;
+            transform-origin: bottom center;
+            transition: transform 0.1s ease;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+        }
+
+        .time-dial-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--primary-500), var(--coral-500));
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .time-dial-marks {
+            position: absolute;
+            inset: 0;
+        }
+
+        .time-dial-mark {
+            position: absolute;
+            width: 2px;
+            height: 8px;
+            background: var(--primary-300);
+            left: 50%;
+            top: 5%;
+            transform-origin: center 95px;
+            border-radius: 1px;
+        }
+
+        .time-dial-mark.major {
+            height: 12px;
+            width: 3px;
+            background: var(--primary-400);
+        }
+
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            font-weight: 600;
         }
 
         /* ScenarioCard */
@@ -1093,7 +1155,7 @@
                     </div>
                 </div>
                 <p class="component-desc">
-                    Time duration selector with increment/decrement controls. Set interview length or practice session duration.
+                    Draggable dial time selector with smooth circular interaction. Drag the dial to adjust interview duration.
                 </p>
                 <div class="props-section">
                     <div class="props-title">Props</div>
@@ -1101,17 +1163,25 @@
                         label: string<br>
                         minMinutes: number<br>
                         maxMinutes: number<br>
-                        default: number
+                        default: number<br>
+                        step?: number
                     </div>
                 </div>
                 <div class="demo-section">
-                    <div class="demo-label">Live Demo</div>
+                    <div class="demo-label">Live Demo - Drag the Dial!</div>
                     <div class="time-selector-card">
                         <div class="question-text">Interview Duration</div>
                         <div class="time-display" id="timeDisplay">30 min</div>
-                        <div class="time-controls">
-                            <button class="time-btn" onclick="changeTime(-5)">-</button>
-                            <button class="time-btn" onclick="changeTime(5)">+</button>
+                        <div class="time-dial-container">
+                            <div class="time-dial" id="timeDial">
+                                <div class="time-dial-marks" id="timeDialMarks"></div>
+                                <div class="time-dial-indicator" id="timeDialIndicator"></div>
+                                <div class="time-dial-center"></div>
+                            </div>
+                        </div>
+                        <div class="time-labels">
+                            <span>15 min</span>
+                            <span>120 min</span>
                         </div>
                     </div>
                 </div>
@@ -1227,11 +1297,98 @@
             }
         }
 
-        // TimeSelector
+        // TimeSelector - Draggable Dial
         let currentTime = 30;
-        function changeTime(delta) {
-            currentTime = Math.max(15, Math.min(120, currentTime + delta));
-            document.getElementById('timeDisplay').textContent = `${currentTime} min`;
+        const minTime = 15;
+        const maxTime = 120;
+        const timeStep = 5;
+
+        // Initialize dial
+        function initTimeDial() {
+            const dial = document.getElementById('timeDial');
+            const indicator = document.getElementById('timeDialIndicator');
+            const marksContainer = document.getElementById('timeDialMarks');
+
+            // Create dial marks
+            for (let i = 0; i < 24; i++) {
+                const mark = document.createElement('div');
+                mark.className = i % 6 === 0 ? 'time-dial-mark major' : 'time-dial-mark';
+                mark.style.transform = `rotate(${i * 15}deg)`;
+                marksContainer.appendChild(mark);
+            }
+
+            let isDragging = false;
+            let lastAngle = getAngleFromTime(currentTime);
+
+            function getAngleFromTime(time) {
+                const range = maxTime - minTime;
+                const ratio = (time - minTime) / range;
+                return ratio * 360;
+            }
+
+            function getTimeFromAngle(angle) {
+                const normalizedAngle = ((angle % 360) + 360) % 360;
+                const ratio = normalizedAngle / 360;
+                const time = minTime + (ratio * (maxTime - minTime));
+                return Math.round(time / timeStep) * timeStep;
+            }
+
+            function updateDial(time) {
+                currentTime = Math.max(minTime, Math.min(maxTime, time));
+                const angle = getAngleFromTime(currentTime);
+                indicator.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+                document.getElementById('timeDisplay').textContent = `${currentTime} min`;
+            }
+
+            function getAngle(event, rect) {
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const clientX = event.clientX || event.touches[0].clientX;
+                const clientY = event.clientY || event.touches[0].clientY;
+                const deltaX = clientX - centerX;
+                const deltaY = clientY - centerY;
+                return Math.atan2(deltaY, deltaX) * (180 / Math.PI) + 90;
+            }
+
+            function handleStart(event) {
+                isDragging = true;
+                const rect = dial.getBoundingClientRect();
+                lastAngle = getAngle(event, rect);
+            }
+
+            function handleMove(event) {
+                if (!isDragging) return;
+                event.preventDefault();
+
+                const rect = dial.getBoundingClientRect();
+                const currentAngle = getAngle(event, rect);
+                const newTime = getTimeFromAngle(currentAngle);
+                updateDial(newTime);
+            }
+
+            function handleEnd() {
+                isDragging = false;
+            }
+
+            // Mouse events
+            dial.addEventListener('mousedown', handleStart);
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+
+            // Touch events
+            dial.addEventListener('touchstart', handleStart);
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('touchend', handleEnd);
+
+            // Initialize position
+            updateDial(currentTime);
+        }
+
+        // Initialize on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initTimeDial);
+        } else {
+            initTimeDial();
         }
 
         // ScenarioCard

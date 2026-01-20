@@ -37,18 +37,20 @@ export const DynamicRenderer: React.FC<DynamicRendererProps> = ({ tree, onValues
           return null;
         }
 
+        const componentProps = {
+          id: component.id,
+          value: values[component.id],
+          onChange: (val: any) => handleValueChange(component.id, val),
+          ...component.props
+        };
+
         return (
           <div
             key={component.id}
             className="animate-fade-in"
             style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
           >
-            <Component
-              {...component.props}
-              id={component.id}
-              value={values[component.id]}
-              onChange={(val: any) => handleValueChange(component.id, val)}
-            />
+            <Component {...componentProps as any} />
           </div>
         );
       })}

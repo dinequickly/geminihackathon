@@ -7,9 +7,8 @@ import {
   AlertCircle,
   Video
 } from 'lucide-react';
-import { 
-  PlayfulButton, 
-  PlayfulCard
+import {
+  PlayfulButton
 } from '../components/PlayfulUI';
 import { DynamicRenderer, ComponentSchema } from '../components/DynamicRenderer';
 import { api } from '../lib/api';
