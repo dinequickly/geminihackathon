@@ -859,89 +859,78 @@ class ApiClient {
   }
 
   async getDynamicComponents(intent: string, personalContext?: string): Promise<any[]> {
-    // New endpoint for full component rendering
-    // Webhook URL: https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b (using same for now)
-    const N8N_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b';
-    
-    try {
-      const response = await fetch(N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          intent,
-          personal_context: personalContext,
-          mode: 'component_tree' // Signal to webhook to return tree
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+    // Call backend proxy to avoid CORS issues with n8n
+    return this.request('/api/ai/dynamic-components', {
+      method: 'POST',
+      body: JSON.stringify({
+        intent,
+        personal_context: personalContext,
+        mode: 'component_tree'
+      })
+    }).then(data => {
         if (Array.isArray(data.tree)) return data.tree;
         if (Array.isArray(data)) return data;
-      }
-    } catch (e) {
-      console.warn('Webhook failed, using mock catalog:', e);
-    }
-
-    // Mock catalog response based on intent (fallback)
-    return [
-      {
-        type: 'InfoCard',
-        id: 'info1',
-        props: {
-          title: 'Interview Context',
-          message: `We've analyzed your request for "${intent}". Please configure the specifics below.`,
-          variant: 'info'
-        }
-      },
-      {
-        type: 'MultiChoiceCard',
-        id: 'role_level',
-        props: {
-          question: 'Target Role Level',
-          options: ['Associate / Junior', 'Mid-Level', 'Senior', 'Staff / Principal', 'Executive']
-        }
-      },
-      {
-        type: 'TagSelector',
-        id: 'focus_areas',
-        props: {
-          label: 'Key Focus Areas',
-          availableTags: ['System Design', 'Behavioral', 'Live Coding', 'Product Sense', 'Leadership', 'Culture Fit'],
-          maxSelections: 3
-        }
-      },
-      {
-        type: 'ScenarioCard',
-        id: 'scenario_pressure',
-        props: {
-          title: 'Pressure Test Mode',
-          description: 'Simulate a high-stakes environment with challenging follow-ups and shorter time limits.',
-          includes: ['Rapid Fire', 'Deep Drill-down', 'Skeptical Interviewer']
-        }
-      },
-      {
-        type: 'SliderCard',
-        id: 'duration',
-        props: {
-          label: 'Session Duration (Minutes)',
-          min: 15,
-          max: 60,
-          unitLabels: ['Quick', 'Marathon']
-        }
-      },
-      {
-        type: 'TextInputCard',
-        id: 'specific_topic',
-        props: {
-          label: 'Specific Topic to Drill (Optional)',
-          placeholder: 'e.g., React Hooks, Distributed Caching, Conflict Resolution...',
-          maxLength: 50
-        }
-      }
-    ];
+        return []; // Fallback handled below if empty
+    }).catch(e => {
+        console.warn('Backend proxy failed, using mock catalog:', e);
+        // Fallback mock data
+        return [
+          {
+            type: 'InfoCard',
+            id: 'info1',
+            props: {
+              title: 'Interview Context',
+              message: `We've analyzed your request for "${intent}". Please configure the specifics below.`,
+              variant: 'info'
+            }
+          },
+          {
+            type: 'MultiChoiceCard',
+            id: 'role_level',
+            props: {
+              question: 'Target Role Level',
+              options: ['Associate / Junior', 'Mid-Level', 'Senior', 'Staff / Principal', 'Executive']
+            }
+          },
+          {
+            type: 'TagSelector',
+            id: 'focus_areas',
+            props: {
+              label: 'Key Focus Areas',
+              availableTags: ['System Design', 'Behavioral', 'Live Coding', 'Product Sense', 'Leadership', 'Culture Fit'],
+              maxSelections: 3
+            }
+          },
+          {
+            type: 'ScenarioCard',
+            id: 'scenario_pressure',
+            props: {
+              title: 'Pressure Test Mode',
+              description: 'Simulate a high-stakes environment with challenging follow-ups and shorter time limits.',
+              includes: ['Rapid Fire', 'Deep Drill-down', 'Skeptical Interviewer']
+            }
+          },
+          {
+            type: 'SliderCard',
+            id: 'duration',
+            props: {
+              label: 'Session Duration (Minutes)',
+              min: 15,
+              max: 60,
+              unitLabels: ['Quick', 'Marathon']
+            }
+          },
+          {
+            type: 'TextInputCard',
+            id: 'specific_topic',
+            props: {
+              label: 'Specific Topic to Drill (Optional)',
+              placeholder: 'e.g., React Hooks, Distributed Caching, Conflict Resolution...',
+              maxLength: 50
+            }
+          }
+        ];
+    });
   }
 }
 

@@ -341,6 +341,34 @@ app.post('/api/ai/generate-interview-config', async (req, res) => {
   }
 });
 
+app.post('/api/ai/dynamic-components', async (req, res) => {
+  try {
+    const { intent, personal_context, mode } = req.body;
+    
+    // N8n webhook for dynamic components
+    const N8N_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b';
+    
+    console.log('Fetching dynamic components from n8n for intent:', intent);
+    
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intent, personal_context, mode })
+    });
+
+    if (!response.ok) {
+      throw new Error(`N8n webhook failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    console.error('Dynamic components error:', error);
+    // Return error but frontend will handle fallback
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============================================
 // HEALTH CHECK
 // ============================================
