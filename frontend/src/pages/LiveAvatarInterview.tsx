@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
   Video,
   VideoOff,
   Sparkles,
@@ -23,7 +21,6 @@ interface LiveAvatarInterviewProps {
 const DEFAULT_CONVERSATION_PLAN = '';
 
 export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps) {
-  const navigate = useNavigate();
   const activeConversationRef = useRef<string | null>(null);
 
   const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
@@ -33,7 +30,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
-  const [conversationPlan, setConversationPlan] = useState(DEFAULT_CONVERSATION_PLAN);
+  const [conversationPlan] = useState(DEFAULT_CONVERSATION_PLAN);
   const sessionActive = Boolean(conversationUrl);
 
   // Check subscription on mount
