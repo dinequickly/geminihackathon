@@ -239,12 +239,12 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-semibold">Video Call Interview</h3>
+                  <h3 className="text-lg font-semibold">Tavus Video Interview</h3>
                   <span className="px-2 py-0.5 bg-sunshine-400 text-gray-900 text-xs font-bold rounded-full">
                     PREMIUM
                   </span>
                 </div>
-                <p className="text-sky-100 text-sm">AI video interviewer</p>
+                <p className="text-sky-100 text-sm">AI video interviewer powered by Tavus</p>
               </div>
             </div>
             <ChevronRight className="w-6 h-6" />

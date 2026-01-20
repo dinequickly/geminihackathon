@@ -170,7 +170,11 @@ const HUME_API_KEY = process.env.HUME_API_KEY || '';
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-const LIVEAVATAR_API_KEY = process.env.LIVEAVATAR_API_KEY || process.env.HEYGEN_API_KEY || '';
+const TAVUS_API_KEY = process.env.TAVUS_API_KEY || '';
+const TAVUS_BASE_URL = process.env.TAVUS_BASE_URL || 'https://api.tavus.io/v2';
+const TAVUS_REPLICA_ID = process.env.TAVUS_REPLICA_ID || '';
+const TAVUS_PERSONA_ID = process.env.TAVUS_PERSONA_ID || '';
+const TAVUS_CALLBACK_URL = process.env.TAVUS_CALLBACK_URL || '';
 
 // Stripe client
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, {
@@ -182,6 +186,112 @@ const supabase = createClient(
   SUPABASE_URL || 'https://placeholder.supabase.co', 
   process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_KEY || 'placeholder'
 );
+
+const DEFAULT_TAVUS_CONVERSATION_PLAN = [
+  '1. Warm introduction and confirm the target role.',
+  '2. Resume walkthrough focusing on impact and outcomes.',
+  '3. Role-specific questions based on the job description.',
+  '4. Behavioral questions using STAR format.',
+  '5. Candidate questions and wrap-up.'
+].join('\n');
+
+const buildConversationPlan = async (userId: string, requestedPlan?: string) => {
+  const trimmedPlan = requestedPlan?.trim();
+  if (trimmedPlan) return trimmedPlan;
+
+  const planParts: string[] = [];
+  const { data: prefs, error: prefsError } = await supabase
+    .from('user_interview_preferences')
+    .select('selected_mood_preset_id, custom_agent_id, use_dynamic_behavior')
+    .eq('user_id', userId)
+    .single();
+
+  if (prefsError && prefsError.code !== 'PGRST116') {
+    console.warn('Failed to load interview preferences:', prefsError);
+  }
+
+  if (prefs?.custom_agent_id) {
+    const { data: agent, error: agentError } = await supabase
+      .from('user_interview_agents')
+      .select('agent_name, system_prompt')
+      .eq('id', prefs.custom_agent_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (agentError) {
+      console.warn('Failed to load custom agent:', agentError);
+    } else if (agent?.system_prompt) {
+      planParts.push(`Custom interviewer plan (${agent.agent_name || 'Custom Agent'}):\n${agent.system_prompt}`);
+    }
+  }
+
+  if (prefs?.selected_mood_preset_id) {
+    const { data: mood, error: moodError } = await supabase
+      .from('interviewer_mood_presets')
+      .select('name, system_prompt_template')
+      .eq('id', prefs.selected_mood_preset_id)
+      .single();
+
+    if (moodError) {
+      console.warn('Failed to load mood preset:', moodError);
+    } else if (mood?.system_prompt_template) {
+      planParts.push(`Interviewer mood (${mood.name || 'Preset'}):\n${mood.system_prompt_template}`);
+    }
+  }
+
+  if (prefs?.use_dynamic_behavior) {
+    planParts.push('Dynamic behavior: adapt difficulty and follow-ups based on the candidate responses.');
+  }
+
+  if (planParts.length === 0) {
+    return DEFAULT_TAVUS_CONVERSATION_PLAN;
+  }
+
+  return planParts.join('\n\n');
+};
+
+const buildConversationContext = (user: any, conversationPlan: string) => {
+  const contextParts: string[] = [];
+
+  if (user?.name) {
+    contextParts.push(`Candidate Name: ${user.name}`);
+  }
+
+  const resume = user?.formatted_resume?.trim();
+  contextParts.push(`Candidate Resume:\n${resume || 'Not provided.'}`);
+
+  const jobDetails: string[] = [];
+  if (user?.job_title) jobDetails.push(`Job Title: ${user.job_title}`);
+  if (user?.job_description) jobDetails.push(`Job Description:\n${user.job_description}`);
+
+  const skills = user?.skills;
+  if (skills) {
+    const formattedSkills = Array.isArray(skills)
+      ? skills.join(', ')
+      : typeof skills === 'string'
+        ? skills
+        : JSON.stringify(skills);
+    jobDetails.push(`Candidate Skills: ${formattedSkills}`);
+  }
+
+  if (user?.experience_years !== undefined && user?.experience_years !== null) {
+    jobDetails.push(`Candidate Experience (years): ${user.experience_years}`);
+  }
+
+  contextParts.push(`Job Details:\n${jobDetails.length ? jobDetails.join('\n') : 'Not provided.'}`);
+
+  if (conversationPlan) {
+    contextParts.push(`Conversation Plan:\n${conversationPlan}`);
+  }
+
+  return contextParts.join('\n\n');
+};
+
+const getTavusHeaders = () => ({
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${TAVUS_API_KEY}`,
+  'x-api-key': TAVUS_API_KEY
+});
 
 // Middleware
 app.use(cors({
@@ -481,9 +591,9 @@ app.post('/api/interviews/:conversationId/end', async (req, res) => {
   }
 });
 
-app.post('/api/heygen/create-session', async (req, res) => {
+app.post('/api/tavus/conversations', async (req, res) => {
   try {
-    const { user_id } = req.body;
+    const { user_id, conversation_plan, callback_url } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id required' });
@@ -499,7 +609,7 @@ app.post('/api/heygen/create-session', async (req, res) => {
     if (subError || !subscription) {
       return res.status(403).json({
         error: 'Premium subscription required',
-        message: 'LiveAvatar interviews are available for premium members only'
+        message: 'Tavus video interviews are available for premium members only'
       });
     }
 
@@ -511,73 +621,126 @@ app.post('/api/heygen/create-session', async (req, res) => {
       });
     }
 
-    if (!LIVEAVATAR_API_KEY) {
-      return res.status(500).json({ error: 'LiveAvatar API key not configured' });
+    if (!TAVUS_API_KEY) {
+      return res.status(500).json({ error: 'Tavus API key not configured' });
     }
 
-    const AVATAR_ID = process.env.LIVEAVATAR_AVATAR_ID || '246e8d9d-5826-4f49-b8a0-07cb73ff7556';
-    const VOICE_ID = process.env.LIVEAVATAR_VOICE_ID || '246e8d9d-5826-4f49-b8a0-07cb73ff7556';
+    if (!TAVUS_REPLICA_ID || !TAVUS_PERSONA_ID) {
+      return res.status(500).json({ error: 'Tavus replica or persona not configured' });
+    }
 
-    const liveAvatarPayload = {
-      mode: 'FULL',
-      avatar_id: AVATAR_ID,
-      avatar_persona: {
-        voice_id: VOICE_ID,
-        language: 'en'
-      }
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, name, formatted_resume, job_description, job_title, skills, experience_years')
+      .eq('id', user_id)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const finalPlan = await buildConversationPlan(user_id, conversation_plan);
+    const conversationalContext = buildConversationContext(user, finalPlan);
+
+    const tavusPayload: Record<string, any> = {
+      replica_id: TAVUS_REPLICA_ID,
+      persona_id: TAVUS_PERSONA_ID,
+      conversation_name: `Interview Session - ${user.name || user_id}`,
+      conversational_context: conversationalContext,
+      model: 'tavus-gpt-oss',
+      speculative_inference: true,
+      turn_taking_patience: 'high',
+      replica_interruptibility: 'medium'
     };
 
-    console.log('Creating LiveAvatar session with:', { avatar_id: AVATAR_ID, voice_id: VOICE_ID });
-    const heygenResponse = await fetch('https://api.liveavatar.com/v1/sessions/token', {
+    if (callback_url) {
+      tavusPayload.callback_url = callback_url;
+    } else if (TAVUS_CALLBACK_URL) {
+      tavusPayload.callback_url = TAVUS_CALLBACK_URL;
+    }
+
+    console.log('Creating Tavus conversation for user:', user_id);
+    const tavusResponse = await fetch(`${TAVUS_BASE_URL}/conversations`, {
       method: 'POST',
-      headers: {
-        'X-API-KEY': LIVEAVATAR_API_KEY,
-        'accept': 'application/json',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(liveAvatarPayload)
+      headers: getTavusHeaders(),
+      body: JSON.stringify(tavusPayload)
     });
 
-    const heygenResponseBody = await heygenResponse.json().catch(() => ({}));
+    const tavusResponseBody = await tavusResponse.json().catch(() => ({}));
 
-    if (!heygenResponse.ok) {
+    if (!tavusResponse.ok) {
       const errorMessage =
-        heygenResponseBody?.data?.[0]?.message ||
-        heygenResponseBody?.message ||
-        'Failed to create LiveAvatar session';
-      console.error('LiveAvatar session creation error:', heygenResponseBody);
-      return res.status(heygenResponse.status).json({ error: errorMessage });
+        tavusResponseBody?.message ||
+        tavusResponseBody?.error ||
+        'Failed to create Tavus conversation';
+      console.error('Tavus conversation creation error:', tavusResponseBody);
+      return res.status(tavusResponse.status).json({ error: errorMessage });
     }
 
-    const sessionData = heygenResponseBody?.data || {};
-    const sessionToken = sessionData.session_token;
-    const sessionId = sessionData.session_id;
+    const conversationData = tavusResponseBody?.data || tavusResponseBody;
+    const conversationId = conversationData?.conversation_id || conversationData?.id;
+    const conversationUrl = conversationData?.conversation_url || conversationData?.url;
 
-    if (!sessionToken) {
-      throw new Error('LiveAvatar session_token missing from API response');
+    if (!conversationUrl) {
+      throw new Error('Tavus conversation_url missing from API response');
     }
 
-    console.log('LiveAvatar session created successfully:', {
-      session_id: sessionId,
-      has_token: true
-    });
-
-    // Track LiveAvatar session creation
-    trackEvent(user_id, 'liveavatar_session_created', {
-      session_id: sessionId,
-      avatar_id: AVATAR_ID,
-      voice_id: VOICE_ID,
+    trackEvent(user_id, 'tavus_conversation_created', {
+      conversation_id: conversationId,
+      persona_id: TAVUS_PERSONA_ID,
+      replica_id: TAVUS_REPLICA_ID,
       plan: subscription.plan_name
     });
 
     res.json({
-      session_id: sessionId || null,
-      session_token: sessionToken,
-      avatar_id: AVATAR_ID,
-      voice_id: VOICE_ID
+      conversation_id: conversationId || null,
+      conversation_url: conversationUrl
     });
   } catch (error: any) {
-    console.error('Create LiveAvatar session error:', error);
+    console.error('Create Tavus conversation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/tavus/conversations/:conversationId/end', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    if (!conversationId) {
+      return res.status(400).json({ error: 'conversationId required' });
+    }
+
+    if (!TAVUS_API_KEY) {
+      return res.status(500).json({ error: 'Tavus API key not configured' });
+    }
+
+    const endResponse = await fetch(`${TAVUS_BASE_URL}/conversations/${conversationId}/end`, {
+      method: 'POST',
+      headers: getTavusHeaders()
+    });
+
+    let endResponseBody: any = {};
+    if (!endResponse.ok) {
+      endResponseBody = await endResponse.json().catch(() => ({}));
+      console.warn('Tavus end conversation failed, attempting delete:', endResponseBody);
+
+      const deleteResponse = await fetch(`${TAVUS_BASE_URL}/conversations/${conversationId}`, {
+        method: 'DELETE',
+        headers: getTavusHeaders()
+      });
+
+      if (!deleteResponse.ok) {
+        const deleteResponseBody = await deleteResponse.json().catch(() => ({}));
+        console.error('Tavus delete conversation failed:', deleteResponseBody);
+        return res.status(deleteResponse.status).json({
+          error: deleteResponseBody?.message || deleteResponseBody?.error || 'Failed to end Tavus conversation'
+        });
+      }
+    }
+
+    res.json({ status: 'ended', conversation_id: conversationId });
+  } catch (error: any) {
+    console.error('End Tavus conversation error:', error);
     res.status(500).json({ error: error.message });
   }
 });
