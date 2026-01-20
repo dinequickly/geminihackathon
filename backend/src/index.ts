@@ -357,15 +357,115 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
     });
 
     if (!response.ok) {
-      throw new Error(`N8n webhook failed: ${response.status}`);
+      console.warn(`N8n webhook failed with ${response.status}, falling back to mock data.`);
+      
+      // Fallback mock data structure
+      const mockTree = [
+        {
+          type: 'InfoCard',
+          id: 'info1',
+          props: {
+            title: 'Interview Context',
+            message: `We've analyzed your request for "${intent}". Please configure the specifics below. (Mock Data)`,
+            variant: 'info'
+          }
+        },
+        {
+          type: 'MultiChoiceCard',
+          id: 'role_level',
+          props: {
+            question: 'Target Role Level',
+            options: ['Associate / Junior', 'Mid-Level', 'Senior', 'Staff / Principal', 'Executive']
+          }
+        },
+        {
+          type: 'TagSelector',
+          id: 'focus_areas',
+          props: {
+            label: 'Key Focus Areas',
+            availableTags: ['System Design', 'Behavioral', 'Live Coding', 'Product Sense', 'Leadership', 'Culture Fit'],
+            maxSelections: 3
+          }
+        },
+        {
+          type: 'ScenarioCard',
+          id: 'scenario_pressure',
+          props: {
+            title: 'Pressure Test Mode',
+            description: 'Simulate a high-stakes environment with challenging follow-ups and shorter time limits.',
+            includes: ['Rapid Fire', 'Deep Drill-down', 'Skeptical Interviewer']
+          }
+        },
+        {
+          type: 'SliderCard',
+          id: 'duration',
+          props: {
+            label: 'Session Duration (Minutes)',
+            min: 15,
+            max: 60,
+            unitLabels: ['Quick', 'Marathon']
+          }
+        },
+        {
+          type: 'TextInputCard',
+          id: 'specific_topic',
+          props: {
+            label: 'Specific Topic to Drill (Optional)',
+            placeholder: 'e.g., React Hooks, Distributed Caching, Conflict Resolution...',
+            maxLength: 50
+          }
+        }
+      ];
+      
+      return res.json({ tree: mockTree });
     }
 
     const data = await response.json();
     res.json(data);
   } catch (error: any) {
     console.error('Dynamic components error:', error);
-    // Return error but frontend will handle fallback
-    res.status(500).json({ error: error.message });
+    
+    // Also fallback on exception
+    const mockTree = [
+      {
+        type: 'InfoCard',
+        id: 'error_info',
+        props: {
+          title: 'System Offline',
+          message: 'We could not reach the AI service, but you can still configure your interview manually.',
+          variant: 'warning'
+        }
+      },
+      {
+        type: 'MultiChoiceCard',
+        id: 'role_level',
+        props: {
+          question: 'Target Role Level',
+          options: ['Associate / Junior', 'Mid-Level', 'Senior', 'Staff / Principal', 'Executive']
+        }
+      },
+      {
+        type: 'TagSelector',
+        id: 'focus_areas',
+        props: {
+          label: 'Key Focus Areas',
+          availableTags: ['System Design', 'Behavioral', 'Live Coding', 'Product Sense', 'Leadership', 'Culture Fit'],
+          maxSelections: 3
+        }
+      },
+      {
+        type: 'SliderCard',
+        id: 'duration',
+        props: {
+          label: 'Session Duration (Minutes)',
+          min: 15,
+          max: 60,
+          unitLabels: ['Quick', 'Marathon']
+        }
+      }
+    ];
+    
+    res.json({ tree: mockTree });
   }
 });
 
