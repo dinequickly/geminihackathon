@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Play,
   Video,
-  Plus,
-  Calendar,
   Clock,
-  ChevronRight,
   TrendingUp,
   Award,
-  ShoppingBag,
   LogOut,
-  Package
+  ChevronRight,
+  Loader2,
+  Package,
+  ShoppingBag
 } from 'lucide-react';
 import { api, Conversation } from '../lib/api';
 import { PackSelectionModal, ShopModal, PromoPopup } from '../components';
