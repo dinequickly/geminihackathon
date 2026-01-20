@@ -658,22 +658,16 @@ app.post('/api/tavus/conversations', async (req, res) => {
       tavusPayload.callback_url = TAVUS_CALLBACK_URL;
     }
 
-    console.log('Creating Tavus conversation for user:', user_id);
-    console.log('Tavus API Key present:', !!TAVUS_API_KEY);
-    
-    // DEBUG: Minimal payload
-    const minimalPayload = {
-      replica_id: TAVUS_REPLICA_ID,
-      persona_id: TAVUS_PERSONA_ID,
-      conversation_name: "Test Conversation",
-      conversational_context: "This is a test interview."
-    };
-    console.log('Sending Minimal Payload:', JSON.stringify(minimalPayload, null, 2));
+    console.log('Creating Tavus conversation via n8n for user:', user_id);
+    const N8N_TAVUS_WEBHOOK = 'https://maxipad.app.n8n.cloud/webhook/c07f5292-201f-4c87-a581-ad1ff32f0a89';
 
-    const tavusResponse = await fetch(`${TAVUS_BASE_URL}/conversations`, {
+    const tavusResponse = await fetch(N8N_TAVUS_WEBHOOK, {
       method: 'POST',
-      headers: getTavusHeaders(),
-      body: JSON.stringify(minimalPayload)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...tavusPayload,
+        user_id // Passing user_id explicitly in case webhook needs it
+      })
     });
 
     const responseText = await tavusResponse.text();
