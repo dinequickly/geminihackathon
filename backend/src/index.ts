@@ -14,6 +14,14 @@ dotenv.config();
 
 const app = express();
 
+// CORS configuration
+app.use(cors({
+  origin: '*', // Allow all origins for now, or specify your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
+}));
+app.options('*', cors()); // Enable pre-flight for all routes
+
 // Stripe webhook needs raw body - must be BEFORE express.json()
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
@@ -283,12 +291,6 @@ const getTavusHeaders = () => ({
 });
 
 // Middleware
-app.use(cors({
-  origin: '*', // Allow all origins for now, or specify your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
-}));
-app.options('*', cors()); // Enable pre-flight for all routes
 app.use(express.json());
 
 // ============================================
