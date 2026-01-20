@@ -789,16 +789,29 @@ class ApiClient {
     return this.request(`/api/users/${userId}/subscriptions`);
   }
 
-  // HeyGen LiveAvatar endpoints
-  async createHeyGenSession(userId: string): Promise<{
-    session_id: string | null;
-    session_token: string;
-    avatar_id: string;
-    voice_id: string;
+  // Tavus video interview endpoints
+  async createTavusConversation(
+    userId: string,
+    conversationPlan?: string
+  ): Promise<{
+    conversation_id: string | null;
+    conversation_url: string;
   }> {
-    return this.request('/api/heygen/create-session', {
+    return this.request('/api/tavus/conversations', {
       method: 'POST',
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({
+        user_id: userId,
+        conversation_plan: conversationPlan
+      }),
+    });
+  }
+
+  async endTavusConversation(conversationId: string): Promise<{
+    status: string;
+    conversation_id: string;
+  }> {
+    return this.request(`/api/tavus/conversations/${conversationId}/end`, {
+      method: 'POST'
     });
   }
 }
