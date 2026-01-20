@@ -231,10 +231,10 @@ export const TagSelector: React.FC<DynamicComponentProps & { label: string; avai
 
 // --- 7. TimeSelector ---
 export const TimeSelector: React.FC<DynamicComponentProps & { label: string; minMinutes?: number; maxMinutes?: number }> = ({
-  onChange, value = 30, label, minMinutes = 15, maxMinutes = 120
+  id, onChange, value = 8, label, minMinutes = 1, maxMinutes = 15
 }) => {
   const changeTime = (delta: number) => {
-    const newVal = Math.max(minMinutes, Math.min(maxMinutes, (value || 30) + delta));
+    const newVal = Math.max(minMinutes, Math.min(maxMinutes, (value || 8) + delta));
     onChange(newVal);
   };
 
@@ -248,17 +248,17 @@ export const TimeSelector: React.FC<DynamicComponentProps & { label: string; min
       </div>
       <div className="flex flex-col items-center py-4">
         <div className="text-5xl font-display font-black text-primary-500 mb-6">
-          {value || 30} <span className="text-2xl font-bold text-primary-300">min</span>
+          {value || 8} <span className="text-2xl font-bold text-primary-300">min</span>
         </div>
         <div className="flex gap-6">
           <button
-            onClick={() => changeTime(-5)}
+            onClick={() => changeTime(-1)}
             className="w-14 h-14 rounded-full border-2 border-primary-200 bg-white text-primary-500 font-bold text-2xl flex items-center justify-center hover:bg-primary-500 hover:text-white hover:border-primary-500 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             -
           </button>
           <button
-            onClick={() => changeTime(5)}
+            onClick={() => changeTime(1)}
             className="w-14 h-14 rounded-full border-2 border-primary-200 bg-white text-primary-500 font-bold text-2xl flex items-center justify-center hover:bg-primary-500 hover:text-white hover:border-primary-500 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             +
@@ -268,6 +268,7 @@ export const TimeSelector: React.FC<DynamicComponentProps & { label: string; min
     </PlayfulCard>
   );
 };
+
 
 // --- 8. ScenarioCard ---
 export const ScenarioCard: React.FC<DynamicComponentProps & { title: string; description: string; includes: string[] }> = ({

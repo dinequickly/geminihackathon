@@ -278,14 +278,14 @@ class ApiClient {
   }
 
   // Interview endpoints
-  async startInterview(userId: string): Promise<{
+  async startInterview(userId: string, interviewConfig?: any): Promise<{
     conversation_id: string;
     agent_id: string;
     signed_url: string;
   }> {
     return this.request('/api/interviews/start', {
       method: 'POST',
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({ user_id: userId, interview_config: interviewConfig }),
     });
   }
 
@@ -855,6 +855,81 @@ class ApiClient {
             { id: 'q1', text: 'Do you want to focus on specific technical frameworks?', type: 'yes_no' },
             { id: 'q2', text: 'What is your preferred level of difficulty?', type: 'choice', options: ['Junior', 'Mid-Level', 'Senior'] }
         ];
+    }
+  }
+
+  async streamDynamicComponents(intent: string, onUpdate: (components: any[]) => void): Promise<void> {
+    const response = await fetch('/api/ai/dynamic-components', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intent, mode: 'component_tree' })
+    });
+
+    if (!response.ok) {
+        // Fallback handled by caller or throw
+        throw new Error('Stream failed');
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) return;
+
+    const decoder = new TextDecoder();
+    let accumulated = '';
+    let parsedCount = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      accumulated += decoder.decode(value, { stream: true });
+      
+      // Attempt to extract complete objects from the "tree" array
+      // Simplistic parser: find objects inside "tree": [ ... ]
+      // We look for { "type": ... } blocks.
+      
+      try {
+        // Very basic extraction: regex for objects that look like components
+        // This is a heuristic to support "pop out" streaming without a full stream parser
+        const matches = accumulated.match(/\{[\s\S]*?"type"\s*:\s*"[^"]+"[\s\S]*?\}(?=\s*,|\s*\])/g);
+        if (matches && matches.length > parsedCount) {
+            const validComponents = matches.map(s => {
+                try { return JSON.parse(s); } catch { return null; }
+            }).filter(Boolean);
+            
+            if (validComponents.length > 0) {
+                onUpdate(validComponents);
+                parsedCount = matches.length;
+            }
+        }
+      } catch (e) {
+        // Ignore parse errors during streaming
+      }
+    }
+    
+    // Final parse to ensure we got everything
+    try {
+        const finalJson = JSON.parse(accumulated);
+        if (finalJson.tree) onUpdate(finalJson.tree);
+    } catch (e) {
+        console.warn('Final JSON parse failed', e);
+    }
+  }
+
+  async streamPersonality(intent: string, onChunk: (text: string) => void): Promise<void> {
+    const response = await fetch('/api/ai/personality', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intent })
+    });
+
+    const reader = response.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        onChunk(decoder.decode(value, { stream: true }));
     }
   }
 

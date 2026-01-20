@@ -354,7 +354,7 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
 
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     
-    console.log('Generating dynamic components via Groq for intent:', intent);
+    console.log('Generating dynamic components via Groq for intent (streaming):', intent);
     
     const systemPrompt = `I have a React application that dynamically renders UI components from a JSON tree. I need you to generate a JSON response that defines a specific UI form.
 
@@ -406,9 +406,15 @@ Generate a JSON object with a key "tree" containing an array of these components
 ${personal_context ? `Additional Context: ${personal_context}` : ''}
 
 The form should collect relevant details like difficulty, specific topics, and duration. Use a mix of components to make it interactive.
+ALWAYS include a TimeSelector component first.
 
 Output Format:
-Strict JSON only. Do not include markdown code blocks or explanations. Just the JSON object.`;
+Strict JSON only.`;
+
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
     const completion = await groq.chat.completions.create({
       messages: [
@@ -416,71 +422,74 @@ Strict JSON only. Do not include markdown code blocks or explanations. Just the 
         { role: 'user', content: intent }
       ],
       model: 'openai/gpt-oss-120b',
-      temperature: 0.7,
-      max_tokens: 2048,
+      temperature: 1,
+      max_completion_tokens: 8192,
       top_p: 1,
-      stop: null,
-      stream: false
+      // reasoning_effort: "low", // Uncomment if supported by the model
+      stream: true,
+      response_format: { type: "json_object" },
+      stop: null
     });
 
-    const responseContent = completion.choices[0]?.message?.content || '';
-    console.log('Groq Response:', responseContent.substring(0, 100) + '...');
-
-    let data;
-    try {
-      // Clean up potential markdown blocks if the model outputs them despite instructions
-      const cleanJson = responseContent.replace(/```json\n?|\n?```/g, '').trim();
-      data = JSON.parse(cleanJson);
-    } catch (e) {
-      console.error('Failed to parse Groq response:', e);
-      throw new Error('Invalid JSON from AI');
+    for await (const chunk of completion) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        res.write(content);
+      }
     }
 
-    res.json(data);
+    res.end();
   } catch (error: any) {
     console.error('Dynamic components error:', error);
+    // If headers already sent, we can't send JSON error
+    if (!res.headersSent) {
+      // Fallback on exception (simplified for stream endpoint)
+      res.status(500).json({ error: error.message });
+    } else {
+      res.end();
+    }
+  }
+});
+
+app.post('/api/ai/personality', async (req, res) => {
+  try {
+    const { intent } = req.body;
     
-    // Fallback on exception
-    const mockTree = [
-      {
-        type: 'InfoCard',
-        id: 'error_info',
-        props: {
-          title: 'AI Service Unavailable',
-          message: 'We could not generate a custom plan at this moment. Please configure your interview manually below.',
-          variant: 'warning'
+    if (!process.env.GROQ_API_KEY) {
+        return res.status(500).json({ error: 'API key missing' });
+    }
+
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: "You are an expert interviewer. Describe the persona you will adopt for this interview (e.g. 'Strict but fair', 'Collaborative peer'). Keep it under 3 sentences." },
+        { role: 'user', content: intent }
+      ],
+      model: 'openai/gpt-oss-120b',
+      temperature: 1,
+      max_completion_tokens: 1024,
+      top_p: 1,
+      stream: true,
+      stop: null
+    });
+
+    for await (const chunk of completion) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+            res.write(content);
         }
-      },
-      {
-        type: 'MultiChoiceCard',
-        id: 'role_level',
-        props: {
-          question: 'Target Role Level',
-          options: ['Associate / Junior', 'Mid-Level', 'Senior', 'Staff / Principal', 'Executive']
-        }
-      },
-      {
-        type: 'TagSelector',
-        id: 'focus_areas',
-        props: {
-          label: 'Key Focus Areas',
-          availableTags: ['System Design', 'Behavioral', 'Live Coding', 'Product Sense', 'Leadership', 'Culture Fit'],
-          maxSelections: 3
-        }
-      },
-      {
-        type: 'SliderCard',
-        id: 'duration',
-        props: {
-          label: 'Session Duration (Minutes)',
-          min: 15,
-          max: 60,
-          unitLabels: ['Quick', 'Marathon']
-        }
-      }
-    ];
-    
-    res.json({ tree: mockTree });
+    }
+    res.end();
+
+  } catch (error: any) {
+    console.error('Personality stream error:', error);
+    if (!res.headersSent) res.status(500).json({ error: error.message });
+    else res.end();
   }
 });
 
@@ -681,7 +690,7 @@ app.get('/api/users/:userId/status', async (req, res) => {
 // ============================================
 app.post('/api/interviews/start', async (req, res) => {
   try {
-    const { user_id } = req.body;
+    const { user_id, interview_config } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id required' });
@@ -698,12 +707,13 @@ app.post('/api/interviews/start', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Create conversation record
+    // Create conversation record with config
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
       .insert({
         user_id,
-        status: 'in_progress'
+        status: 'in_progress',
+        interview_config: interview_config // Save the dynamic config
       })
       .select()
       .single();

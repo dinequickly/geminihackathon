@@ -81,7 +81,7 @@ function App() {
           <Route
             path="/interview/setup"
             element={
-              userId ? <InterviewSetup /> : <Navigate to="/" replace />
+              userId ? <InterviewSetup userId={userId} /> : <Navigate to="/" replace />
             }
           />
           <Route

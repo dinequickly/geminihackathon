@@ -28,7 +28,7 @@ export const DynamicRenderer: React.FC<DynamicRendererProps> = ({ tree, onValues
   const visibleComponents = tree.filter(comp => comp.visible !== false);
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
       {visibleComponents.map((component, index) => {
         const Component = Components[component.type];
 
@@ -37,20 +37,22 @@ export const DynamicRenderer: React.FC<DynamicRendererProps> = ({ tree, onValues
           return null;
         }
 
-        const componentProps = {
-          id: component.id,
-          value: values[component.id],
-          onChange: (val: any) => handleValueChange(component.id, val),
-          ...component.props
-        };
+        // Span logic: Make larger components span 2 columns if possible
+        const isLarge = ['MultiChoiceCard', 'ScenarioCard'].includes(component.type);
+        const colSpan = isLarge ? 'md:col-span-2' : 'col-span-1';
 
         return (
           <div
             key={component.id}
-            className="animate-fade-in"
-            style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
+            className={`animate-fade-in ${colSpan}`}
+            style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
           >
-            <Component {...componentProps as any} />
+            <Component
+              {...component.props}
+              id={component.id}
+              value={values[component.id]}
+              onChange={(val: any) => handleValueChange(component.id, val)}
+            />
           </div>
         );
       })}
