@@ -640,14 +640,16 @@ app.post('/api/tavus/conversations', async (req, res) => {
       persona_id: TAVUS_PERSONA_ID,
       conversation_name: `Interview Session - ${user.name || user_id}`,
       conversational_context: conversationalContext,
-      model: 'tavus-gpt-oss',
-      speculative_inference: true,
-      turn_taking_patience: 'high',
-      replica_interruptibility: 'medium'
+      properties: {
+        max_call_duration: 3600,
+        participant_left_timeout: 60,
+        participant_absent_timeout: 300,
+        enable_closed_captions: true
+      }
     };
 
     if (properties && typeof properties === 'object') {
-      tavusPayload.properties = properties;
+      tavusPayload.properties = { ...tavusPayload.properties, ...properties };
     }
 
     if (callback_url) {
@@ -657,13 +659,23 @@ app.post('/api/tavus/conversations', async (req, res) => {
     }
 
     console.log('Creating Tavus conversation for user:', user_id);
+    console.log('Tavus Payload:', JSON.stringify(tavusPayload, null, 2));
+
     const tavusResponse = await fetch(`${TAVUS_BASE_URL}/conversations`, {
       method: 'POST',
       headers: getTavusHeaders(),
       body: JSON.stringify(tavusPayload)
     });
 
-    const tavusResponseBody = await tavusResponse.json().catch(() => ({}));
+    const responseText = await tavusResponse.text();
+    console.log('Tavus Raw Response:', tavusResponse.status, tavusResponse.statusText, responseText);
+
+    let tavusResponseBody;
+    try {
+      tavusResponseBody = JSON.parse(responseText);
+    } catch {
+      tavusResponseBody = {};
+    }
 
     if (!tavusResponse.ok) {
       const errorMessage =
