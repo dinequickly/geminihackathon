@@ -659,12 +659,21 @@ app.post('/api/tavus/conversations', async (req, res) => {
     }
 
     console.log('Creating Tavus conversation for user:', user_id);
-    console.log('Tavus Payload:', JSON.stringify(tavusPayload, null, 2));
+    console.log('Tavus API Key present:', !!TAVUS_API_KEY);
+    
+    // DEBUG: Minimal payload
+    const minimalPayload = {
+      replica_id: TAVUS_REPLICA_ID,
+      persona_id: TAVUS_PERSONA_ID,
+      conversation_name: "Test Conversation",
+      conversational_context: "This is a test interview."
+    };
+    console.log('Sending Minimal Payload:', JSON.stringify(minimalPayload, null, 2));
 
     const tavusResponse = await fetch(`${TAVUS_BASE_URL}/conversations`, {
       method: 'POST',
       headers: getTavusHeaders(),
-      body: JSON.stringify(tavusPayload)
+      body: JSON.stringify(minimalPayload)
     });
 
     const responseText = await tavusResponse.text();
