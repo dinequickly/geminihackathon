@@ -135,13 +135,6 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
               Shop
             </button>
             <button
-              onClick={() => navigate('/interview-settings')}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition"
-            >
-              <Settings className="w-4 h-4" />
-              Settings
-            </button>
-            <button
               onClick={onLogout}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
             >
@@ -230,7 +223,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
           {/* Video Call Interview */}
           <button
-            onClick={() => navigate('/live-avatar-interview')}
+            onClick={() => navigate('/interview/setup')}
             className="bg-gradient-to-br from-sky-500 to-mint-500 hover:from-sky-600 hover:to-mint-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-sky-500/20 relative overflow-hidden"
           >
             <div className="flex items-center gap-4">

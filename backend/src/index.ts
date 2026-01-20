@@ -291,6 +291,57 @@ app.options('*', cors()); // Enable pre-flight for all routes
 app.use(express.json());
 
 // ============================================
+// AI GENERATION
+// ============================================
+
+app.post('/api/ai/generate-interview-config', async (req, res) => {
+  try {
+    const { intent, rework_feedback, previous_config } = req.body;
+    
+    // In a real implementation, we would call Anthropic here.
+    // For now, we return a structured mock response based on the intent.
+    
+    console.log('Generating interview config for intent:', intent);
+    
+    const isTechnical = intent.toLowerCase().includes('technical') || intent.toLowerCase().includes('design') || intent.toLowerCase().includes('code');
+    const isBehavioral = intent.toLowerCase().includes('behavioral');
+    
+    const mockConfig = {
+      interview_type: isTechnical ? 'specific_focus' : 'full_interview',
+      duration_minutes: isTechnical ? 45 : 30,
+      focus_areas: isTechnical ? ['System Design', 'Scalability', 'Trade-offs'] : ['Behavioral', 'Leadership', 'Impact'],
+      company_context: intent.includes('Google') ? 'Google' : null,
+      role_context: 'Candidate',
+      interview_structure: isTechnical ? [
+        { phase: 'Introduction', duration_minutes: 5 },
+        { phase: 'System Design Problem', duration_minutes: 35 },
+        { phase: 'Wrap-up', duration_minutes: 5 }
+      ] : [
+        { phase: 'Introduction', duration_minutes: 5 },
+        { phase: 'Resume Deep Dive', duration_minutes: 10 },
+        { phase: 'Behavioral Questions', duration_minutes: 10 },
+        { phase: 'Closing', duration_minutes: 5 }
+      ]
+    };
+    
+    // If reworking, we might toggle something for demo purposes
+    if (rework_feedback) {
+       console.log('Reworking with feedback:', rework_feedback);
+       mockConfig.duration_minutes += 15;
+       mockConfig.focus_areas.push('New Focus');
+    }
+
+    // Simulate AI delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    res.json(mockConfig);
+  } catch (error: any) {
+    console.error('AI generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
 // HEALTH CHECK
 // ============================================
 app.get('/', (req, res) => {

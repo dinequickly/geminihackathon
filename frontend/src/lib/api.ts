@@ -814,6 +814,49 @@ class ApiClient {
       method: 'POST'
     });
   }
+
+  // AI Generation Endpoints
+  async generateInterviewConfig(intent: string, reworkFeedback?: string, previousConfig?: any): Promise<any> {
+    return this.request('/api/ai/generate-interview-config', {
+      method: 'POST',
+      body: JSON.stringify({ intent, rework_feedback: reworkFeedback, previous_config: previousConfig })
+    });
+  }
+
+  async getDynamicQuestions(intent: string, config: any, personalContext: string): Promise<any[]> {
+    // Calling n8n webhook directly for dynamic questions as per requirements
+    // Webhook URL: https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b
+    const N8N_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b';
+    
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          intent,
+          interview_config: config,
+          personal_context: personalContext
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get dynamic questions');
+      }
+
+      const data = await response.json();
+      // Ensure we return an array of questions
+      return Array.isArray(data.questions) ? data.questions : (Array.isArray(data) ? data : []);
+    } catch (error) {
+        console.error('N8n webhook error:', error);
+        // Fallback questions for testing/offline
+        return [
+            { id: 'q1', text: 'Do you want to focus on specific technical frameworks?', type: 'yes_no' },
+            { id: 'q2', text: 'What is your preferred level of difficulty?', type: 'choice', options: ['Junior', 'Mid-Level', 'Senior'] }
+        ];
+    }
+  }
 }
 
 // Emotion timeline types

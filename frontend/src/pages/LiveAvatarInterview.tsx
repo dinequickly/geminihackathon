@@ -20,13 +20,7 @@ interface LiveAvatarInterviewProps {
   userId: string;
 }
 
-const DEFAULT_CONVERSATION_PLAN = [
-  '1. Warm introduction and confirm the target role.',
-  '2. Resume walkthrough focusing on impact and outcomes.',
-  '3. Role-specific questions based on the job description.',
-  '4. Behavioral questions using STAR format.',
-  '5. Candidate questions and wrap-up.'
-].join('\n');
+const DEFAULT_CONVERSATION_PLAN = '';
 
 export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps) {
   const navigate = useNavigate();
@@ -152,22 +146,6 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
           <p className="text-gray-600 mb-6">
             Tavus video interviews are available exclusively for premium members. Upgrade your plan to unlock this feature!
           </p>
-          <div className="flex gap-3 justify-center">
-            <PlayfulButton
-              variant="secondary"
-              icon={ArrowLeft}
-              onClick={() => navigate('/dashboard')}
-            >
-              Back to Dashboard
-            </PlayfulButton>
-            <PlayfulButton
-              variant="sunshine"
-              icon={Sparkles}
-              onClick={() => navigate('/dashboard?showShop=true')}
-            >
-              Upgrade Now
-            </PlayfulButton>
-          </div>
         </PlayfulCard>
       </div>
     );
@@ -179,16 +157,6 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <PlayfulButton
-            variant="secondary"
-            size="sm"
-            icon={ArrowLeft}
-            onClick={() => navigate('/dashboard')}
-            className="mb-4"
-          >
-            Back to Dashboard
-          </PlayfulButton>
-
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -290,61 +258,6 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
                   </div>
                 </div>
               )}
-            </PlayfulCard>
-
-            <PlayfulCard variant="mint">
-              <h3 className="font-bold text-gray-900 mb-3">Conversation Plan</h3>
-              <p className="text-sm text-gray-700 mb-3">
-                We pass your resume, job details, and this plan to Tavus for the interview.
-              </p>
-              <textarea
-                value={conversationPlan}
-                onChange={(e) => setConversationPlan(e.target.value)}
-                disabled={sessionActive || starting}
-                rows={6}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-mint-400 focus:border-transparent text-sm text-gray-800 disabled:bg-gray-100 disabled:text-gray-500"
-                placeholder="Outline the flow, focus areas, and any constraints."
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Update the plan before starting to tailor the interview flow.
-              </p>
-            </PlayfulCard>
-
-            <PlayfulCard variant="sunshine">
-              <h3 className="font-bold text-gray-900 mb-3">How It Works</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-sunshine-600 font-bold">1.</span>
-                  <span>Click "Start Session" to connect with your AI interviewer</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-sunshine-600 font-bold">2.</span>
-                  <span>The Tavus interviewer will appear and begin the interview</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-sunshine-600 font-bold">3.</span>
-                  <span>Speak naturally - voice chat is enabled</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-sunshine-600 font-bold">4.</span>
-                  <span>End the session when you're done practicing</span>
-                </li>
-              </ul>
-            </PlayfulCard>
-
-            <PlayfulCard>
-              <h3 className="font-bold text-gray-900 mb-3">Debug Info</h3>
-              <p className="text-xs text-gray-600 mb-2">
-                Use these details if you need to troubleshoot the Tavus session.
-              </p>
-              <div className="text-xs space-y-1 text-gray-500">
-                <div>Conversation ID: {conversationId || 'Not created'}</div>
-                <div>Active: {sessionActive ? 'Yes' : 'No'}</div>
-                <div>Conversation URL: {conversationUrl ? 'Ready' : 'Not created'}</div>
-                {conversationUrl && (
-                  <div className="break-all text-gray-400">{conversationUrl}</div>
-                )}
-              </div>
             </PlayfulCard>
           </div>
         </div>

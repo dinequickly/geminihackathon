@@ -11,6 +11,8 @@ import FlashcardPractice from './pages/FlashcardPractice';
 import LiveAvatarInterview from './pages/LiveAvatarInterview';
 import { initPostHog, posthog } from './lib/posthog';
 
+import InterviewSetup from './pages/InterviewSetup';
+
 // Simple user context - in production, use proper state management
 interface UserContext {
   userId: string | null;
@@ -74,6 +76,12 @@ function App() {
             path="/dashboard"
             element={
               userId ? <Dashboard userId={userId} onLogout={() => setUserId(null)} /> : <Navigate to="/" replace />
+            }
+          />
+          <Route
+            path="/interview/setup"
+            element={
+              userId ? <InterviewSetup /> : <Navigate to="/" replace />
             }
           />
           <Route
