@@ -30,7 +30,7 @@ export const DynamicRenderer: React.FC<DynamicRendererProps> = ({ tree, onValues
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
       {visibleComponents.map((component, index) => {
-        const Component = Components[component.type];
+        const Component = Components[component.type] as any;
 
         if (!Component) {
           console.warn(`Component type "${component.type}" not found in registry.`);

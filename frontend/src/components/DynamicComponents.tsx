@@ -231,7 +231,7 @@ export const TagSelector: React.FC<DynamicComponentProps & { label: string; avai
 
 // --- 7. TimeSelector ---
 export const TimeSelector: React.FC<DynamicComponentProps & { label: string; minMinutes?: number; maxMinutes?: number }> = ({
-  id, onChange, value = 8, label, minMinutes = 1, maxMinutes = 15
+  onChange, value = 8, label, minMinutes = 1, maxMinutes = 15
 }) => {
   const changeTime = (delta: number) => {
     const newVal = Math.max(minMinutes, Math.min(maxMinutes, (value || 8) + delta));
