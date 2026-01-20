@@ -867,8 +867,8 @@ class ApiClient {
         personal_context: personalContext,
         mode: 'component_tree'
       })
-    }).then(data => {
-        if (Array.isArray(data.tree)) return data.tree;
+    }).then((data: any) => {
+        if (data && Array.isArray(data.tree)) return data.tree;
         if (Array.isArray(data)) return data;
         return []; // Fallback handled below if empty
     }).catch(e => {
