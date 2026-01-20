@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import Stripe from 'stripe';
+import Groq from 'groq-sdk';
 import { runFullAnalysis } from './analysis/orchestrator.js';
 import { trackEvent } from './posthog.js';
 
@@ -345,94 +346,108 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
   try {
     const { intent, personal_context, mode } = req.body;
     
-    // N8n webhook for dynamic components
-    const N8N_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b';
-    
-    console.log('Fetching dynamic components from n8n for intent:', intent);
-    
-    const response = await fetch(N8N_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ intent, personal_context, mode })
-    });
-
-    if (!response.ok) {
-      console.warn(`N8n webhook failed with ${response.status}, falling back to mock data.`);
-      
-      // Fallback mock data structure
-      const mockTree = [
-        {
-          type: 'InfoCard',
-          id: 'info1',
-          props: {
-            title: 'Interview Context',
-            message: `We've analyzed your request for "${intent}". Please configure the specifics below. (Mock Data)`,
-            variant: 'info'
-          }
-        },
-        {
-          type: 'MultiChoiceCard',
-          id: 'role_level',
-          props: {
-            question: 'Target Role Level',
-            options: ['Associate / Junior', 'Mid-Level', 'Senior', 'Staff / Principal', 'Executive']
-          }
-        },
-        {
-          type: 'TagSelector',
-          id: 'focus_areas',
-          props: {
-            label: 'Key Focus Areas',
-            availableTags: ['System Design', 'Behavioral', 'Live Coding', 'Product Sense', 'Leadership', 'Culture Fit'],
-            maxSelections: 3
-          }
-        },
-        {
-          type: 'ScenarioCard',
-          id: 'scenario_pressure',
-          props: {
-            title: 'Pressure Test Mode',
-            description: 'Simulate a high-stakes environment with challenging follow-ups and shorter time limits.',
-            includes: ['Rapid Fire', 'Deep Drill-down', 'Skeptical Interviewer']
-          }
-        },
-        {
-          type: 'SliderCard',
-          id: 'duration',
-          props: {
-            label: 'Session Duration (Minutes)',
-            min: 15,
-            max: 60,
-            unitLabels: ['Quick', 'Marathon']
-          }
-        },
-        {
-          type: 'TextInputCard',
-          id: 'specific_topic',
-          props: {
-            label: 'Specific Topic to Drill (Optional)',
-            placeholder: 'e.g., React Hooks, Distributed Caching, Conflict Resolution...',
-            maxLength: 50
-          }
-        }
-      ];
-      
-      return res.json({ tree: mockTree });
+    // Check for Groq API key
+    if (!process.env.GROQ_API_KEY) {
+      console.warn('GROQ_API_KEY not configured, falling back to mock data.');
+      throw new Error('GROQ_API_KEY missing');
     }
 
-    const data = await response.json();
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    
+    console.log('Generating dynamic components via Groq for intent:', intent);
+    
+    const systemPrompt = `I have a React application that dynamically renders UI components from a JSON tree. I need you to generate a JSON response that defines a specific UI form.
+
+The System:
+- I use a DynamicRenderer that takes a tree array.
+- Each item in the array is an object: { type: "ComponentType", id: "unique_id", props: { ... } }.
+- Available Component Types and their Props:
+
+1. InfoCard
+   - title (string): Title text.
+   - message (string): Body text.
+   - variant (string): 'info', 'tip', or 'warning'.
+
+2. MultiChoiceCard
+   - question (string): The label/question.
+   - options (string[]): Array of options to choose from.
+
+3. SliderCard
+   - label (string): The label.
+   - min (number): Minimum value.
+   - max (number): Maximum value.
+   - unitLabels (string[]): Optional. Two labels for min/max e.g., ["Easy", "Hard"].
+
+4. TagSelector
+   - label (string): The label.
+   - availableTags (string[]): List of tags to toggle.
+   - maxSelections (number): Max tags selectable.
+
+5. TextInputCard
+   - label (string): Input label.
+   - placeholder (string): Placeholder text.
+   - maxLength (number): Max characters.
+
+6. ScenarioCard
+   - title (string): Scenario title.
+   - description (string): Description text.
+   - includes (string[]): List of features included in this scenario (tags).
+
+7. QuestionCard
+   - question (string): Yes/No question text.
+
+8. TimeSelector
+   - label (string): Label.
+   - minMinutes (number): Min duration.
+   - maxMinutes (number): Max duration.
+
+The Task:
+Generate a JSON object with a key "tree" containing an array of these components to create a configuration form for: "${intent}".
+${personal_context ? `Additional Context: ${personal_context}` : ''}
+
+The form should collect relevant details like difficulty, specific topics, and duration. Use a mix of components to make it interactive.
+
+Output Format:
+Strict JSON only. Do not include markdown code blocks or explanations. Just the JSON object.`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: intent }
+      ],
+      model: 'openai/gpt-oss-120b',
+      temperature: 0.7,
+      max_tokens: 2048,
+      top_p: 1,
+      stop: null,
+      stream: false
+    });
+
+    const responseContent = completion.choices[0]?.message?.content || '';
+    console.log('Groq Response:', responseContent.substring(0, 100) + '...');
+
+    let data;
+    try {
+      // Clean up potential markdown blocks if the model outputs them despite instructions
+      const cleanJson = responseContent.replace(/```json\n?|\n?```/g, '').trim();
+      data = JSON.parse(cleanJson);
+    } catch (e) {
+      console.error('Failed to parse Groq response:', e);
+      throw new Error('Invalid JSON from AI');
+    }
+
     res.json(data);
   } catch (error: any) {
     console.error('Dynamic components error:', error);
     
-    // Also fallback on exception
+    // Fallback on exception
     const mockTree = [
       {
         type: 'InfoCard',
         id: 'error_info',
         props: {
-          title: 'System Offline',
-          message: 'We could not reach the AI service, but you can still configure your interview manually.',
+          title: 'AI Service Unavailable',
+          message: 'We could not generate a custom plan at this moment. Please configure your interview manually below.',
           variant: 'warning'
         }
       },
