@@ -581,7 +581,7 @@ app.post('/api/interviews/:conversationId/end', async (req, res) => {
 
 app.post('/api/tavus/conversations', async (req, res) => {
   try {
-    const { user_id, conversation_plan, callback_url } = req.body;
+    const { user_id, conversation_plan, callback_url, properties } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id required' });
@@ -646,6 +646,10 @@ app.post('/api/tavus/conversations', async (req, res) => {
       replica_interruptibility: 'medium'
     };
 
+    if (properties && typeof properties === 'object') {
+      tavusPayload.properties = properties;
+    }
+
     if (callback_url) {
       tavusPayload.callback_url = callback_url;
     } else if (TAVUS_CALLBACK_URL) {
@@ -670,12 +674,16 @@ app.post('/api/tavus/conversations', async (req, res) => {
       return res.status(tavusResponse.status).json({ error: errorMessage });
     }
 
-    const conversationData = tavusResponseBody?.data || tavusResponseBody;
+    const conversationDataRaw = tavusResponseBody?.data ?? tavusResponseBody;
+    const conversationData = Array.isArray(conversationDataRaw)
+      ? conversationDataRaw[0]
+      : conversationDataRaw;
     const conversationId = conversationData?.conversation_id || conversationData?.id;
     const conversationUrl = conversationData?.conversation_url || conversationData?.url;
 
     if (!conversationUrl) {
-      throw new Error('Tavus conversation_url missing from API response');
+      console.error('Tavus response missing conversation_url:', tavusResponseBody);
+      return res.status(502).json({ error: 'Tavus response missing conversation_url' });
     }
 
     trackEvent(user_id, 'tavus_conversation_created', {
