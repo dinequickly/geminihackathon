@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { createCatalog } from '@json-render/core';
 
 /**
  * Interview Component Catalog
@@ -76,53 +75,22 @@ const ScenarioCardProps = z.object({
 });
 
 /**
- * Create the component catalog
+ * Component catalog definition
+ * Maps component names to their Zod schemas
  */
-export const interviewCatalog = createCatalog({
-  components: {
-    QuestionCard: {
-      props: QuestionCardProps,
-      hasChildren: false
-    },
-    MultiChoiceCard: {
-      props: MultiChoiceCardProps,
-      hasChildren: false
-    },
-    TextInputCard: {
-      props: TextInputCardProps,
-      hasChildren: false
-    },
-    SliderCard: {
-      props: SliderCardProps,
-      hasChildren: false
-    },
-    InfoCard: {
-      props: InfoCardProps,
-      hasChildren: false
-    },
-    TagSelector: {
-      props: TagSelectorProps,
-      hasChildren: false
-    },
-    TimeSelector: {
-      props: TimeSelectorProps,
-      hasChildren: false
-    },
-    ScenarioCard: {
-      props: ScenarioCardProps,
-      hasChildren: false
-    }
-  },
-  // No actions for minimal migration
-  actions: {},
-  // No custom validation functions for minimal migration
-  functions: {},
-  validation: 'strict' // Strict validation mode
-});
+export const ComponentSchemas = {
+  QuestionCard: QuestionCardProps,
+  MultiChoiceCard: MultiChoiceCardProps,
+  TextInputCard: TextInputCardProps,
+  SliderCard: SliderCardProps,
+  InfoCard: InfoCardProps,
+  TagSelector: TagSelectorProps,
+  TimeSelector: TimeSelectorProps,
+  ScenarioCard: ScenarioCardProps,
+} as const;
 
-// Export types inferred from catalog for use in other files
-export type InterviewCatalogType = typeof interviewCatalog;
-export type ComponentType = keyof InterviewCatalogType['components'];
+// Export type for valid component names
+export type ComponentType = keyof typeof ComponentSchemas;
 
 // Export individual prop types for convenience
 export type QuestionCardPropsType = z.infer<typeof QuestionCardProps>;
