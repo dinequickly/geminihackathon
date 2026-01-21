@@ -4,9 +4,8 @@ import { MacOSTerminal } from "./MacOSTerminal";
 import { Dashboard } from "./Dashboard";
 import { InterviewConfig } from "./InterviewConfig";
 import { LoadingScreen } from "./LoadingScreen";
-import { LiveEmotionsView } from "./LiveEmotionsView";
-import { PerformanceView } from "./PerformanceView";
-import { TranscriptView } from "./TranscriptView";
+import { InterviewInProgress } from "./InterviewInProgress";
+import { ResultsView } from "./ResultsView";
 import { Cursor } from "../components/Cursor";
 import { BrowserWindow } from "../components/BrowserWindow";
 
@@ -22,9 +21,8 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   // 420-440: Cursor moves to Start Interview button, clicks
   // 450-680: Interview Config screen with scroll
   // 680-780: Loading screen
-  // 780-930: Live Emotions view
-  // 930-1080: Performance view
-  // 1080-1230: Transcript view
+  // 780-870: Interview in progress (brief flash)
+  // 870-1180: Results view with scroll (Performance + Live Emotions + Transcript)
 
   const browserOpenStart = 300;
   const dashboardStart = 310;
@@ -41,13 +39,15 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const configToLoadingTransition = 680;
   const loadingStart = 700;
 
-  // Feature showcase timeline
-  const loadingToEmotionsTransition = 780;
-  const emotionsStart = 800;
-  const emotionsToPerformanceTransition = 930;
-  const performanceStart = 950;
-  const performanceToTranscriptTransition = 1080;
-  const transcriptStart = 1100;
+  // Interview in progress timeline
+  const loadingToInterviewTransition = 780;
+  const interviewStart = 790;
+  const interviewToResultsTransition = 870;
+
+  // Results timeline
+  const resultsStart = 890;
+  const resultsScrollStart = 1000;
+  const resultsScrollEnd = 1080;
 
   // Scroll amount for config
   const configScrollY = interpolate(
@@ -57,14 +57,21 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
 
+  // Scroll amount for results
+  const resultsScrollY = interpolate(
+    frame,
+    [resultsScrollStart, resultsScrollEnd],
+    [0, 400],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
+  );
+
   // Scene visibility
   const showTerminal = frame < browserOpenStart;
   const showDashboard = frame >= browserOpenStart && frame < dashboardToConfigTransition + 20;
   const showConfig = frame >= dashboardToConfigTransition && frame < configToLoadingTransition + 20;
-  const showLoading = frame >= configToLoadingTransition && frame < loadingToEmotionsTransition + 20;
-  const showEmotions = frame >= loadingToEmotionsTransition && frame < emotionsToPerformanceTransition + 20;
-  const showPerformance = frame >= emotionsToPerformanceTransition && frame < performanceToTranscriptTransition + 20;
-  const showTranscript = frame >= performanceToTranscriptTransition;
+  const showLoading = frame >= configToLoadingTransition && frame < loadingToInterviewTransition + 20;
+  const showInterview = frame >= loadingToInterviewTransition && frame < interviewToResultsTransition + 20;
+  const showResults = frame >= interviewToResultsTransition;
 
   // Dashboard to Config transition
   const dashToConfigProgress = interpolate(
@@ -86,26 +93,18 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
 
-  // Loading to Emotions transition
-  const loadingToEmotionsProgress = interpolate(
+  // Loading to Interview transition
+  const loadingToInterviewProgress = interpolate(
     frame,
-    [loadingToEmotionsTransition, loadingToEmotionsTransition + 20],
+    [loadingToInterviewTransition, loadingToInterviewTransition + 15],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
 
-  // Emotions to Performance transition
-  const emotionsToPerformanceProgress = interpolate(
+  // Interview to Results transition
+  const interviewToResultsProgress = interpolate(
     frame,
-    [emotionsToPerformanceTransition, emotionsToPerformanceTransition + 20],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
-  );
-
-  // Performance to Transcript transition
-  const performanceToTranscriptProgress = interpolate(
-    frame,
-    [performanceToTranscriptTransition, performanceToTranscriptTransition + 20],
+    [interviewToResultsTransition, interviewToResultsTransition + 20],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
@@ -134,10 +133,12 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
           >
             <MacOSTerminal
               promptUser="user"
-              promptPath="~"
+              promptPath="/Users/maxwellmoroz"
               typedText="@claude, help me get a job"
               typeStartFrame={30}
               framesPerChar={3}
+              linkHoverFrame={280}
+              linkClickFrame={288}
             />
           </div>
         )}
@@ -195,8 +196,8 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
             style={{
               position: "absolute",
               inset: 30,
-              opacity: frame >= loadingToEmotionsTransition
-                ? interpolate(loadingToEmotionsProgress, [0, 1], [1, 0])
+              opacity: frame >= loadingToInterviewTransition
+                ? interpolate(loadingToInterviewProgress, [0, 1], [1, 0])
                 : interpolate(configToLoadProgress, [0, 1], [0, 1]),
             }}
           >
@@ -206,64 +207,47 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
           </div>
         )}
 
-        {/* Live Emotions View */}
-        {showEmotions && (
+        {/* Interview In Progress (brief flash) */}
+        {showInterview && (
           <div
             style={{
               position: "absolute",
               inset: 30,
-              opacity: frame >= emotionsToPerformanceTransition
-                ? interpolate(emotionsToPerformanceProgress, [0, 1], [1, 0])
-                : interpolate(loadingToEmotionsProgress, [0, 1], [0, 1]),
+              opacity: frame >= interviewToResultsTransition
+                ? interpolate(interviewToResultsProgress, [0, 1], [1, 0])
+                : interpolate(loadingToInterviewProgress, [0, 1], [0, 1]),
             }}
           >
             <BrowserWindow url="interviewpro.app/interview/live">
-              <LiveEmotionsView animationStartFrame={emotionsStart} />
+              <InterviewInProgress animationStartFrame={interviewStart} interviewerVideoSrc="interviewer-recording.mov" />
             </BrowserWindow>
           </div>
         )}
 
-        {/* Performance View */}
-        {showPerformance && (
+        {/* Combined Results View (Performance + Live Emotions + Transcript) */}
+        {showResults && (
           <div
             style={{
               position: "absolute",
               inset: 30,
-              opacity: frame >= performanceToTranscriptTransition
-                ? interpolate(performanceToTranscriptProgress, [0, 1], [1, 0])
-                : interpolate(emotionsToPerformanceProgress, [0, 1], [0, 1]),
+              opacity: interpolate(interviewToResultsProgress, [0, 1], [0, 1]),
             }}
           >
             <BrowserWindow url="interviewpro.app/results">
-              <PerformanceView animationStartFrame={performanceStart} />
+              <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} />
             </BrowserWindow>
           </div>
         )}
 
-        {/* Transcript View */}
-        {showTranscript && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 30,
-              opacity: interpolate(performanceToTranscriptProgress, [0, 1], [0, 1]),
-            }}
-          >
-            <BrowserWindow url="interviewpro.app/transcript">
-              <TranscriptView animationStartFrame={transcriptStart} />
-            </BrowserWindow>
-          </div>
-        )}
-
-        {/* Cursor for clicking InterviewPro text in terminal */}
+        {/* Cursor for clicking InterviewPro link in terminal */}
         {frame >= 250 && frame < browserOpenStart + 20 && (
           <Cursor
             startX={800}
-            startY={700}
-            endX={378}
-            endY={242}
+            startY={600}
+            endX={340}
+            endY={340}
             moveStartFrame={250}
-            moveDuration={35}
+            moveDuration={25}
             clickFrame={288}
           />
         )}
@@ -285,9 +269,9 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
         {frame >= cursorMoveToStartInterview && frame < configToLoadingTransition + 30 && (
           <Cursor
             startX={900}
-            startY={300}
+            startY={400}
             endX={640}
-            endY={620}
+            endY={870}
             moveStartFrame={cursorMoveToStartInterview}
             moveDuration={30}
             clickFrame={startInterviewClickFrame}

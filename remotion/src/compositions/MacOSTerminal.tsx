@@ -7,14 +7,18 @@ export type MacOSTerminalProps = {
   typedText?: string;
   typeStartFrame?: number;
   framesPerChar?: number;
+  linkHoverFrame?: number; // Frame when cursor starts hovering over InterviewPro
+  linkClickFrame?: number; // Frame when link is clicked
 };
 
 export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
   promptUser = "user",
-  promptPath = "~",
+  promptPath = "/Users/maxwellmoroz",
   typedText = "@claude, help me get a job",
   typeStartFrame = 30,
   framesPerChar = 3,
+  linkHoverFrame = 280,
+  linkClickFrame = 288,
 }) => {
   const frame = useCurrentFrame();
 
@@ -25,7 +29,6 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
     typedText.length
   );
   const displayedText = typedText.slice(0, charsToShow);
-  const isTypingComplete = charsToShow >= typedText.length;
 
   // Calculate when user typing finishes
   const userTypingEndFrame = typeStartFrame + typedText.length * framesPerChar;
@@ -43,23 +46,29 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
 
   // Claude response 2: appears 30 frames after response 1 finishes
   const response2StartFrame = response1StartFrame + response1Text.length * 6 + 30;
-  const response2Text = "wait just use InterviewPro";
+  const response2Prefix = "wait just use\u00A0";
+  const response2Link = "InterviewPro";
+  const response2Full = response2Prefix + response2Link;
   const response2Progress = Math.max(0, frame - response2StartFrame);
   const response2CharsToShow = Math.min(
     Math.floor(response2Progress / 2), // Faster typing
-    response2Text.length
+    response2Full.length
   );
-  const displayedResponse2 = response2Text.slice(0, response2CharsToShow);
+  const displayedResponse2 = response2Full.slice(0, response2CharsToShow);
   const showResponse2 = frame >= response2StartFrame;
 
-  // Determine where cursor should be
-  const isResponse2Complete = response2CharsToShow >= response2Text.length;
-  const cursorOpacity =
-    isResponse2Complete && showResponse2
-      ? Math.floor(frame / 15) % 2 === 0
-        ? 1
-        : 0
-      : 1;
+  // Split displayed text into prefix and link parts
+  const displayedPrefix = displayedResponse2.slice(0, Math.min(response2CharsToShow, response2Prefix.length));
+  const displayedLink = response2CharsToShow > response2Prefix.length
+    ? displayedResponse2.slice(response2Prefix.length)
+    : "";
+
+  // Link hover/click states
+  const isLinkHovered = frame >= linkHoverFrame;
+  const isLinkClicked = frame >= linkClickFrame;
+
+  // Cursor blinking
+  const cursorVisible = Math.floor(frame / 15) % 2 === 0;
 
   // Determine which line cursor is on
   const cursorOnUser = !showResponse1;
@@ -152,32 +161,83 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
           style={{
             flex: 1,
             backgroundColor: "#ffffff",
-            padding: 20,
+            padding: "32px 40px",
             fontFamily:
               '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Menlo, monospace',
             fontSize: 15,
-            lineHeight: 1.8,
+            lineHeight: 1.6,
             color: "#1a1a1a",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
+          {/* Claude Code Header */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 }}>
+            {/* Claude Code Logo - Pixel Art Style */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Row 1 */}
+              <div style={{ display: "flex", gap: 2 }}>
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "transparent" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "transparent" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+              </div>
+              {/* Row 2 */}
+              <div style={{ display: "flex", gap: 2 }}>
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+              </div>
+              {/* Row 3 - Eyes */}
+              <div style={{ display: "flex", gap: 2 }}>
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#2d2d2d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#2d2d2d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+              </div>
+              {/* Row 4 - Nose */}
+              <div style={{ display: "flex", gap: 2 }}>
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#8b5a42" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+                <div style={{ width: 16, height: 16, backgroundColor: "#c97a5d" }} />
+              </div>
+            </div>
+
+            {/* Header Text */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>Claude Code</span>
+                <span style={{ fontSize: 14, color: "#9ca3af" }}>v2.0.55</span>
+              </div>
+              <div style={{ fontSize: 14, color: "#9ca3af" }}>
+                Opus 4.5 · API Usage Billing
+              </div>
+              <div style={{ fontSize: 14, color: "#9ca3af" }}>
+                {promptPath}
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, backgroundColor: "#e5e7eb", marginBottom: 24 }} />
+
           {/* User Prompt Line */}
           <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ color: "#2e7d32", fontWeight: 600 }}>
-              {promptUser}@mac
-            </span>
-            <span style={{ color: "#757575" }}>:</span>
-            <span style={{ color: "#1565c0", fontWeight: 600 }}>
-              {promptPath}
-            </span>
-            <span style={{ color: "#757575" }}>$ </span>
+            <span style={{ color: "#9ca3af", marginRight: 8 }}>&gt;</span>
             <span style={{ color: "#1a1a1a" }}>{displayedText}</span>
             {cursorOnUser && (
               <span
                 style={{
-                  width: 10,
-                  height: 20,
+                  width: 2,
+                  height: 18,
                   backgroundColor: "#1a1a1a",
-                  opacity: cursorOpacity,
+                  opacity: cursorVisible ? 1 : 0,
                   marginLeft: 1,
                 }}
               />
@@ -186,16 +246,17 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
 
           {/* Claude Response 1 */}
           {showResponse1 && (
-            <div style={{ display: "flex", alignItems: "center", marginTop: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", marginTop: 16 }}>
+              <span style={{ color: "#9ca3af", marginRight: 8 }}>&gt;</span>
               <span style={{ color: "#e65100", fontWeight: 600 }}>@claude:</span>
               <span style={{ marginLeft: 8 }}>{displayedResponse1}</span>
               {cursorOnResponse1 && (
                 <span
                   style={{
-                    width: 10,
-                    height: 20,
+                    width: 2,
+                    height: 18,
                     backgroundColor: "#1a1a1a",
-                    opacity: cursorOpacity,
+                    opacity: cursorVisible ? 1 : 0,
                     marginLeft: 1,
                   }}
                 />
@@ -205,22 +266,45 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
 
           {/* Claude Response 2 */}
           {showResponse2 && (
-            <div style={{ display: "flex", alignItems: "center", marginTop: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", marginTop: 16 }}>
+              <span style={{ color: "#9ca3af", marginRight: 8 }}>&gt;</span>
               <span style={{ color: "#e65100", fontWeight: 600 }}>@claude:</span>
-              <span style={{ marginLeft: 8 }}>{displayedResponse2}</span>
-              {cursorOnResponse2 && (
+              <span style={{ marginLeft: 8 }}>{displayedPrefix}</span>
+              {displayedLink && (
                 <span
                   style={{
-                    width: 10,
-                    height: 20,
+                    color: isLinkHovered ? "#2563eb" : "#1a1a1a",
+                    textDecoration: isLinkHovered ? "underline" : "none",
+                    fontWeight: isLinkHovered ? 600 : 400,
+                    transition: "all 0.15s ease",
+                    cursor: isLinkHovered ? "pointer" : "default",
+                  }}
+                >
+                  {displayedLink}
+                </span>
+              )}
+              {cursorOnResponse2 && !isLinkClicked && (
+                <span
+                  style={{
+                    width: 2,
+                    height: 18,
                     backgroundColor: "#1a1a1a",
-                    opacity: cursorOpacity,
+                    opacity: cursorVisible ? 1 : 0,
                     marginLeft: 1,
                   }}
                 />
               )}
             </div>
           )}
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Bottom hint */}
+          <div style={{ fontSize: 14, color: "#9ca3af" }}>
+            <span style={{ marginRight: 8 }}>?</span>
+            for shortcuts
+          </div>
         </div>
       </div>
     </AbsoluteFill>

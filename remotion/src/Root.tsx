@@ -6,6 +6,7 @@ import { LoadingScreen, LoadingScreenProps } from "./compositions/LoadingScreen"
 import { LiveEmotionsView, LiveEmotionsViewProps } from "./compositions/LiveEmotionsView";
 import { PerformanceView, PerformanceViewProps } from "./compositions/PerformanceView";
 import { TranscriptView, TranscriptViewProps } from "./compositions/TranscriptView";
+import { ResultsView, ResultsViewProps } from "./compositions/ResultsView";
 import { ProductDemo } from "./compositions/ProductDemo";
 
 export const RemotionRoot: React.FC = () => {
@@ -15,7 +16,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="ProductDemo"
         component={ProductDemo}
-        durationInFrames={1300}
+        durationInFrames={1200}
         fps={30}
         width={1280}
         height={1000}
@@ -113,6 +114,18 @@ export const RemotionRoot: React.FC = () => {
             animationStartFrame: 0,
             scrollY: 0,
           } satisfies TranscriptViewProps}
+        />
+
+        <Composition
+          id="ResultsView"
+          component={ResultsView}
+          durationInFrames={180}
+          fps={30}
+          width={1280}
+          height={1000}
+          defaultProps={{
+            animationStartFrame: 0,
+          } satisfies ResultsViewProps}
         />
       </Folder>
     </>
