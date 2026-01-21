@@ -391,14 +391,13 @@ Generate JSON in this format:
   "tree": {
     "root": "container",
     "elements": {
-      "info_1": { "type": "InfoCard", "props": { "title": "...", "message": "...", "variant": "tip" } },
-      "choice_1": { "type": "MultiChoiceCard", "props": { "question": "...", "options": ["A", "B", "C"] } }
+      "choice_1": { "type": "MultiChoiceCard", "props": { "question": "...", "options": ["A", "B", "C"] } },
+      "slider_1": { "type": "SliderCard", "props": { "label": "...", "min": 1, "max": 10 } }
     }
   }
 }
 
-**Components:**
-- InfoCard: { title, message, variant: 'info'|'tip'|'warning' }
+**Components (DO NOT use InfoCard):**
 - MultiChoiceCard: { question, options[] }
 - SliderCard: { label, min, max, unitLabels?: [string, string] }
 - TagSelector: { label, availableTags[], maxSelections }
@@ -452,7 +451,7 @@ app.post('/api/ai/personality', async (req, res) => {
     const result = await streamText({
       model: groq('openai/gpt-oss-120b'),
       messages: [
-        { role: 'system', content: "You are an expert interviewer. Describe the persona you will adopt for this interview (e.g. 'Strict but fair', 'Collaborative peer'). Keep it under 3 sentences." },
+        { role: 'system', content: "Describe ONLY the interviewer's personality traits and demeanor (e.g. 'Warm and encouraging, asks clarifying questions' or 'Direct and analytical, pushes for deeper reasoning'). Do NOT mention interview topics, questions, or technical content. Keep it under 2 sentences focused purely on personality." },
         { role: 'user', content: intent }
       ],
       temperature: 1,
@@ -478,9 +477,9 @@ app.post('/api/ai/rewrite-personality', async (req, res) => {
       model: groq('openai/gpt-oss-120b'),
       messages: [
         {
-          role: 'system', content: `You are an expert editor. Rewrite the following interviewer persona based on the user's instruction. Keep it under 3 sentences.
-        
-        Current Persona: "${current_personality}"`
+          role: 'system', content: `Rewrite the interviewer personality based on the user's instruction. Output ONLY personality traits and demeanor (e.g. communication style, tone, approach). Do NOT mention interview topics or technical content. Keep it under 2 sentences.
+
+        Current: "${current_personality}"`
         },
         { role: 'user', content: instruction }
       ],
