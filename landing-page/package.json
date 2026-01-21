@@ -1,0 +1,17 @@
+{
+  "name": "interviewpro-landing",
+  "version": "1.0.0",
+  "description": "InterviewPro Landing Page",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["landing", "interview", "node"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

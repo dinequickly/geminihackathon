@@ -19,34 +19,31 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const NORMAL_SPEED_END = 840;   // 28 seconds at 30fps
 
   // Speed up timeline: divide frame times by 2 up to 23s
-  const browserOpenStart = 150;      // was 300
-  const dashboardStart = 155;        // was 310
-  const cursorMoveToStartNew = 200;  // was 400
-  const startNewClickFrame = 217;    // was 435
-  const dashboardToConfigTransition = 225;  // was 450
-  const configStart = 235;           // was 470
+  const browserOpenStart = 168;      // was 300 (delayed by 18 frames = 0.6s)
+  const dashboardStart = 173;        // was 310 (delayed by 18 frames)
+  const cursorMoveToStartNew = 218;  // was 400 (delayed by 18 frames)
+  const startNewClickFrame = 235;    // was 435 (delayed by 18 frames)
+  const dashboardToConfigTransition = 243;  // was 450 (delayed by 18 frames)
+  const configStart = 253;           // was 470 (delayed by 18 frames)
 
   // Config scrolling timeline (also sped up)
-  const scrollStartFrame = 290;      // was 580
-  const scrollEndFrame = 310;        // was 620
-  const cursorMoveToStartInterview = 315; // was 630
-  const startInterviewClickFrame = 332;   // was 665
-  const configToLoadingTransition = 340;  // was 680
-  const loadingStart = 342;          // was 685
+  const scrollStartFrame = 308;      // was 580 (delayed by 18 frames)
+  const scrollEndFrame = 328;        // was 620 (delayed by 18 frames)
+  const cursorMoveToStartInterview = 333; // was 630 (delayed by 18 frames)
+  const startInterviewClickFrame = 350;   // was 665 (delayed by 18 frames)
+  const configToLoadingTransition = 358;  // was 680 (delayed by 18 frames)
+  const loadingStart = 360;          // was 685 (delayed by 18 frames)
 
   // Interview in progress timeline (7 seconds = 210 frames)
-  const loadingToInterviewTransition = 345; // was 695 (still in speedup)
-  const interviewStart = 350;        // was 705
-  const interviewToResultsTransition = 560; // was 825 (now 7 seconds: 350 + 210)
+  const loadingToInterviewTransition = 363; // was 695 (delayed by 18 frames)
+  const interviewStart = 368;        // was 705 (delayed by 18 frames)
+  const interviewToResultsTransition = 578; // was 825 (now 7 seconds: 368 + 210)
 
   // Results timeline (after interview)
-  const resultsStart = 570;          // was 840
-  const resultsScrollStart = 600;    // was 950 (disabled scroll animation)
-  const resultsScrollEnd = 600;      // was 1030 (no scroll - same as start)
+  const resultsStart = 588;          // was 840 (delayed by 18 frames)
+  const resultsScrollStart = 618;    // was 950 (disabled scroll animation)
+  const resultsScrollEnd = 618;      // was 1030 (no scroll - same as start)
 
-  // Shuffleboard effect timeline
-  const shuffleboardStart = 671;     // When card starts moving (added 0.7s = 21 frames)
-  const shuffleboardShootOut = 711;  // When card shoots into space (slower: 40 frames instead of 20)
 
   // Scroll amount for config
   const configScrollY = interpolate(
@@ -103,19 +100,38 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
 
-  // Shuffleboard 3D card effect
-  const shuffleboardProgress = interpolate(
+  // Cards slide off to the left with 0.2 second (6 frame) delays
+  const cardSlideStart = 692; // 23.06 sec
+  const cardSlideDuration = 58; // ~2 seconds to slide off
+  const cardStaggerDelay = 6; // 0.2 seconds between each card
+
+  // Helper function to get slide progress for each card
+  const getCardSlideProgress = (cardIndex: number) => {
+    const start = cardSlideStart + (cardIndex * cardStaggerDelay);
+    return interpolate(
+      frame,
+      [start, start + cardSlideDuration],
+      [0, 1],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
+    );
+  };
+
+  // Front card (index 0)
+  const frontCardProgress = getCardSlideProgress(0);
+  const frontCardTranslateX = interpolate(frontCardProgress, [0, 1], [0, -1500]);
+  const frontCardOpacity = interpolate(frontCardProgress, [0, 1], [1, 0.7]);
+
+  // Last card grows to fill screen (starts when card 2 begins sliding)
+  const lastCardGrowStart = cardSlideStart + (2 * cardStaggerDelay); // After card 2 starts
+  const lastCardGrowEnd = lastCardGrowStart + 40; // ~1.3 seconds to grow
+  const lastCardGrowProgress = interpolate(
     frame,
-    [shuffleboardStart, shuffleboardShootOut],
+    [lastCardGrowStart, lastCardGrowEnd],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
-
-  // Card moves left and rotates
-  const cardTranslateX = interpolate(shuffleboardProgress, [0, 0.5, 1], [0, -200, -800]);
-  const cardRotateX = interpolate(shuffleboardProgress, [0, 0.5, 1], [0, 30, 45]); // Clockwise tilt
-  const cardScale = interpolate(shuffleboardProgress, [0, 0.5, 1], [1, 0.95, 0.6]); // Shrink as it goes away
-  const cardOpacity = interpolate(shuffleboardProgress, [0, 0.8, 1], [1, 1, 0]); // Fade out at end
+  const lastCardScale = interpolate(lastCardGrowProgress, [0, 1], [0.955, 1.08]);
+  const lastCardTranslateX = interpolate(lastCardGrowProgress, [0, 1], [60, 0]); // Move from offset to center
 
   return (
     <AbsoluteFill
@@ -142,7 +158,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
             <MacOSTerminal
               promptUser="user"
               promptPath="/Users/maxwellmoroz"
-              typedText="@claude, help me get a job"
+              typedText="@claude help me get a job"
               typeStartFrame={30}
               framesPerChar={3}
               linkHoverFrame={280}
@@ -234,73 +250,97 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
         {/* Combined Results View (Performance + Live Emotions + Transcript) */}
         {showResults && (
           <>
-            {/* Background cards (deck effect) - only visible during shuffleboard */}
-            {frame >= shuffleboardStart && (
-              <>
-                {[1, 2, 3].map((i) => {
-                  // Stagger each card's appearance
-                  const cardDelay = i * 0.12; // Each card starts 12% later
-                  const fadeInEnd = Math.min(cardDelay + 0.25, 0.95);
-                  const holdEnd = Math.min(fadeInEnd + 0.3, 0.98);
-                  const cardProgress = interpolate(
-                    shuffleboardProgress,
-                    [cardDelay, fadeInEnd, holdEnd, 1],
-                    [0, 1, 1, 0],
-                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-                  );
-
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        position: "absolute",
-                        inset: 30,
-                        borderRadius: 16,
-                        backgroundColor: "#fff",
-                        boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
-                        transformStyle: "preserve-3d",
-                        transform: `translateX(${-150 - i * 10}px) translateY(${i * 8}px) rotateX(${20 + i * 5}deg) scale(${0.95 - i * 0.05})`,
-                        opacity: cardProgress * 0.6,
-                        zIndex: -i,
-                      }}
-                    />
-                  );
-                })}
-              </>
-            )}
-
-            {/* Main results card with shuffleboard effect */}
+            {/* Card stack container - stays in place */}
             <div
               style={{
                 position: "absolute",
-                inset: 30,
-                opacity: frame < shuffleboardStart
-                  ? interpolate(interviewToResultsProgress, [0, 1], [0, 1])
-                  : cardOpacity,
-                borderRadius: 16,
-                overflow: "hidden",
-                boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
-                transformStyle: "preserve-3d",
-                transform: frame >= shuffleboardStart
-                  ? `translateX(${cardTranslateX}px) rotateX(${cardRotateX}deg) scale(${cardScale})`
-                  : "none",
+                inset: 0,
+                opacity: interpolate(interviewToResultsProgress, [0, 1], [0, 1]),
               }}
             >
-              <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} />
+              {/* Stack of cards behind - representing multiple practice sessions */}
+              {/* Cards 1 and 2 slide off */}
+              {[2, 1].map((i) => {
+                const cardOffset = i * 20; // Horizontal offset for each card
+                const cardScaleVal = 1 - i * 0.015; // Slightly smaller as they go back
+
+                // Each card slides off with staggered delay
+                const stackCardProgress = getCardSlideProgress(i);
+                const stackCardTranslateX = interpolate(stackCardProgress, [0, 1], [cardOffset, -1500]);
+                const stackCardOpacity = interpolate(stackCardProgress, [0, 1], [1, 0.7]);
+
+                return (
+                  <div
+                    key={`stack-${i}`}
+                    style={{
+                      position: "absolute",
+                      inset: 30,
+                      borderRadius: 16,
+                      backgroundColor: "#fff",
+                      boxShadow: "0 15px 40px rgba(0, 0, 0, 0.15)",
+                      transform: `translateX(${stackCardTranslateX}px) scale(${cardScaleVal})`,
+                      opacity: stackCardOpacity,
+                      zIndex: -i,
+                    }}
+                  >
+                    {/* Placeholder content hint */}
+                    <div style={{ padding: 40, opacity: 0.3 }}>
+                      <div style={{ height: 24, width: "60%", backgroundColor: "#e5e7eb", borderRadius: 8, marginBottom: 16 }} />
+                      <div style={{ height: 16, width: "40%", backgroundColor: "#e5e7eb", borderRadius: 6 }} />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Last card (card 3) - grows to fill screen */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 30,
+                  borderRadius: 16,
+                  backgroundColor: "#fff",
+                  boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
+                  transform: `translateX(${lastCardTranslateX}px) scale(${lastCardScale})`,
+                  zIndex: -3,
+                }}
+              >
+                {/* Placeholder content hint */}
+                <div style={{ padding: 40, opacity: 0.3 }}>
+                  <div style={{ height: 24, width: "60%", backgroundColor: "#e5e7eb", borderRadius: 8, marginBottom: 16 }} />
+                  <div style={{ height: 16, width: "40%", backgroundColor: "#e5e7eb", borderRadius: 6 }} />
+                </div>
+              </div>
+
+              {/* Main results card (front) - slides off to the right */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 30,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
+                  backgroundColor: "#fff",
+                  zIndex: 1,
+                  transform: `translateX(${frontCardTranslateX}px)`,
+                  opacity: frontCardOpacity,
+                }}
+              >
+                <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} />
+              </div>
             </div>
           </>
         )}
 
         {/* Cursor for clicking InterviewPro link in terminal */}
-        {frame >= 250 && frame < browserOpenStart + 20 && (
+        {frame >= 268 && frame < browserOpenStart + 20 && (
           <Cursor
             startX={800}
             startY={600}
             endX={340}
             endY={340}
-            moveStartFrame={250}
+            moveStartFrame={268}
             moveDuration={25}
-            clickFrame={288}
+            clickFrame={306}
           />
         )}
 

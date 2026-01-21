@@ -189,7 +189,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
             </PlayfulButton>
           ) : (
             <PlayfulButton
-              variant="coral"
+              variant="primary"
               icon={VideoOff}
               onClick={handleStopSession}
               disabled={stopping}

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InterviewPro - Master Your Next Interview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient Background -->
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container">
+      <div class="nav-content">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </div>
+          <span class="logo-text">InterviewPro</span>
+        </div>
+        <button class="btn-secondary" onclick="window.location.href='/onboarding'">Sign In</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <!-- Badge -->
+        <div class="badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span>AI-Powered Interview Preparation</span>
+        </div>
+
+        <!-- Main Heading -->
+        <h1 class="hero-title">
+          <span class="title-line">Interviews are</span>
+          <span class="title-gradient">complicated</span>
+        </h1>
+
+        <!-- Subheading -->
+        <p class="hero-subtitle">
+          But your preparation doesn't have to be. Master technical skills, emotional intelligence,
+          communication, and executive presence. Be ready to <span class="highlight">impress</span>,
+          not just answer.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="cta-buttons">
+          <button class="btn-primary" onclick="window.location.href='/onboarding'">
+            Start Practicing Free
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+          <button class="btn-secondary" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">
+            See How It Works
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value">10k+</div>
+            <div class="stat-label">Interviews Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">94%</div>
+            <div class="stat-label">Success Rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">4.9/5</div>
+            <div class="stat-label">User Rating</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Elements -->
+      <div class="floating-element floating-1"></div>
+      <div class="floating-element floating-2"></div>
+      <div class="floating-element floating-3"></div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">
+          Practice What <span class="text-gradient">Matters</span>
+        </h2>
+        <p class="section-subtitle">
+          Four key dimensions that separate good candidates from great ones
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Technical Skills -->
+        <div class="feature-card" style="animation-delay: 0ms">
+          <div class="feature-icon icon-blue">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <h3 class="feature-title">Technical Skills</h3>
+          <p class="feature-description">
+            Master the questions that matter with targeted practice across your domain.
+          </p>
+          <div class="feature-link">
+            Explore
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Emotional Intelligence -->
+        <div class="feature-card" style="animation-delay: 100ms">
+          <div class="feature-icon icon-pink">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </div>
+          <h3 class="feature-title">Emotional Intelligence</h3>
+          <p class="feature-description">
+            Develop self-awareness and authentic responses that resonate.
+          </p>
+          <div class="feature-link">
+            Explore
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Communication -->
+        <div class="feature-card" style="animation-delay: 200ms">
+          <div class="feature-icon icon-purple">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <h3 class="feature-title">Communication</h3>
+          <p class="feature-description">
+            Articulate complex ideas clearly and confidently under pressure.
+          </p>
+          <div class="feature-link">
+            Explore
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Executive Presence -->
+        <div class="feature-card" style="animation-delay: 300ms">
+          <div class="feature-icon icon-indigo">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </div>
+          <h3 class="feature-title">Executive Presence</h3>
+          <p class="feature-description">
+            Command the room with poise, energy, and authentic confidence.
+          </p>
+          <div class="feature-link">
+            Explore
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-card">
+        <h2 class="cta-title">
+          Ready When <span class="text-gradient">You Are</span>
+        </h2>
+        <p class="cta-subtitle">
+          Jump into a practice interview in seconds. Get instant feedback on your performance.
+          Track your growth across all dimensions. No scheduling. No pressure. Just progress.
+        </p>
+        <button class="btn-primary btn-large" onclick="window.location.href='/onboarding'">
+          Get Started Now
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </div>
+          <span class="logo-text">InterviewPro</span>
+        </div>
+        <div class="copyright">
+          © 2024 InterviewPro. Built to help you succeed.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

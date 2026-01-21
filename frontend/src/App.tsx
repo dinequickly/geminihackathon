@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import LandingPage from './pages/LandingPage';
 import Onboarding from './pages/Onboarding';
 import Interview from './pages/Interview';
 import Results from './pages/Results';
@@ -60,9 +61,7 @@ function App() {
           <Routes>
           <Route
             path="/"
-            element={
-              userId ? <Navigate to="/dashboard" replace /> : <Onboarding onComplete={setUserId} />
-            }
+            element={<LandingPage />}
           />
           <Route
             path="/onboarding"
