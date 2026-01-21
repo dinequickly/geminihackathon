@@ -7,7 +7,6 @@ import { LoadingScreen } from "./LoadingScreen";
 import { InterviewInProgress } from "./InterviewInProgress";
 import { ResultsView } from "./ResultsView";
 import { Cursor } from "../components/Cursor";
-import { BrowserWindow } from "../components/BrowserWindow";
 
 export type ProductDemoProps = {};
 
@@ -20,9 +19,9 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   // 300-450: Dashboard with pulsing button
   // 420-440: Cursor moves to Start Interview button, clicks
   // 450-680: Interview Config screen with scroll
-  // 680-780: Loading screen
-  // 780-870: Interview in progress (brief flash)
-  // 870-1180: Results view with scroll (Performance + Live Emotions + Transcript)
+  // 680-695: Loading screen (0.5 sec)
+  // 695-825: Interview in progress
+  // 825+: Results view with scroll
 
   const browserOpenStart = 300;
   const dashboardStart = 310;
@@ -37,17 +36,17 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const cursorMoveToStartInterview = 630;
   const startInterviewClickFrame = 665;
   const configToLoadingTransition = 680;
-  const loadingStart = 700;
+  const loadingStart = 685;
 
-  // Interview in progress timeline
-  const loadingToInterviewTransition = 780;
-  const interviewStart = 790;
-  const interviewToResultsTransition = 870;
+  // Interview in progress timeline (loading is only 0.5 sec)
+  const loadingToInterviewTransition = 695;
+  const interviewStart = 705;
+  const interviewToResultsTransition = 825;
 
   // Results timeline
-  const resultsStart = 890;
-  const resultsScrollStart = 1000;
-  const resultsScrollEnd = 1080;
+  const resultsStart = 840;
+  const resultsScrollStart = 950;
+  const resultsScrollEnd = 1030;
 
   // Scroll amount for config
   const configScrollY = interpolate(
@@ -68,8 +67,8 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   // Scene visibility
   const showTerminal = frame < browserOpenStart;
   const showDashboard = frame >= browserOpenStart && frame < dashboardToConfigTransition + 20;
-  const showConfig = frame >= dashboardToConfigTransition && frame < configToLoadingTransition + 20;
-  const showLoading = frame >= configToLoadingTransition && frame < loadingToInterviewTransition + 20;
+  const showConfig = frame >= dashboardToConfigTransition && frame < configToLoadingTransition + 10;
+  const showLoading = frame >= configToLoadingTransition && frame < loadingToInterviewTransition + 10;
   const showInterview = frame >= loadingToInterviewTransition && frame < interviewToResultsTransition + 20;
   const showResults = frame >= interviewToResultsTransition;
 
@@ -85,18 +84,18 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const dashboardOpacity = dashToConfigProgress < 0.5 ? 1 : 0;
   const configOpacity = dashToConfigProgress >= 0.5 ? 1 : 0;
 
-  // Config to Loading transition
+  // Config to Loading transition (quick 8-frame fade)
   const configToLoadProgress = interpolate(
     frame,
-    [configToLoadingTransition, configToLoadingTransition + 20],
+    [configToLoadingTransition, configToLoadingTransition + 8],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
 
-  // Loading to Interview transition
+  // Loading to Interview transition (quick 8-frame fade)
   const loadingToInterviewProgress = interpolate(
     frame,
-    [loadingToInterviewTransition, loadingToInterviewTransition + 15],
+    [loadingToInterviewTransition, loadingToInterviewTransition + 8],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
@@ -143,7 +142,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
           </div>
         )}
 
-        {/* Browser with Dashboard */}
+        {/* Dashboard */}
         {showDashboard && (
           <div
             style={{
@@ -153,19 +152,15 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               transform: `rotateY(${dashboardRotateY}deg)`,
               opacity: dashboardOpacity,
               backfaceVisibility: "hidden",
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
             }}
           >
-            <BrowserWindow
-              url="interviewpro.app"
-              showOpenAnimation={true}
-              openAnimationStart={browserOpenStart}
-              openAnimationDuration={15}
-            >
-              <Dashboard
-                animationStartFrame={dashboardStart}
-                showPulsingButton={frame > dashboardStart + 60}
-              />
-            </BrowserWindow>
+            <Dashboard
+              animationStartFrame={dashboardStart}
+              showPulsingButton={frame > dashboardStart + 60}
+            />
           </div>
         )}
 
@@ -179,14 +174,15 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               transform: frame < configToLoadingTransition ? `rotateY(${configRotateY}deg)` : "none",
               opacity: frame >= configToLoadingTransition ? interpolate(configToLoadProgress, [0, 1], [1, 0]) : configOpacity,
               backfaceVisibility: "hidden",
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
             }}
           >
-            <BrowserWindow url="interviewpro.app/configure">
-              <InterviewConfig
-                animationStartFrame={configStart}
-                scrollY={configScrollY}
-              />
-            </BrowserWindow>
+            <InterviewConfig
+              animationStartFrame={configStart}
+              scrollY={configScrollY}
+            />
           </div>
         )}
 
@@ -199,11 +195,12 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               opacity: frame >= loadingToInterviewTransition
                 ? interpolate(loadingToInterviewProgress, [0, 1], [1, 0])
                 : interpolate(configToLoadProgress, [0, 1], [0, 1]),
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
             }}
           >
-            <BrowserWindow url="interviewpro.app/interview">
-              <LoadingScreen animationStartFrame={loadingStart} />
-            </BrowserWindow>
+            <LoadingScreen animationStartFrame={loadingStart} />
           </div>
         )}
 
@@ -216,11 +213,12 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               opacity: frame >= interviewToResultsTransition
                 ? interpolate(interviewToResultsProgress, [0, 1], [1, 0])
                 : interpolate(loadingToInterviewProgress, [0, 1], [0, 1]),
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
             }}
           >
-            <BrowserWindow url="interviewpro.app/interview/live">
-              <InterviewInProgress animationStartFrame={interviewStart} interviewerVideoSrc="interviewer-recording.mov" />
-            </BrowserWindow>
+            <InterviewInProgress animationStartFrame={interviewStart} interviewerVideoSrc="newtavusrecording.mp4" />
           </div>
         )}
 
@@ -231,11 +229,12 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               position: "absolute",
               inset: 30,
               opacity: interpolate(interviewToResultsProgress, [0, 1], [0, 1]),
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
             }}
           >
-            <BrowserWindow url="interviewpro.app/results">
-              <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} />
-            </BrowserWindow>
+            <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} />
           </div>
         )}
 
