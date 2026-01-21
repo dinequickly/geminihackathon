@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Sparkles, 
+import {
+  ArrowLeft,
+  Sparkles,
   CheckCircle2,
   AlertCircle,
   Video,
   Pencil,
   X,
   Check,
-  Bot
+  Bot,
+  Clock
 } from 'lucide-react';
 import {
   PlayfulButton
@@ -157,18 +158,28 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
     if (intent.length < 10) return;
     setLoading(true);
     setError(null);
-    setDynamicTree([]);
+    
+    // Instant Pop: Add TimeSelector immediately
+    const initialTree: ComponentSchema[] = [{
+      type: 'TimeSelector',
+      id: 'duration',
+      props: { label: 'Session Duration', minMinutes: 5, maxMinutes: 15, default: 8 }
+    }];
+    setDynamicTree(initialTree);
+    setDynamicValues({ duration: 8 });
+    
     setPersonality('');
-    setStep(2); // Move to step 2 immediately to show streaming
+    setStep(2); 
     
     try {
       // Start both streams in parallel
       const componentsPromise = api.streamDynamicComponents(intent, (components) => {
-        setDynamicTree(components);
-        
+        // Filter out any AI-generated TimeSelectors to keep our dedicated slider at top
+        const newComponents = components.filter(c => c.type !== 'TimeSelector');
+
         // Also init default values for new components
         const defaults: Record<string, any> = {};
-        components.forEach(comp => {
+        newComponents.forEach(comp => {
             if (comp.props.default !== undefined && dynamicValues[comp.id] === undefined) {
                 defaults[comp.id] = comp.props.default;
             }
@@ -176,6 +187,8 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         if (Object.keys(defaults).length > 0) {
             setDynamicValues(prevVals => ({ ...prevVals, ...defaults }));
         }
+
+        setDynamicTree([...initialTree, ...newComponents]);
       });
 
       const personalityPromise = api.streamPersonality(intent, (chunk) => {
@@ -204,15 +217,15 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         personality: personality
       };
 
-      // Start Tavus video interview
+      // Start ElevenLabs interview
       await api.startInterview(
         userId,
-        fullConfig
+        fullConfig 
       );
 
-      // Navigate to the Tavus video interview page
-      navigate('/live-avatar-interview');
-
+      // Navigate to the ElevenLabs interview page
+      navigate('/interview');
+      
     } catch (err: any) {
       console.error('Failed to start:', err);
       setError(err.message || 'Failed to start interview session.');
@@ -289,11 +302,45 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         </p>
       </div>
 
+      {/* Interview Length Slider */}
+      <div className="bg-gradient-to-r from-primary-50 to-sky-50 border-2 border-primary-200 rounded-2xl p-6 animate-fade-in">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-sky-500 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="font-display font-bold text-lg text-gray-900">Interview Length</h3>
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-display font-black text-primary-600">
+              {dynamicValues.duration || 8}
+            </span>
+            <span className="text-lg font-bold text-primary-400 ml-1">min</span>
+          </div>
+        </div>
+
+        <div className="relative pt-2 pb-4">
+          <input
+            type="range"
+            min={5}
+            max={15}
+            value={dynamicValues.duration || 8}
+            onChange={(e) => setDynamicValues(prev => ({ ...prev, duration: Number(e.target.value) }))}
+            className="w-full h-3 bg-gradient-to-r from-primary-200 to-sky-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-primary-500 [&::-webkit-slider-thumb]:to-sky-500 [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:active:scale-95"
+          />
+          <div className="flex justify-between mt-3 text-xs font-bold text-gray-500 uppercase tracking-wide">
+            <span>Quick (5 min)</span>
+            <span>Standard (10 min)</span>
+            <span>Deep (15 min)</span>
+          </div>
+        </div>
+      </div>
+
       {personality && (
         <div className="animate-fade-in">
-            <PersonalityEditor 
-                personality={personality} 
-                setPersonality={setPersonality} 
+            <PersonalityEditor
+                personality={personality}
+                setPersonality={setPersonality}
             />
         </div>
       )}

@@ -349,135 +349,70 @@ app.post('/api/ai/generate-interview-config', async (req, res) => {
   }
 });
 
+import { streamText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// ... (previous imports)
+
+const groq = createOpenAI({
+  baseURL: 'https://api.groq.com/openai/v1',
+  apiKey: process.env.GROQ_API_KEY,
+});
+
 app.post('/api/ai/dynamic-components', async (req, res) => {
   try {
-    const { intent, personal_context } = req.body;
-
-    // Check for Anthropic API key
-    if (!process.env.ANTHROPIC_API_KEY) {
-      console.error('ANTHROPIC_API_KEY not configured');
-      return res.status(500).json({ error: 'Anthropic API key missing' });
+    const { intent, personal_context, mode } = req.body;
+    
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY missing');
     }
 
-    console.log('Generating dynamic components via Claude for intent:', intent);
+    console.log('Generating dynamic components via Vercel AI SDK (Groq):', intent);
+    
+    const systemPrompt = `You are a UI generator. You must generate a valid JSON object with a "tree" property containing an array of components.\n\n**Available Components & Props:**\n1. InfoCard { title: string, message: string, variant: 'info'|'tip'|'warning' }\n2. MultiChoiceCard { question: string, options: string[] }\n3. SliderCard { label: string, min: number, max: number, unitLabels?: [string, string] }\n4. TagSelector { label: string, availableTags: string[], maxSelections: number }\n5. TextInputCard { label: string, placeholder: string, maxLength: number }\n6. ScenarioCard { title: string, description: string, includes: string[] }\n7. QuestionCard { question: string }\n8. TimeSelector { label: string, minMinutes: number, maxMinutes: number }\n\n**Rules:**\n- ALWAYS start with a TimeSelector component.\n- Generate a form configuration for: "${intent}".\n- ${personal_context ? `Context: ${personal_context}` : ''}\n- Output strictly clean JSON. No markdown.`;
 
-    // Generate the catalog prompt with component definitions
-    const catalogPrompt = generateCatalogPrompt();
-    const fullPrompt = `${catalogPrompt}
+    const result = await streamText({
+      model: groq('openai/gpt-oss-120b'), // Using the requested model ID
+      system: systemPrompt,
+      prompt: "Generate the JSON tree.",
+      temperature: 0.7,
+    });
 
-${personal_context ? `\n**User Context**: ${personal_context}\n` : ''}
+    // Pipe the text stream directly to the response
+    result.pipeDataStreamToResponse(res);
 
-**User's Interview Goal**: ${intent}
-
-Generate a JSON configuration that creates 3-8 appropriate components for this interview setup. Focus on components that will help capture the user's preferences and requirements.`;
-
-    // Set headers for SSE
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    let accumulatedResponse = '';
-
-    // Stream from Claude
-    await streamComponentGeneration(
-      catalogPrompt,
-      fullPrompt,
-      (chunk) => {
-        accumulatedResponse += chunk;
-        // Write each chunk to the client in SSE format
-        res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-      }
-    );
-
-    // After streaming completes, validate the full response
-    console.log('Validating generated UI tree...');
-
-    try {
-      // Extract JSON from the response
-      const jsonMatch = accumulatedResponse.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
-      }
-
-      const parsedTree = JSON.parse(jsonMatch[0]);
-
-      // Validate the UITree structure
-      const validation = validateUITree(parsedTree);
-
-      if (!validation.success) {
-        console.error('Validation failed:', validation.errors || validation.error);
-        res.write(`data: ${JSON.stringify({
-          error: 'Generated components failed validation',
-          details: validation.errors || validation.error
-        })}\n\n`);
-      } else {
-        console.log('Validation successful');
-        res.write(`data: ${JSON.stringify({ complete: true })}\n\n`);
-      }
-    } catch (validationError: any) {
-      console.error('Validation error:', validationError.message);
-      res.write(`data: ${JSON.stringify({
-        error: 'Failed to parse generated response',
-        details: validationError.message
-      })}\n\n`);
-    }
-
-    res.end();
   } catch (error: any) {
     console.error('Dynamic components error:', error);
-
-    // If headers already sent, send error as SSE
-    if (res.headersSent) {
-      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-      res.end();
-    } else {
+    if (!res.headersSent) {
       res.status(500).json({ error: error.message });
     }
   }
 });
 
+
 app.post('/api/ai/personality', async (req, res) => {
   try {
     const { intent } = req.body;
-
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return res.status(500).json({ error: 'Anthropic API key missing' });
+    
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY missing');
     }
 
-    console.log('Generating interviewer personality for intent:', intent);
+    const result = await streamText({
+      model: groq('openai/gpt-oss-120b'),
+      messages: [
+        { role: 'system', content: "You are an expert interviewer. Describe the persona you will adopt for this interview (e.g. 'Strict but fair', 'Collaborative peer'). Keep it under 3 sentences." },
+        { role: 'user', content: intent }
+      ],
+      temperature: 1,
+    });
 
-    const systemPrompt = `You are an expert interviewer. Based on the user's interview goal, describe the persona you will adopt for this interview.
+    result.pipeDataStreamToResponse(res);
 
-Keep your response under 3 sentences. Be specific about your interviewing style, tone, and approach.
-
-Examples:
-- "Strict but fair senior technical lead who digs deep into system design"
-- "Collaborative peer focused on behavioral questions and culture fit"
-- "Friendly but thorough hiring manager evaluating leadership potential"`;
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    // Stream from Claude
-    await streamPersonalityGeneration(
-      systemPrompt,
-      intent,
-      (chunk) => {
-        // Write each chunk to the client (plain text streaming)
-        res.write(chunk);
-      }
-    );
-
-    res.end();
   } catch (error: any) {
     console.error('Personality stream error:', error);
-
-    if (res.headersSent) {
-      res.end();
-    } else {
-      res.status(500).json({ error: error.message });
-    }
+    if (!res.headersSent) res.status(500).json({ error: error.message });
   }
 });
 
@@ -486,42 +421,25 @@ app.post('/api/ai/rewrite-personality', async (req, res) => {
     const { current_personality, instruction } = req.body;
     
     if (!process.env.GROQ_API_KEY) {
-        return res.status(500).json({ error: 'API key missing' });
+      throw new Error('GROQ_API_KEY missing');
     }
 
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    const completion = await groq.chat.completions.create({
+    const result = await streamText({
+      model: groq('openai/gpt-oss-120b'),
       messages: [
         { role: 'system', content: `You are an expert editor. Rewrite the following interviewer persona based on the user's instruction. Keep it under 3 sentences.
         
         Current Persona: "${current_personality}"` },
         { role: 'user', content: instruction }
       ],
-      model: 'openai/gpt-oss-120b',
       temperature: 0.7,
-      max_completion_tokens: 1024,
-      top_p: 1,
-      stream: true,
-      stop: null
     });
 
-    for await (const chunk of completion) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
-            res.write(content);
-        }
-    }
-    res.end();
+    result.pipeDataStreamToResponse(res);
 
   } catch (error: any) {
     console.error('Personality rewrite error:', error);
     if (!res.headersSent) res.status(500).json({ error: error.message });
-    else res.end();
   }
 });
 

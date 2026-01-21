@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@elevenlabs/client": "^0.12.2",
+    "ai": "^6.0.42",
     "face-api.js": "^0.22.2",
     "lucide-react": "^0.303.0",
     "posthog-js": "^1.325.0",

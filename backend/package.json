@@ -8,9 +8,11 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.13",
     "@anthropic-ai/sdk": "^0.71.2",
     "@supabase/supabase-js": "^2.39.0",
     "@types/bcrypt": "^6.0.0",
+    "ai": "^6.0.42",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
