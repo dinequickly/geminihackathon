@@ -397,6 +397,8 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
 
 **Rules:**
 - Do not include TimeSelector; duration is configured elsewhere.
+- Never ask the user something like: "Are you ready to start this intervriew"
+- Never include anything about the duration of the interview
 - Generate a form configuration for: "${intent}".
 - ${personal_context ? `Context: ${personal_context}` : ''}
 - Each element must have a unique ID as its key (e.g., "info_1", "choice_1", "slider_1")
