@@ -380,7 +380,7 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
     });
 
     // Pipe the text stream directly to the response
-    result.pipeDataStreamToResponse(res);
+    result.pipeTextStreamToResponse(res);
 
   } catch (error: any) {
     console.error('Dynamic components error:', error);
@@ -408,7 +408,7 @@ app.post('/api/ai/personality', async (req, res) => {
       temperature: 1,
     });
 
-    result.pipeDataStreamToResponse(res);
+    result.pipeTextStreamToResponse(res);
 
   } catch (error: any) {
     console.error('Personality stream error:', error);
@@ -435,7 +435,7 @@ app.post('/api/ai/rewrite-personality', async (req, res) => {
       temperature: 0.7,
     });
 
-    result.pipeDataStreamToResponse(res);
+    result.pipeTextStreamToResponse(res);
 
   } catch (error: any) {
     console.error('Personality rewrite error:', error);
