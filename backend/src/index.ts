@@ -370,16 +370,65 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
 
     console.log('Generating dynamic components via Vercel AI SDK (Groq):', intent);
     
-    const systemPrompt = `You are a UI generator. You must generate a valid JSON object with a "tree" property containing an array of components.\n\n**Available Components & Props:**\n1. InfoCard { title: string, message: string, variant: 'info'|'tip'|'warning' }\n2. MultiChoiceCard { question: string, options: string[] }\n3. SliderCard { label: string, min: number, max: number, unitLabels?: [string, string] }\n4. TagSelector { label: string, availableTags: string[], maxSelections: number }\n5. TextInputCard { label: string, placeholder: string, maxLength: number }\n6. ScenarioCard { title: string, description: string, includes: string[] }\n7. QuestionCard { question: string }\n\n**Rules:**\n- Do not include TimeSelector; duration is configured elsewhere.\n- Generate a form configuration for: "${intent}".\n- ${personal_context ? `Context: ${personal_context}` : ''}\n- Output strictly clean JSON. No markdown.`;
+    const systemPrompt = `You are a UI generator using the json-render format. You must generate a valid JSON object in this exact structure:
+
+{
+  "tree": {
+    "root": "container",
+    "elements": {
+      "element_id_1": {
+        "type": "ComponentType",
+        "props": { ... },
+        "visible": true
+      },
+      "element_id_2": { ... }
+    }
+  }
+}
+
+**Available Components & Props:**
+1. InfoCard { title: string, message: string, variant: 'info'|'tip'|'warning' }
+2. MultiChoiceCard { question: string, options: string[] }
+3. SliderCard { label: string, min: number, max: number, unitLabels?: [string, string] }
+4. TagSelector { label: string, availableTags: string[], maxSelections: number }
+5. TextInputCard { label: string, placeholder: string, maxLength: number }
+6. ScenarioCard { title: string, description: string, includes: string[] }
+7. QuestionCard { question: string }
+
+**Rules:**
+- Do not include TimeSelector; duration is configured elsewhere.
+- Generate a form configuration for: "${intent}".
+- ${personal_context ? `Context: ${personal_context}` : ''}
+- Each element must have a unique ID as its key (e.g., "info_1", "choice_1", "slider_1")
+- Each element must have "type" (component name) and "props" (component properties)
+- The root must be "container"
+- Output strictly clean JSON. No markdown, no code blocks, just the JSON object.`;
 
     const result = await generateText({
-      model: groq('openai/gpt-oss-20b'),
+      model: groq('llama-3.3-70b-versatile'), // Better for structured output than OSS-20B
       system: systemPrompt,
       prompt: "Generate the JSON tree.",
       temperature: 0.7,
     });
 
-    res.type('text/plain').send(result.text);
+    // Clean up any markdown code blocks
+    let cleanedText = result.text.trim();
+    cleanedText = cleanedText.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+
+    // Validate that it's valid JSON before sending
+    try {
+      const parsed = JSON.parse(cleanedText);
+      if (!parsed.tree || !parsed.tree.elements) {
+        console.error('Invalid structure generated:', parsed);
+        throw new Error('Generated JSON missing required tree.elements structure');
+      }
+      console.log('Generated components:', Object.keys(parsed.tree.elements).length);
+    } catch (parseError: any) {
+      console.error('Generated invalid JSON:', cleanedText);
+      throw new Error(`Model generated invalid JSON: ${parseError.message}`);
+    }
+
+    res.type('text/plain').send(cleanedText);
 
   } catch (error: any) {
     console.error('Dynamic components error:', error);
