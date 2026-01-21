@@ -10,11 +10,17 @@ Railway is the fastest and easiest option. It auto-detects your setup and deploy
 
 1. **Go to Railway**: https://railway.app
 2. **Sign in with GitHub**
-3. **Click "New Project"**
-4. **Select "Deploy from GitHub repo"**
-5. **Choose your repository**: `dinequickly/geminihackathon`
-6. **Railway will auto-detect** your frontend and backend
-7. **Add Environment Variables**:
+3. **Create a New Project**: Click "New Project"
+
+#### Deploy Frontend:
+4. **Add Service**: Click "New" → "GitHub Repo" → Select `dinequickly/geminihackathon`
+5. **Configure Root Directory**:
+   - Click on the service
+   - Go to "Settings"
+   - Under "Build & Deploy" → "Root Directory" → Enter: `frontend`
+   - Railway will detect the `nixpacks.toml` automatically
+6. **Add Environment Variables** (if needed for frontend):
+   - Go to "Variables" tab
    - Click on each service (frontend/backend)
    - Add these variables:
      ```
