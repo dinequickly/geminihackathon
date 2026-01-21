@@ -161,8 +161,10 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               typedText="@claude help me get a job"
               typeStartFrame={30}
               framesPerChar={3}
-              linkHoverFrame={280}
-              linkClickFrame={288}
+              linkHoverFrame={380}
+              linkClickFrame={440}
+              cursorMoveStartFrame={350}
+              cursorClickFrame={440}
             />
           </div>
         )}

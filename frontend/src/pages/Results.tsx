@@ -17,7 +17,10 @@ import {
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
 import { VideoEmotionPlayer, TranscriptViewer, VideoEmotionPlayerRef } from '../components';
-import { PlayfulButton, PlayfulCard, LoadingSpinner } from '../components/PlayfulUI';
+import { LiquidButton } from '../components/LiquidButton';
+import { LiquidGlass } from '../components/LiquidGlass';
+import { LightLeakBackground } from '../components/LightLeakBackground';
+import { LoadingSpinner } from '../components/PlayfulUI';
 
 export default function Results() {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -38,7 +41,6 @@ export default function Results() {
     }
   }, [conversationId]);
 
-  // Poll for results if still processing
   useEffect(() => {
     if (conversation && !analysis && conversation.status !== 'error') {
       const interval = setInterval(loadResults, 5000);
@@ -73,12 +75,9 @@ export default function Results() {
   };
 
   const scrollToTranscript = () => {
-    // Expand transcript section if collapsed
     if (!expandedSections.has('transcript')) {
       setExpandedSections(prev => new Set([...prev, 'transcript']));
     }
-
-    // Scroll to transcript after a brief delay to allow expansion
     setTimeout(() => {
       transcriptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -91,9 +90,9 @@ export default function Results() {
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-100';
-    if (score >= 60) return 'bg-yellow-100';
-    return 'bg-red-100';
+    if (score >= 80) return 'bg-green-50 text-green-700';
+    if (score >= 60) return 'bg-yellow-50 text-yellow-700';
+    return 'bg-red-50 text-red-700';
   };
 
   const getLevelLabel = (level: string) => {
@@ -109,7 +108,7 @@ export default function Results() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream-100 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <LoadingSpinner size="lg" color="primary" />
       </div>
     );
@@ -117,273 +116,246 @@ export default function Results() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
-        <PlayfulCard variant="white" className="max-w-md w-full text-center animate-scale-in">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <LightLeakBackground />
+        <LiquidGlass className="max-w-md w-full text-center p-8">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 border border-red-100">
+            <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to load results</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <PlayfulButton
+          <h2 className="font-serif text-2xl text-black mb-2">Analysis Failed</h2>
+          <p className="text-gray-600 mb-8 font-light">{error}</p>
+          <LiquidButton
             onClick={() => navigate('/dashboard')}
-            variant="primary"
-            size="lg"
-            icon={ArrowLeft}
+            variant="black"
+            icon={<ArrowLeft size={16} />}
           >
             Back to Dashboard
-          </PlayfulButton>
-        </PlayfulCard>
+          </LiquidButton>
+        </LiquidGlass>
       </div>
     );
   }
 
-  // Show processing state
   if (!analysis) {
     return (
-      <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
-        <PlayfulCard variant="white" className="max-w-md w-full text-center animate-scale-in">
-          <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
-            <RefreshCw className="w-10 h-10 text-primary-600 animate-spin" />
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <LightLeakBackground />
+        <LiquidGlass className="max-w-md w-full text-center p-12">
+          <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-6 border border-gray-100">
+            <RefreshCw className="w-10 h-10 text-gray-900 animate-spin" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Analyzing your interview</h2>
-          <p className="text-gray-600 mb-6">
-            Our AI is reviewing your performance. This usually takes 1-2 minutes.
+          <h2 className="font-serif text-3xl text-black mb-4">Processing Signal</h2>
+          <p className="text-gray-600 mb-8 font-light">
+            Our AI is analyzing your performance metrics. This typically takes 1-2 minutes.
           </p>
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-6 overflow-hidden">
-            <div className="bg-primary-500 h-3 rounded-full animate-pulse" style={{ width: '60%' }} />
+          <div className="w-full bg-gray-100 rounded-full h-1 mb-8 overflow-hidden">
+            <div className="bg-black h-1 rounded-full animate-pulse" style={{ width: '60%' }} />
           </div>
-          <PlayfulButton
+          <LiquidButton
             onClick={() => navigate('/dashboard')}
-            variant="secondary"
-            size="md"
-            icon={ArrowLeft}
+            variant="ghost"
+            icon={<ArrowLeft size={16} />}
           >
             Back to Dashboard
-          </PlayfulButton>
-        </PlayfulCard>
+          </LiquidButton>
+        </LiquidGlass>
       </div>
     );
   }
 
   const categoryScores = [
-    { key: 'communication', label: 'Communication', icon: Mic, score: analysis.communication_score, feedback: analysis.communication_feedback },
-    { key: 'presence', label: 'Executive Presence', icon: Sparkles, score: analysis.presence_score, feedback: analysis.presence_feedback },
-    { key: 'technical', label: 'Technical Skills', icon: Brain, score: analysis.technical_score, feedback: analysis.technical_feedback },
-    { key: 'eq', label: 'Emotional Intelligence', icon: Heart, score: analysis.eq_score, feedback: analysis.eq_feedback },
-    { key: 'culture', label: 'Culture Fit', icon: Users, score: analysis.culture_fit_score, feedback: analysis.culture_fit_feedback },
-    { key: 'authenticity', label: 'Authenticity', icon: Award, score: analysis.authenticity_score, feedback: analysis.authenticity_feedback },
+    { key: 'communication', label: 'Communication', icon: Mic, score: analysis.communication_score },
+    { key: 'presence', label: 'Presence', icon: Sparkles, score: analysis.presence_score },
+    { key: 'technical', label: 'Technical', icon: Brain, score: analysis.technical_score },
+    { key: 'eq', label: 'Emotional IQ', icon: Heart, score: analysis.eq_score },
+    { key: 'culture', label: 'Culture', icon: Users, score: analysis.culture_fit_score },
+    { key: 'authenticity', label: 'Authenticity', icon: Award, score: analysis.authenticity_score },
   ].filter(c => c.score !== undefined && c.score !== null);
 
   return (
-    <div className="min-h-screen bg-cream-100 relative">
-      {/* Playful background blobs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[5%] right-[10%] w-96 h-96 bg-sky-200/30 rounded-blob animate-float" style={{ animationDuration: '10s' }} />
-        <div className="absolute bottom-[10%] left-[5%] w-[500px] h-[500px] bg-sunshine-200/30 rounded-blob-2 animate-float" style={{ animationDelay: '2s', animationDuration: '12s' }} />
-      </div>
+    <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
+      <LightLeakBackground />
 
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b-2 border-primary-100 sticky top-0 z-20 shadow-soft">
-        <div className="px-6 py-5 max-w-7xl mx-auto flex items-center gap-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="p-3 hover:bg-primary-50 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95"
-          >
-            <ArrowLeft className="w-5 h-5 text-primary-600" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Award className="w-6 h-6 text-primary-500" />
-              Interview Results
-            </h1>
-            <p className="text-sm text-gray-600 mt-0.5">
-              {conversation?.started_at && new Date(conversation.started_at).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </p>
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
+        <div className="flex flex-col">
+          <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+          <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Analysis Report</span>
         </div>
+        <LiquidButton
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/dashboard')}
+          icon={<ArrowLeft size={16} />}
+        >
+          Back
+        </LiquidButton>
       </header>
 
-      <main className="px-6 py-8 max-w-7xl mx-auto space-y-6 relative z-10">
+      <main className="max-w-6xl mx-auto px-6 pt-32 pb-24 relative z-10 space-y-8">
+        
         {/* Overall Score Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
+        <LiquidGlass className="p-10">
+          <div className="flex items-start justify-between mb-8">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-1">Overall Performance</h2>
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getScoreBg(analysis.overall_score)} ${getScoreColor(analysis.overall_score)}`}>
+              <h2 className="font-serif text-4xl text-black mb-2">Performance Summary</h2>
+              <span className={`inline-block px-3 py-1 rounded border text-xs font-mono uppercase tracking-widest ${getScoreBg(analysis.overall_score).replace('bg-', 'border-').replace('text-', 'text-')}`}>
                 {getLevelLabel(analysis.overall_level)}
               </span>
             </div>
             <div className="text-right">
-              <div className={`text-5xl font-bold ${getScoreColor(analysis.overall_score)}`}>
+              <div className={`font-serif text-7xl ${getScoreColor(analysis.overall_score)}`}>
                 {analysis.overall_score}
               </div>
-              <p className="text-sm text-gray-500">out of 100</p>
+              <p className="font-mono text-xs text-gray-400 uppercase tracking-widest mt-1">Score Index</p>
             </div>
           </div>
 
           {(analysis.feedback?.summary || analysis.overall_summary) && (
-            <p className="mt-4 text-gray-600 leading-relaxed">
+            <p className="text-xl text-gray-700 font-light leading-relaxed max-w-4xl border-l-2 border-gray-200 pl-6 my-8">
               {analysis.feedback?.summary || analysis.overall_summary}
             </p>
           )}
 
-          {/* Category scores at top */}
+          {/* Category Grid */}
           {categoryScores.length > 0 && (
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-8 border-t border-gray-100">
               {categoryScores.map(({ key, label, icon: Icon, score }) => (
-                <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${getScoreBg(score!)} flex items-center justify-center`}>
-                      <Icon className={`w-5 h-5 ${getScoreColor(score!)}`} />
-                    </div>
-                    <span className="font-medium text-gray-900">{label}</span>
+                <div key={key} className="flex flex-col items-center text-center p-4 rounded-2xl hover:bg-white/40 transition-colors">
+                  <div className={`w-10 h-10 rounded-full mb-3 flex items-center justify-center border border-gray-100 bg-white`}>
+                    <Icon className="w-5 h-5 text-gray-600" />
                   </div>
-                  <span className={`text-2xl font-bold ${getScoreColor(score!)}`}>{score}</span>
+                  <span className={`font-serif text-2xl mb-1 ${getScoreColor(score!)}`}>{score}</span>
+                  <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">{label}</span>
                 </div>
               ))}
             </div>
           )}
 
           {/* Quick stats */}
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <MessageSquare className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-              <p className="text-lg font-semibold text-gray-900">{analysis.filler_word_count || 0}</p>
-              <p className="text-xs text-gray-500">Filler Words</p>
+          <div className="flex gap-8 justify-center mt-8 pt-8 border-t border-gray-100">
+            <div className="text-center">
+              <p className="font-serif text-2xl text-black">{analysis.filler_word_count || 0}</p>
+              <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Filler Words</p>
             </div>
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-              <p className="text-lg font-semibold text-gray-900">{analysis.speaking_pace_wpm || '--'}</p>
-              <p className="text-xs text-gray-500">Words/Min</p>
+            <div className="text-center">
+              <p className="font-serif text-2xl text-black">{analysis.speaking_pace_wpm || '--'}</p>
+              <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Words / Min</p>
             </div>
           </div>
+        </LiquidGlass>
+
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Top Improvements */}
+          {analysis.top_improvements && analysis.top_improvements.length > 0 && (
+            <LiquidGlass className="p-0 overflow-hidden">
+              <button
+                onClick={() => toggleSection('improvements')}
+                className="w-full p-6 flex items-center justify-between bg-white/40 border-b border-gray-100"
+              >
+                <h2 className="font-serif text-2xl text-black">Key Improvements</h2>
+                {expandedSections.has('improvements') ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
+              </button>
+
+              {expandedSections.has('improvements') && (
+                <div className="p-6 space-y-4">
+                  {analysis.top_improvements.map((imp: any, i: number) => (
+                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-amber-50/50 border border-amber-100/50">
+                      <span className="font-mono text-amber-900/40 font-bold text-xl">0{i + 1}</span>
+                      <div>
+                        <p className="font-medium text-gray-900 mb-1">{imp.area}</p>
+                        <p className="text-sm text-gray-600 font-light leading-relaxed">{imp.suggestion}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </LiquidGlass>
+          )}
+
+          {/* Instant Rewrites */}
+          {analysis.instant_rewrites && analysis.instant_rewrites.length > 0 && (
+            <LiquidGlass className="p-0 overflow-hidden">
+              <button
+                onClick={() => toggleSection('rewrites')}
+                className="w-full p-6 flex items-center justify-between bg-white/40 border-b border-gray-100"
+              >
+                <h2 className="font-serif text-2xl text-black">AI Rewrites</h2>
+                {expandedSections.has('rewrites') ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
+              </button>
+
+              {expandedSections.has('rewrites') && (
+                <div className="p-6 space-y-6">
+                  {analysis.instant_rewrites.map((rewrite: any, i: number) => (
+                    <div key={i} className="rounded-xl overflow-hidden border border-gray-100">
+                      <div className="p-4 bg-red-50/30 border-b border-gray-100">
+                        <p className="font-mono text-[10px] text-red-400 uppercase tracking-widest mb-2">Original</p>
+                        <p className="text-sm text-gray-600 font-light">{rewrite.original}</p>
+                      </div>
+                      <div className="p-4 bg-green-50/30">
+                        <p className="font-mono text-[10px] text-green-600 uppercase tracking-widest mb-2">Optimized</p>
+                        <p className="text-sm text-gray-800">{rewrite.improved}</p>
+                        {rewrite.explanation && (
+                          <p className="text-xs text-gray-400 mt-3 italic pt-3 border-t border-green-100/50">{rewrite.explanation}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </LiquidGlass>
+          )}
         </div>
 
-        {/* Top Improvements */}
-        {analysis.top_improvements && analysis.top_improvements.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <button
-              onClick={() => toggleSection('improvements')}
-              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
-            >
-              <h2 className="text-lg font-semibold text-gray-900">Top Improvements</h2>
-              {expandedSections.has('improvements') ? (
-                <ChevronUp className="w-5 h-5 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
+        {/* Video & Transcript */}
+        <div className="grid lg:grid-cols-2 gap-8">
+           {conversationId && conversation?.video_url && (
+            <div className="rounded-3xl overflow-hidden shadow-2xl border border-gray-200">
+              <VideoEmotionPlayer
+                ref={videoPlayerRef}
+                conversationId={conversationId}
+                videoUrl={conversation.video_url}
+                audioUrl={conversation.audio_url}
+                humeJobId={analysis?.url}
+                onTimeUpdate={setCurrentVideoTimeMs}
+                onReviewTranscript={scrollToTranscript}
+              />
+            </div>
+           )}
 
-            {expandedSections.has('improvements') && (
-              <div className="px-4 pb-4 space-y-3">
-                {analysis.top_improvements.map((imp: any, i: number) => (
-                  <div key={i} className="flex gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                    <div className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{imp.area}</p>
-                      <p className="text-sm text-gray-600 mt-1">{imp.suggestion}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+           {conversationId && (
+            <div ref={transcriptRef} className="h-[500px] rounded-3xl overflow-hidden shadow-soft border border-gray-100 bg-white">
+              <TranscriptViewer
+                conversationId={conversationId}
+                currentTimeMs={currentVideoTimeMs}
+                humeJobId={analysis?.url}
+                onSegmentClick={(startTime) => {
+                  setCurrentVideoTimeMs(startTime * 1000);
+                  videoPlayerRef.current?.seekTo(startTime);
+                  videoPlayerRef.current?.pause();
+                }}
+              />
+            </div>
+           )}
+        </div>
 
-        {/* Instant Rewrites */}
-        {analysis.instant_rewrites && analysis.instant_rewrites.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <button
-              onClick={() => toggleSection('rewrites')}
-              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition"
-            >
-              <h2 className="text-lg font-semibold text-gray-900">Answer Rewrites</h2>
-              {expandedSections.has('rewrites') ? (
-                <ChevronUp className="w-5 h-5 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
-
-            {expandedSections.has('rewrites') && (
-              <div className="px-4 pb-4 space-y-4">
-                {analysis.instant_rewrites.map((rewrite: any, i: number) => (
-                  <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="p-4 bg-red-50 border-b border-gray-200">
-                      <p className="text-xs font-medium text-red-600 uppercase mb-1">Your Answer</p>
-                      <p className="text-gray-700">{rewrite.original}</p>
-                    </div>
-                    <div className="p-4 bg-green-50">
-                      <p className="text-xs font-medium text-green-600 uppercase mb-1">Improved Version</p>
-                      <p className="text-gray-700">{rewrite.improved}</p>
-                      {rewrite.explanation && (
-                        <p className="text-sm text-gray-500 mt-2 italic">{rewrite.explanation}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Video with Emotion Analysis */}
-        {conversationId && conversation?.video_url && (
-          <div className="animate-fade-in">
-            <VideoEmotionPlayer
-              ref={videoPlayerRef}
-              conversationId={conversationId}
-              videoUrl={conversation.video_url}
-              audioUrl={conversation.audio_url}
-              humeJobId={analysis?.url}
-              onTimeUpdate={setCurrentVideoTimeMs}
-              onReviewTranscript={scrollToTranscript}
-            />
-          </div>
-        )}
-
-        {/* Transcript Viewer */}
-        {conversationId && (
-          <div ref={transcriptRef} className="animate-fade-in">
-            <TranscriptViewer
-              conversationId={conversationId}
-              currentTimeMs={currentVideoTimeMs}
-              humeJobId={analysis?.url}
-              onSegmentClick={(startTime) => {
-                setCurrentVideoTimeMs(startTime * 1000);
-                videoPlayerRef.current?.seekTo(startTime);
-                videoPlayerRef.current?.pause();
-              }}
-            />
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-4">
-          <PlayfulButton
+        {/* Footer Actions */}
+        <div className="flex justify-center gap-6 pt-12">
+          <LiquidButton
             onClick={() => navigate('/interview')}
-            variant="primary"
+            variant="black"
             size="lg"
-            className="flex-1"
-            icon={RefreshCw}
+            icon={<RefreshCw size={18} />}
           >
             Practice Again
-          </PlayfulButton>
-          <PlayfulButton
+          </LiquidButton>
+          <LiquidButton
             onClick={() => navigate('/dashboard')}
             variant="secondary"
             size="lg"
-            className="flex-1"
-            icon={ArrowLeft}
           >
-            Back to Dashboard
-          </PlayfulButton>
+            Return to Dashboard
+          </LiquidButton>
         </div>
       </main>
     </div>

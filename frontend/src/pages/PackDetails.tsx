@@ -7,15 +7,14 @@ import {
   Clock,
   BarChart3,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Play
 } from 'lucide-react';
-import {
-  PlayfulButton,
-  PlayfulCard,
-  Badge,
-  LoadingSpinner,
-  PlayfulCharacter
-} from '../components/PlayfulUI';
+import { LiquidButton } from '../components/LiquidButton';
+import { LiquidGlass } from '../components/LiquidGlass';
+import { LightLeakBackground } from '../components/LightLeakBackground';
+import { LoadingSpinner, Badge } from '../components/PlayfulUI'; // Keep simple badge or replace? I'll stick to new styling inside render if possible, or keep simple badge for now but styled better.
+// Actually, let's replace Badge usage with simple styled spans to be consistent with the "Executive" look
 import { api, InterviewPack, InterviewQuestion } from '../lib/api';
 
 interface PackDetailsProps {
@@ -39,7 +38,6 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
         setLoading(true);
         const data = await api.getPackDetails(packId);
 
-        // Transform the pack data
         setPack({
           id: data.pack.id,
           name: data.pack.name,
@@ -48,7 +46,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
           is_subscription_only: data.pack.is_subscription_only,
           required_plan: data.pack.required_plan,
           is_custom: data.pack.is_custom,
-          created_by_user: false, // Will be set by backend if needed
+          created_by_user: false,
           question_count: data.question_count,
           created_at: data.pack.created_at,
           updated_at: data.pack.updated_at,
@@ -72,26 +70,23 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingSpinner size="lg" color="primary" />
-          <p className="text-gray-600">Loading pack details...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <LoadingSpinner size="lg" color="primary" />
       </div>
     );
   }
 
   if (error || !pack) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 flex items-center justify-center p-4">
-        <PlayfulCard className="max-w-md text-center">
-          <PlayfulCharacter emotion="surprised" size={100} className="mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
-          <p className="text-gray-600 mb-6">{error || 'Pack not found'}</p>
-          <PlayfulButton onClick={() => navigate('/dashboard')} icon={ArrowLeft}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white relative">
+        <LightLeakBackground />
+        <LiquidGlass className="max-w-md text-center p-8">
+          <h2 className="font-serif text-3xl font-bold text-black mb-4">Unavailable</h2>
+          <p className="text-gray-600 mb-8 font-light">{error || 'Pack not found'}</p>
+          <LiquidButton onClick={() => navigate('/dashboard')} icon={<ArrowLeft size={16} />} variant="black">
             Back to Dashboard
-          </PlayfulButton>
-        </PlayfulCard>
+          </LiquidButton>
+        </LiquidGlass>
       </div>
     );
   }
@@ -108,187 +103,169 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
   const totalDuration = questions.reduce((sum, q) => sum + (q.expected_duration_seconds || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <PlayfulButton
-            variant="secondary"
-            size="sm"
-            icon={ArrowLeft}
-            onClick={() => navigate('/dashboard')}
-            className="mb-4"
-          >
-            Back to Dashboard
-          </PlayfulButton>
+    <div className="min-h-screen relative overflow-hidden text-gray-900 font-sans selection:bg-pink-100">
+      <LightLeakBackground />
 
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <h1 className="text-4xl font-bold text-gray-900">{pack.name}</h1>
-                {pack.is_subscription_only && (
-                  <Badge variant="sunshine" icon={Sparkles}>
-                    Premium
-                  </Badge>
-                )}
-                {pack.is_custom && (
-                  <Badge variant="mint">
-                    Custom
-                  </Badge>
-                )}
-              </div>
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
+        <div className="flex flex-col">
+          <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+          <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Pack Details</span>
+        </div>
+        <LiquidButton
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/dashboard')}
+          icon={<ArrowLeft size={16} />}
+        >
+          Back
+        </LiquidButton>
+      </header>
 
-              <p className="text-lg text-gray-600 mb-4">
-                {pack.description || 'Practice interview questions with this pack.'}
-              </p>
+      <main className="max-w-6xl mx-auto px-6 pt-32 pb-24 relative z-10">
+        
+        {/* Pack Info */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="font-mono text-xs text-black uppercase tracking-widest border border-gray-200 px-2 py-0.5 rounded">
+              {pack.category}
+            </span>
+            {pack.is_subscription_only && (
+              <span className="font-mono text-xs text-white bg-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1">
+                <Sparkles size={10} /> Premium
+              </span>
+            )}
+            {pack.is_custom && (
+              <span className="font-mono text-xs text-black border border-black uppercase tracking-widest px-2 py-0.5 rounded">
+                Custom
+              </span>
+            )}
+          </div>
 
-              <div className="flex items-center gap-6 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  <span>{questions.length} questions</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>~{Math.round(totalDuration / 60)} min total</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  <span className="capitalize">{pack.category}</span>
-                </div>
-              </div>
+          <h1 className="font-serif text-6xl text-black mb-6">{pack.name}</h1>
+          
+          <p className="text-xl text-gray-600 font-light max-w-3xl leading-relaxed mb-8">
+            {pack.description || 'Practice interview questions with this pack.'}
+          </p>
+
+          <div className="flex items-center gap-8 text-sm text-gray-500 font-mono uppercase tracking-wider">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              <span>{questions.length} questions</span>
             </div>
-
-            <PlayfulCharacter emotion="excited" size={100} />
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>~{Math.round(totalDuration / 60)} min total</span>
+            </div>
           </div>
         </div>
 
-        {/* Practice Mode Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        {/* Practice Modes */}
+        <div className="grid md:grid-cols-2 gap-8 mb-16">
           {/* Flashcard Mode */}
-          <div onClick={handleFlashcardPractice}>
-            <PlayfulCard variant="sky" hover className="cursor-pointer">
-              <div className="flex items-start justify-between mb-4">
-                <div className="bg-sky-500 text-white p-3 rounded-2xl">
-                  <BookOpen className="w-6 h-6" />
+          <div onClick={handleFlashcardPractice} className="cursor-pointer group">
+            <LiquidGlass className="p-8 h-full flex flex-col justify-between hover:!border-black/20 transition-all">
+              <div>
+                <div className="flex justify-between items-start mb-6">
+                  <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-black">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <ChevronRight className="w-6 h-6 text-gray-300 group-hover:text-black transition-colors" />
                 </div>
-              </div>
 
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Flashcard Practice
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Review questions at your own pace. Perfect for quick prep and memorization.
-              </p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Clock className="w-4 h-4" />
-                  <span>~{Math.round(avgDuration / 60)} min per question</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-sky-600" />
+                <h3 className="font-serif text-3xl text-black mb-2">
+                  Flashcards
+                </h3>
+                <p className="text-gray-600 font-light text-sm">
+                  Review questions at your own pace. Perfect for quick prep.
+                </p>
               </div>
-            </PlayfulCard>
+              
+              <div className="mt-8 pt-8 border-t border-gray-100 flex items-center justify-between">
+                <span className="font-mono text-xs text-gray-400 uppercase tracking-widest">
+                  ~{Math.round(avgDuration / 60)} min / q
+                </span>
+                <span className="font-mono text-xs text-black font-bold uppercase tracking-widest group-hover:underline">
+                  Start Practice
+                </span>
+              </div>
+            </LiquidGlass>
           </div>
 
           {/* Audio Mode - Coming Soon */}
-          <PlayfulCard variant="sunshine" className="opacity-75 relative overflow-hidden">
-            <div className="absolute top-4 right-4">
-              <Badge variant="coral">
-                Coming Soon
-              </Badge>
-            </div>
-
-            <div className="flex items-start justify-between mb-4">
-              <div className="bg-sunshine-500 text-white p-3 rounded-2xl">
-                <Mic className="w-6 h-6" />
+          <LiquidGlass className="p-8 h-full flex flex-col justify-between opacity-60">
+            <div>
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
+                  <Mic className="w-6 h-6" />
+                </div>
+                <span className="font-mono text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded uppercase tracking-widest">
+                  Coming Soon
+                </span>
               </div>
+
+              <h3 className="font-serif text-3xl text-gray-400 mb-2">
+                Audio Mode
+              </h3>
+              <p className="text-gray-500 font-light text-sm">
+                Record and analyze your spoken responses with AI feedback.
+              </p>
             </div>
-
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Audio Practice
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Record and analyze your spoken responses. Get detailed feedback on delivery.
-            </p>
-
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            
+            <div className="mt-8 pt-8 border-t border-gray-100 flex items-center gap-2 text-gray-400">
               <Sparkles className="w-4 h-4" />
-              <span>AI-powered speech analysis</span>
+              <span className="font-mono text-xs uppercase tracking-widest">AI Analysis</span>
             </div>
-          </PlayfulCard>
+          </LiquidGlass>
         </div>
 
         {/* Questions List */}
-        <PlayfulCard className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Questions in this Pack
-            </h2>
-
-            {/* Difficulty Distribution */}
-            <div className="flex items-center gap-2">
-              {Object.entries(difficultyCount).map(([difficulty, count]) => {
-                const colors = {
-                  easy: 'mint',
-                  medium: 'sunshine',
-                  hard: 'coral',
-                } as const;
-
-                return (
-                  <Badge
-                    key={difficulty}
-                    variant={colors[difficulty as keyof typeof colors] || 'primary'}
-                  >
-                    {difficulty}: {count}
-                  </Badge>
-                );
-              })}
+        <div className="mb-8">
+          <div className="flex items-end justify-between mb-8 border-b border-gray-200/50 pb-4">
+            <h2 className="font-serif text-3xl text-black">Questions</h2>
+            <div className="flex gap-2">
+              {Object.entries(difficultyCount).map(([difficulty, count]) => (
+                <span key={difficulty} className="font-mono text-[10px] text-gray-500 uppercase tracking-widest border border-gray-200 px-2 py-0.5 rounded">
+                  {difficulty}: {count}
+                </span>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {questions.map((question, index) => (
-              <div
-                key={question.id}
-                className="p-4 bg-gray-50 rounded-2xl border-2 border-gray-100 hover:border-gray-200 transition-all"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                    {index + 1}
-                  </div>
+              <LiquidGlass key={question.id} className="p-6 flex items-start gap-6 group">
+                <div className="font-mono text-xl text-gray-300 font-bold w-8 group-hover:text-black transition-colors">
+                  {(index + 1).toString().padStart(2, '0')}
+                </div>
 
-                  <div className="flex-1">
-                    <p className="text-gray-900 font-medium mb-2">
-                      {question.question_text}
-                    </p>
+                <div className="flex-1">
+                  <p className="text-lg text-gray-900 font-medium mb-3">
+                    {question.question_text}
+                  </p>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span className="capitalize">{question.question_type}</span>
-                      {question.difficulty && (
-                        <Badge
-                          variant={
-                            question.difficulty === 'easy' ? 'mint' :
-                            question.difficulty === 'hard' ? 'coral' :
-                            'sunshine'
-                          }
-                        >
-                          {question.difficulty}
-                        </Badge>
-                      )}
-                      {question.expected_duration_seconds && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {Math.round(question.expected_duration_seconds / 60)} min
-                        </span>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-4 text-xs font-mono text-gray-500 uppercase tracking-wider">
+                    <span className="border-r border-gray-200 pr-4">{question.question_type}</span>
+                    <span className={`border-r border-gray-200 pr-4 ${
+                      question.difficulty === 'hard' ? 'text-red-500' : 
+                      question.difficulty === 'easy' ? 'text-green-600' : 'text-yellow-600'
+                    }`}>
+                      {question.difficulty}
+                    </span>
+                    {question.expected_duration_seconds && (
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} />
+                        {Math.round(question.expected_duration_seconds / 60)} min
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
+              </LiquidGlass>
             ))}
           </div>
-        </PlayfulCard>
-      </div>
+        </div>
+
+      </main>
     </div>
   );
 }

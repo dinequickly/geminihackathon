@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, BookOpen, Plus, Sparkles, Lock, ChevronRight, Package } from 'lucide-react';
+import { X, ShoppingBag, Check, Crown, Zap, Sparkles, Package, BookOpen, Plus, ChevronRight, Lock } from 'lucide-react';
 import { api, InterviewPack, UserSubscription } from '../lib/api';
-import { PlayfulButton, Badge, LoadingSpinner } from './PlayfulUI';
+import { LiquidButton } from './LiquidButton';
+import { LiquidGlass } from './LiquidGlass';
+import { LoadingSpinner } from './PlayfulUI'; // Keep loader or create new one? Keeping for now.
 
 interface PackSelectionModalProps {
   isOpen: boolean;
@@ -65,81 +67,67 @@ export default function PackSelectionModal({
   const hasPacks = packs.length > 0;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-soft-lg max-w-3xl w-full max-h-[90vh] overflow-hidden animate-scale-in">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
+      <LiquidGlass className="max-w-3xl w-full max-h-[90vh] overflow-hidden p-0 !bg-white/90">
         {/* Header */}
-        <div className="p-6 border-b-2 border-gray-100 flex items-center justify-between bg-cream-50">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary-100 flex items-center justify-center">
-              <Package className="w-6 h-6 text-primary-600" />
+        <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-black">
+              <Package className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                {mode === 'choose' && 'Practice Interview'}
-                {mode === 'existing' && 'Choose a Pack'}
-                {mode === 'custom' && 'Create Custom Pack'}
+              <h2 className="font-serif text-2xl text-black">
+                {mode === 'choose' && 'Select Context'}
+                {mode === 'existing' && 'Available Packs'}
+                {mode === 'custom' && 'Initialize Custom Pack'}
               </h2>
-              <p className="text-sm text-gray-600">
-                {mode === 'choose' && 'Select how you want to practice'}
-                {mode === 'existing' && `${packs.length} packs available`}
-                {mode === 'custom' && 'Build your own interview pack'}
+              <p className="text-sm text-gray-500 font-light">
+                {mode === 'choose' && 'Choose your practice environment'}
+                {mode === 'existing' && `${packs.length} curated scenarios available`}
+                {mode === 'custom' && 'Design a targeted interview scenario'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-2xl transition-all duration-300 hover:scale-110"
+            className="p-2 hover:bg-gray-100 rounded-full transition-all"
           >
-            <X className="w-6 h-6 text-gray-500" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <LoadingSpinner size="lg" color="primary" />
-              <p className="mt-4 text-gray-600">Loading packs...</p>
+              <p className="mt-4 text-gray-400 font-mono text-xs uppercase tracking-widest">Loading assets...</p>
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                <X className="w-8 h-8 text-red-600" />
-              </div>
-              <p className="text-red-600 font-medium">{error}</p>
-              <PlayfulButton
-                onClick={loadData}
-                variant="secondary"
-                size="sm"
-                className="mt-4"
-              >
-                Try Again
-              </PlayfulButton>
+              <p className="text-red-500 font-medium mb-4">{error}</p>
+              <LiquidButton onClick={loadData} variant="secondary" size="sm">
+                Retry
+              </LiquidButton>
             </div>
           ) : mode === 'choose' ? (
             // Initial choice screen
-            <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-6">
               {/* Practice with Existing Pack */}
               {hasPacks && (
                 <button
                   onClick={() => setMode('existing')}
-                  className="w-full bg-primary-50 hover:bg-primary-100 border-2 border-primary-200 rounded-3xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-soft-lg text-left"
+                  className="group relative overflow-hidden bg-white border border-gray-200 hover:border-black/20 p-8 rounded-3xl text-left transition-all hover:shadow-lg"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-primary-500 flex items-center justify-center">
-                        <BookOpen className="w-7 h-7 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
-                          Practice with Existing Pack
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          Choose from {packs.length} available interview packs
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-6 h-6 text-primary-600" />
+                  <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center mb-6">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-serif text-xl text-black mb-2">Standard Packs</h3>
+                  <p className="text-sm text-gray-500 font-light mb-6">
+                    Access {packs.length} curated question sets designed by experts.
+                  </p>
+                  <div className="flex items-center text-xs font-mono uppercase tracking-widest text-black group-hover:underline">
+                    Browse Library <ChevronRight size={14} className="ml-1" />
                   </div>
                 </button>
               )}
@@ -147,32 +135,23 @@ export default function PackSelectionModal({
               {/* Create Custom Pack */}
               <button
                 onClick={handleCreateCustom}
-                className="w-full bg-sunshine-50 hover:bg-sunshine-100 border-2 border-sunshine-200 rounded-3xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-soft-lg text-left"
+                className="group relative overflow-hidden bg-gradient-to-br from-gray-50 to-white border border-gray-200 hover:border-black/20 p-8 rounded-3xl text-left transition-all hover:shadow-lg"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-sunshine-400 flex items-center justify-center">
-                      <Plus className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-                        Create Custom Pack
-                        <Sparkles className="w-5 h-5 text-sunshine-600" />
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Build your own personalized interview pack
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-6 h-6 text-sunshine-600" />
+                <div className="w-12 h-12 rounded-full bg-white border border-gray-100 text-black flex items-center justify-center mb-6">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif text-xl text-black mb-2">Custom Scenario</h3>
+                <p className="text-sm text-gray-500 font-light mb-6">
+                   Generate a tailored interview pack based on specific job descriptions.
+                </p>
+                <div className="flex items-center text-xs font-mono uppercase tracking-widest text-black group-hover:underline">
+                  Start Generation <ChevronRight size={14} className="ml-1" />
                 </div>
               </button>
 
               {!hasPacks && (
-                <div className="mt-6 p-4 bg-sky-50 border-2 border-sky-200 rounded-2xl">
-                  <p className="text-sm text-sky-800 text-center">
-                    You don't have any packs yet. Create a custom pack to get started!
-                  </p>
+                <div className="col-span-2 p-6 border border-gray-200 rounded-2xl bg-gray-50 text-center">
+                  <p className="text-gray-500 text-sm">Library empty. Create a custom scenario to begin.</p>
                 </div>
               )}
             </div>
@@ -181,52 +160,40 @@ export default function PackSelectionModal({
             <div className="space-y-4">
               <button
                 onClick={() => setMode('choose')}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 mb-4"
+                className="text-xs font-mono uppercase tracking-widest text-gray-400 hover:text-black mb-6 flex items-center gap-2"
               >
-                ← Back to options
+                <ArrowLeft size={12} /> Return to selection
               </button>
 
               {packs.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                    <Package className="w-8 h-8 text-gray-300" />
-                  </div>
-                  <p className="text-gray-500 font-medium">No packs available</p>
-                  <p className="text-sm text-gray-400 mt-1">Create a custom pack to get started</p>
-                </div>
+                <p className="text-center text-gray-500">No packs found.</p>
               ) : (
                 packs.map((pack) => (
                   <button
                     key={pack.id}
                     onClick={() => handlePackClick(pack.id)}
-                    className="w-full bg-white hover:bg-cream-50 border-2 border-gray-200 hover:border-primary-300 rounded-3xl p-5 transition-all duration-300 hover:shadow-soft-lg text-left"
+                    className="w-full group bg-white border border-gray-100 hover:border-black/20 p-6 rounded-2xl transition-all text-left flex items-center justify-between"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-bold text-gray-900">{pack.name}</h3>
-                          {pack.is_custom && (
-                            <Badge variant="sunshine">Custom</Badge>
-                          )}
-                          {pack.is_subscription_only && (
-                            <Badge variant="primary">
-                              <Lock className="w-3 h-3" />
-                              Premium
-                            </Badge>
-                          )}
-                        </div>
-                        {pack.description && (
-                          <p className="text-sm text-gray-600 mb-3">{pack.description}</p>
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="font-serif text-lg text-black">{pack.name}</h3>
+                        {pack.is_custom && (
+                          <span className="text-[10px] font-mono uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded text-gray-600">Custom</span>
                         )}
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="text-gray-500">
-                            <span className="font-semibold text-primary-600">{pack.question_count}</span> questions
+                        {pack.is_subscription_only && (
+                          <span className="text-[10px] font-mono uppercase tracking-widest bg-black text-white px-2 py-0.5 rounded flex items-center gap-1">
+                            <Lock size={8} /> Premium
                           </span>
-                          <span className="text-gray-400">•</span>
-                          <span className="text-gray-500 capitalize">{pack.category}</span>
-                        </div>
+                        )}
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 ml-4 flex-shrink-0" />
+                      <div className="flex items-center gap-4 text-xs font-mono text-gray-400 uppercase tracking-widest">
+                         <span>{pack.question_count} Questions</span>
+                         <span>•</span>
+                         <span>{pack.category}</span>
+                      </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronRight size={14} className="text-black" />
                     </div>
                   </button>
                 ))
@@ -234,7 +201,7 @@ export default function PackSelectionModal({
             </div>
           ) : null}
         </div>
-      </div>
+      </LiquidGlass>
     </div>
   );
 }

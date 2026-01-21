@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, ShoppingBag, Check, Crown, Zap, Sparkles } from 'lucide-react';
+import { X, ShoppingBag, Check, Crown, Zap, Sparkles, CreditCard } from 'lucide-react';
 import { api, StripeProduct, UserSubscriptionRecord } from '../lib/api';
-import { PlayfulButton, Badge, LoadingSpinner } from './PlayfulUI';
+import { LiquidButton } from './LiquidButton';
+import { LiquidGlass } from './LiquidGlass';
+import { LoadingSpinner } from './PlayfulUI';
 
 interface ShopModalProps {
   isOpen: boolean;
@@ -46,8 +48,6 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
     try {
       setCheckoutLoading(priceId);
       const { url } = await api.createCheckoutSession(userId, priceId, planName);
-
-      // Redirect to Stripe Checkout
       window.location.href = url;
     } catch (err) {
       console.error('Failed to create checkout session:', err);
@@ -63,42 +63,6 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
     }).format(amount / 100);
   };
 
-  const getPlanIcon = (planName: string) => {
-    const lower = planName.toLowerCase();
-    if (lower.includes('premium')) return Crown;
-    if (lower.includes('basic')) return Zap;
-    return Sparkles;
-  };
-
-  const getPlanColor = (planName: string): 'sunshine' | 'sky' | 'mint' | 'primary' => {
-    const lower = planName.toLowerCase();
-    if (lower.includes('premium')) return 'sunshine';
-    if (lower.includes('basic')) return 'sky';
-    return 'mint';
-  };
-
-  const getColorClasses = (variant: 'sunshine' | 'sky' | 'mint' | 'primary') => {
-    const colorMap = {
-      sunshine: {
-        bg: 'bg-sunshine-400',
-        badge: 'sunshine' as const
-      },
-      sky: {
-        bg: 'bg-sky-400',
-        badge: 'sky' as const
-      },
-      mint: {
-        bg: 'bg-mint-400',
-        badge: 'mint' as const
-      },
-      primary: {
-        bg: 'bg-primary-400',
-        badge: 'primary' as const
-      }
-    };
-    return colorMap[variant];
-  };
-
   const isSubscribed = (productId: string) => {
     return subscriptions.some(
       sub => sub.status === 'active' && products.find(p => p.id === productId)
@@ -108,72 +72,61 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-soft-lg max-w-4xl w-full max-h-[90vh] overflow-hidden animate-scale-in">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
+      <LiquidGlass className="max-w-4xl w-full max-h-[90vh] overflow-hidden p-0 !bg-white/95">
         {/* Header */}
-        <div className="p-6 border-b-2 border-gray-100 flex items-center justify-between bg-gradient-to-r from-sunshine-50 to-primary-50">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-sunshine-400 flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6 text-white" />
+        <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center">
+              <ShoppingBag className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Subscription Shop</h2>
-              <p className="text-sm text-gray-600">Upgrade your interview practice experience</p>
+              <h2 className="font-serif text-2xl text-black">Marketplace</h2>
+              <p className="text-sm text-gray-500 font-light">Upgrade your professional toolset</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-2xl transition-all duration-300 hover:scale-110"
+            className="p-2 hover:bg-gray-100 rounded-full transition-all"
           >
-            <X className="w-6 h-6 text-gray-500" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <LoadingSpinner size="lg" color="primary" />
-              <p className="mt-4 text-gray-600">Loading plans...</p>
+              <p className="mt-4 text-gray-400 font-mono text-xs uppercase tracking-widest">Loading marketplace...</p>
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                <X className="w-8 h-8 text-red-600" />
-              </div>
-              <p className="text-red-600 font-medium">{error}</p>
-              <PlayfulButton onClick={loadData} variant="secondary" size="sm" className="mt-4">
-                Try Again
-              </PlayfulButton>
+              <p className="text-red-500 font-medium mb-4">{error}</p>
+              <LiquidButton onClick={loadData} variant="secondary" size="sm">Retry</LiquidButton>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-12">
               {/* Active Subscriptions Section */}
               {subscriptions.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-600" />
-                    Your Active Subscriptions
-                  </h3>
+                <div>
+                  <h3 className="font-serif text-lg text-black mb-4">Active Plan</h3>
                   <div className="space-y-3">
                     {subscriptions.map((sub) => (
                       <div
                         key={sub.id}
-                        className="bg-green-50 border-2 border-green-200 rounded-3xl p-4 flex items-center justify-between"
+                        className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex items-center justify-between"
                       >
                         <div>
-                          <p className="font-semibold text-gray-900">{sub.plan_name}</p>
-                          <p className="text-sm text-gray-600">
-                            Status: <span className="text-green-700 font-medium capitalize">{sub.status}</span>
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Renews: {new Date(sub.current_period_end).toLocaleDateString()}
-                          </p>
+                          <p className="font-serif text-xl text-black">{sub.plan_name}</p>
+                          <div className="flex items-center gap-4 mt-2 text-xs font-mono uppercase tracking-widest text-gray-500">
+                             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> {sub.status}</span>
+                             <span>Renews: {new Date(sub.current_period_end).toLocaleDateString()}</span>
+                          </div>
                         </div>
-                        <Badge variant="mint">
-                          <Check className="w-4 h-4" />
-                          Active
-                        </Badge>
+                        <div className="bg-black text-white text-[10px] font-mono uppercase tracking-widest px-3 py-1 rounded-full">
+                          Current
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -182,29 +135,23 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
 
               {/* Available Plans Section */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Available Plans</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="font-serif text-lg text-black mb-6">Available Upgrades</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {products.map((product) => {
-                    // Handle both old format (price) and new format (prices array)
                     const productAny = product as any;
                     let price;
 
                     if (product.prices && product.prices.length > 0) {
                       price = product.prices[0];
                     } else if (productAny.price) {
-                      // Fallback for old backend format
                       price = productAny.price;
                     } else {
-                      console.warn(`Product ${product.name} has no price`, product);
                       return null;
                     }
 
                     if (!price) return null;
 
                     const planName = product.name;
-                    const Icon = getPlanIcon(planName);
-                    const colorVariant = getPlanColor(planName);
-                    const colorClasses = getColorClasses(colorVariant);
                     const subscribed = isSubscribed(product.id);
                     const loading = checkoutLoading === price.id;
 
@@ -212,103 +159,77 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                       <div
                         key={product.id}
                         className={`
-                          rounded-3xl p-6 border-2 transition-all duration-300
+                          rounded-3xl p-8 border transition-all duration-300 flex flex-col h-full
                           ${subscribed
-                            ? 'bg-green-50 border-green-300'
-                            : 'bg-white border-gray-200 hover:border-primary-300 hover:shadow-soft-lg'
+                            ? 'bg-gray-50 border-gray-200 opacity-60'
+                            : 'bg-white border-gray-200 hover:border-black hover:shadow-lg'
                           }
                         `}
                       >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-2xl ${colorClasses.bg} flex items-center justify-center`}>
-                              <Icon className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                              <h4 className="text-lg font-bold text-gray-900">{product.name}</h4>
-                              {product.metadata.tier && (
-                                <Badge variant={colorClasses.badge}>
-                                  {product.metadata.tier}
-                                </Badge>
-                              )}
-                            </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-4">
+                            <h4 className="font-serif text-2xl text-black">{product.name}</h4>
+                            {product.metadata.tier && (
+                              <span className="font-mono text-[10px] uppercase tracking-widest border border-gray-200 px-2 py-1 rounded text-gray-500">
+                                {product.metadata.tier}
+                              </span>
+                            )}
                           </div>
-                        </div>
 
-                        {product.description && (
-                          <p className="text-sm text-gray-600 mb-4">{product.description}</p>
-                        )}
+                          {product.description && (
+                            <p className="text-sm text-gray-500 font-light mb-6">{product.description}</p>
+                          )}
 
-                        {/* Features */}
-                        {product.metadata.features && (
-                          <ul className="space-y-2 mb-4">
-                            {product.metadata.features.split(',').map((feature, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                                <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                <span>{feature.trim()}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                        <div className="border-t-2 border-gray-100 pt-4 mt-4">
-                          <div className="flex items-baseline gap-2 mb-3">
-                            <span className="text-3xl font-bold text-gray-900">
+                          <div className="flex items-baseline gap-1 mb-8">
+                            <span className="font-serif text-4xl text-black">
                               {formatPrice(price.unit_amount, price.currency)}
                             </span>
                             {price.recurring && (
-                              <span className="text-sm text-gray-500">
+                              <span className="font-mono text-xs text-gray-400 uppercase tracking-widest">
                                 / {price.recurring.interval}
                               </span>
                             )}
                           </div>
 
+                          {/* Features */}
+                          {product.metadata.features && (
+                            <ul className="space-y-3 mb-8">
+                              {product.metadata.features.split(',').map((feature, idx) => (
+                                <li key={idx} className="flex items-start gap-3 text-sm text-gray-700 font-light">
+                                  <Check className="w-4 h-4 text-black flex-shrink-0 mt-0.5" />
+                                  <span>{feature.trim()}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+
+                        <div className="mt-auto pt-6 border-t border-gray-100">
                           {subscribed ? (
-                            <div className="flex items-center justify-center gap-2 py-3 px-4 bg-green-100 text-green-700 rounded-2xl font-semibold">
-                              <Check className="w-5 h-5" />
-                              Subscribed
-                            </div>
+                            <button disabled className="w-full py-3 bg-gray-100 text-gray-400 rounded-xl text-sm font-medium cursor-default">
+                              Active Plan
+                            </button>
                           ) : (
-                            <PlayfulButton
+                            <LiquidButton
                               onClick={() => handleSubscribe(price.id, planName)}
-                              variant={colorClasses.badge}
+                              variant="black"
                               size="md"
-                              disabled={loading}
-                              className="w-full"
+                              className="w-full justify-center"
+                              loading={loading}
                             >
-                              {loading ? (
-                                <>
-                                  <LoadingSpinner size="sm" color="primary" />
-                                  Loading...
-                                </>
-                              ) : (
-                                <>
-                                  <ShoppingBag className="w-5 h-5" />
-                                  Subscribe Now
-                                </>
-                              )}
-                            </PlayfulButton>
+                              {loading ? 'Processing...' : 'Subscribe'}
+                            </LiquidButton>
                           )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-
-                {products.length === 0 && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                      <ShoppingBag className="w-8 h-8 text-gray-300" />
-                    </div>
-                    <p className="text-gray-500 font-medium">No plans available</p>
-                    <p className="text-sm text-gray-400 mt-1">Check back later for new offerings</p>
-                  </div>
-                )}
               </div>
             </div>
           )}
         </div>
-      </div>
+      </LiquidGlass>
     </div>
   );
 }

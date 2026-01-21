@@ -10,6 +10,7 @@ import InterviewSettings from './pages/InterviewSettings';
 import PackDetails from './pages/PackDetails';
 import FlashcardPractice from './pages/FlashcardPractice';
 import LiveAvatarInterview from './pages/LiveAvatarInterview';
+import DesignSystem from './pages/DesignSystem';
 import { initPostHog, posthog } from './lib/posthog';
 
 import InterviewSetup from './pages/InterviewSetup';
@@ -59,6 +60,10 @@ function App() {
 
         <div className="relative z-10">
           <Routes>
+          <Route
+            path="/design-system"
+            element={<DesignSystem />}
+          />
           <Route
             path="/"
             element={<LandingPage />}

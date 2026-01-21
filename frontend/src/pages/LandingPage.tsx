@@ -1,6 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Brain, Heart, MessageCircle, Sparkles, Star, Zap } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { LiquidGlass } from '../components/LiquidGlass';
+import { LiquidButton } from '../components/LiquidButton';
+import { LightLeakBackground } from '../components/LightLeakBackground';
+import { IridescentSphere } from '../components/IridescentSphere';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -27,287 +31,198 @@ export default function LandingPage() {
       icon: Brain,
       title: 'Technical Skills',
       description: 'Master the questions that matter with targeted practice across your domain.',
-      gradient: 'from-blue-400/20 to-cyan-400/20',
-      iconColor: 'text-blue-500',
-      delay: '0ms'
+      delay: 0
     },
     {
       icon: Heart,
       title: 'Emotional Intelligence',
       description: 'Develop self-awareness and authentic responses that resonate.',
-      gradient: 'from-pink-400/20 to-rose-400/20',
-      iconColor: 'text-pink-500',
-      delay: '100ms'
+      delay: 0.1
     },
     {
       icon: MessageCircle,
       title: 'Communication',
       description: 'Articulate complex ideas clearly and confidently under pressure.',
-      gradient: 'from-purple-400/20 to-violet-400/20',
-      iconColor: 'text-purple-500',
-      delay: '200ms'
+      delay: 0.2
     },
     {
       icon: Sparkles,
       title: 'Executive Presence',
       description: 'Command the room with poise, energy, and authentic confidence.',
-      gradient: 'from-indigo-400/20 to-blue-400/20',
-      iconColor: 'text-indigo-500',
-      delay: '300ms'
+      delay: 0.3
     },
   ];
 
   const stats = [
-    { value: '10k+', label: 'Interviews Completed', delay: '0ms' },
-    { value: '94%', label: 'Success Rate', delay: '100ms' },
-    { value: '4.9/5', label: 'User Rating', delay: '200ms' },
+    { value: '10k+', label: 'Interviews Completed' },
+    { value: '94%', label: 'Success Rate' },
+    { value: '4.9/5', label: 'User Rating' },
   ];
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Ambient Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        {/* Gradient Orbs */}
-        <div
-          className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full blur-[120px] opacity-30 animate-pulse-slow"
-          style={{
-            background: 'radial-gradient(circle, rgba(147,197,253,0.4) 0%, rgba(196,181,253,0.3) 50%, rgba(251,207,232,0.2) 100%)',
-            animationDuration: '8s'
-          }}
-        />
-        <div
-          className="absolute bottom-[-20%] left-[-10%] w-[700px] h-[700px] rounded-full blur-[100px] opacity-25 animate-pulse-slow"
-          style={{
-            background: 'radial-gradient(circle, rgba(251,207,232,0.4) 0%, rgba(196,181,253,0.3) 50%, rgba(147,197,253,0.2) 100%)',
-            animationDuration: '10s',
-            animationDelay: '2s'
-          }}
-        />
-        <div
-          className="absolute top-[40%] left-[50%] w-[600px] h-[600px] rounded-full blur-[90px] opacity-20 animate-pulse-slow"
-          style={{
-            background: 'radial-gradient(circle, rgba(196,181,253,0.5) 0%, rgba(147,197,253,0.3) 100%)',
-            animationDuration: '12s',
-            animationDelay: '4s'
-          }}
-        />
-      </div>
+    <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
+      <LightLeakBackground />
 
       {/* Navigation */}
-      <nav className="relative z-10 px-6 py-8 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <Star className="w-5 h-5 text-white" fill="white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              InterviewPro
-            </span>
-          </div>
-
-          <button
-            onClick={() => navigate('/onboarding')}
-            className="px-6 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 hover:bg-white hover:shadow-lg hover:shadow-purple-100/50 transition-all duration-300 font-medium"
-          >
-            Sign In
-          </button>
+      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
+        <div className="flex flex-col">
+          <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+          <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Intelligence</span>
         </div>
+
+        <LiquidButton
+          onClick={() => navigate('/onboarding')}
+          variant="black"
+          size="sm"
+        >
+          Sign In
+        </LiquidButton>
       </nav>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="relative z-10 px-6 pt-20 pb-32 max-w-7xl mx-auto">
-        <div className="text-center space-y-8">
+      <section ref={heroRef} className="relative z-10 px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
+        <div className="space-y-8">
           {/* Badge */}
-          <div
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border border-purple-200/30 backdrop-blur-sm animate-fade-in-up shadow-lg shadow-purple-100/20"
-            style={{ animationDelay: '0ms' }}
-          >
-            <Zap className="w-4 h-4 text-purple-500" fill="currentColor" />
-            <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AI-Powered Interview Preparation
-            </span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/30 backdrop-blur-sm border border-white/40 text-xs font-mono tracking-wider uppercase text-gray-700">
+             <Zap className="w-3 h-3 text-black" fill="currentColor" />
+             AI-Powered Preparation
           </div>
 
           {/* Main Heading */}
-          <h1
-            className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight animate-fade-in-up"
-            style={{
-              animationDelay: '100ms',
-              fontFamily: '"DM Serif Display", "Playfair Display", serif'
-            }}
-          >
-            <span className="block text-gray-900">Interviews are</span>
-            <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              complicated
-            </span>
+          <h1 className="font-serif text-6xl md:text-8xl font-medium text-black mb-8 leading-[0.9] tracking-tight">
+            Interviews are <br />
+            <span className="italic text-gray-800">Complicated.</span>
           </h1>
 
           {/* Subheading */}
-          <p
-            className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed animate-fade-in-up"
-            style={{
-              animationDelay: '200ms',
-              fontFamily: '"Outfit", "Plus Jakarta Sans", sans-serif'
-            }}
-          >
+          <p className="text-xl text-gray-800 font-light max-w-2xl mx-auto leading-relaxed">
             But your preparation doesn't have to be. Master technical skills, emotional intelligence,
-            communication, and executive presence. Be ready to <span className="font-semibold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text">impress</span>,
-            not just answer.
+            communication, and executive presence.
           </p>
 
           {/* CTA Buttons */}
-          <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-fade-in-up"
-            style={{ animationDelay: '300ms' }}
-          >
-            <button
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
+            <LiquidButton
               onClick={() => navigate('/onboarding')}
-              className="group px-8 py-4 rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-semibold shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all duration-300 flex items-center gap-2"
+              variant="black"
+              size="xl"
+              icon={<ArrowRight size={20} />}
+              iconPosition="right"
             >
               Start Practicing Free
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </LiquidButton>
 
-            <button
+            <LiquidButton
               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-4 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 hover:bg-white hover:shadow-lg hover:shadow-purple-100/50 transition-all duration-300 font-semibold"
+              variant="secondary"
+              size="xl"
             >
               See How It Works
-            </button>
+            </LiquidButton>
           </div>
 
           {/* Stats */}
-          <div
-            className="flex flex-wrap items-center justify-center gap-8 pt-12 animate-fade-in-up"
-            style={{ animationDelay: '400ms' }}
-          >
-            {stats.map((stat) => (
-              <div
+          <div className="flex flex-wrap items-center justify-center gap-6 pt-16">
+            {stats.map((stat, idx) => (
+              <LiquidGlass
                 key={stat.label}
-                className="glass-card px-8 py-4 rounded-2xl animate-fade-in-up hover:scale-105 transition-transform duration-300"
-                style={{ animationDelay: stat.delay }}
+                className="px-8 py-4 flex flex-col items-center min-w-[200px]"
               >
-                <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <div className="font-serif text-3xl text-black">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
-              </div>
+                <div className="font-mono text-xs text-gray-600 uppercase tracking-widest mt-1">{stat.label}</div>
+              </LiquidGlass>
             ))}
           </div>
         </div>
 
-        {/* Floating Elements */}
-        <div
-          className="absolute top-20 right-[10%] w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400/20 to-cyan-400/20 backdrop-blur-xl border border-white/20 shadow-xl animate-float-slow"
-          style={{
-            transform: `translate(${mousePosition.x * 20}px, ${mousePosition.y * 20}px)`,
-            transition: 'transform 0.3s ease-out'
-          }}
-        />
-        <div
-          className="absolute bottom-32 left-[15%] w-16 h-16 rounded-full bg-gradient-to-br from-pink-400/20 to-rose-400/20 backdrop-blur-xl border border-white/20 shadow-xl animate-float-slow"
-          style={{
-            transform: `translate(${mousePosition.x * -15}px, ${mousePosition.y * -15}px)`,
-            transition: 'transform 0.3s ease-out',
-            animationDelay: '1s'
-          }}
-        />
-        <div
-          className="absolute top-1/2 left-[8%] w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400/20 to-violet-400/20 backdrop-blur-xl border border-white/20 shadow-xl animate-float-slow"
-          style={{
-            transform: `translate(${mousePosition.x * 25}px, ${mousePosition.y * 25}px)`,
-            transition: 'transform 0.3s ease-out',
-            animationDelay: '2s'
-          }}
-        />
+        {/* Decorative Spheres */}
+        <div className="absolute top-20 right-[10%] opacity-50 pointer-events-none">
+          <IridescentSphere size={150} color="blue" delay={0} />
+        </div>
+        <div className="absolute bottom-32 left-[10%] opacity-50 pointer-events-none">
+          <IridescentSphere size={100} color="pink" delay={1} />
+        </div>
       </section>
 
       {/* Features Section */}
       <section id="features" className="relative z-10 px-6 py-32 max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2
-            className="text-5xl md:text-6xl font-bold text-gray-900 mb-6"
-            style={{ fontFamily: '"DM Serif Display", "Playfair Display", serif' }}
-          >
-            Practice What <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Matters</span>
+          <h2 className="font-serif text-5xl text-black mb-6">
+            Practice What <span className="italic text-gray-800">Matters</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Four key dimensions that separate good candidates from great ones
+          <p className="text-xl text-gray-800 font-light max-w-2xl mx-auto">
+            Four key dimensions that separate good candidates from great ones.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid md:grid-cols-2 gap-8">
           {dimensions.map((dimension) => {
             const Icon = dimension.icon;
             return (
-              <div
+              <LiquidGlass
                 key={dimension.title}
-                className="group glass-card p-8 rounded-3xl hover:scale-[1.02] transition-all duration-500 cursor-pointer animate-fade-in-up"
-                style={{ animationDelay: dimension.delay }}
+                className="p-10 flex flex-col h-full group cursor-pointer hover:!border-gray-400 transition-all"
               >
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${dimension.gradient} backdrop-blur-xl border border-white/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
-                  <Icon className={`w-8 h-8 ${dimension.iconColor}`} />
+                <div className="flex justify-between items-start mb-8">
+                  <div className="w-12 h-12 rounded-full border border-gray-900/10 flex items-center justify-center text-black">
+                    <Icon className="w-6 h-6" />
+                  </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                <h3 className="font-serif text-3xl text-black mb-4">
                   {dimension.title}
                 </h3>
 
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-gray-600 font-light leading-relaxed mb-8 flex-1">
                   {dimension.description}
                 </p>
 
-                <div className="mt-6 flex items-center gap-2 text-purple-600 font-semibold group-hover:gap-3 transition-all">
-                  Explore
+                <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
+                  EXPLORE
                   <ArrowRight className="w-4 h-4" />
                 </div>
-              </div>
+              </LiquidGlass>
             );
           })}
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="relative z-10 px-6 py-32 max-w-7xl mx-auto">
-        <div className="glass-card-large p-12 md:p-16 rounded-[3rem] text-center space-y-8">
-          <h2
-            className="text-5xl md:text-6xl font-bold text-gray-900"
-            style={{ fontFamily: '"DM Serif Display", "Playfair Display", serif' }}
-          >
-            Ready When <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">You Are</span>
+      {/* How It Works / CTA */}
+      <section className="relative z-10 px-6 py-32 max-w-5xl mx-auto text-center">
+        <LiquidGlass className="p-16 md:p-24">
+          <h2 className="font-serif text-5xl md:text-6xl text-black mb-8">
+            Ready When <span className="italic text-gray-800">You Are</span>
           </h2>
 
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-800 font-light max-w-3xl mx-auto leading-relaxed mb-12">
             Jump into a practice interview in seconds. Get instant feedback on your performance.
-            Track your growth across all dimensions. No scheduling. No pressure. Just progress.
+            Track your growth across all dimensions.
           </p>
 
-          <div className="pt-8">
-            <button
-              onClick={() => navigate('/onboarding')}
-              className="group px-10 py-5 rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white text-lg font-semibold shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all duration-300 flex items-center gap-3 mx-auto"
-            >
-              Get Started Now
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
+          <LiquidButton
+            onClick={() => navigate('/onboarding')}
+            variant="black"
+            size="xl"
+            icon={<ArrowRight size={20} />}
+            iconPosition="right"
+          >
+            Get Started Now
+          </LiquidButton>
+        </LiquidGlass>
       </section>
 
       {/* Footer */}
       <footer className="relative z-10 px-6 py-12 border-t border-gray-200/50 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <Star className="w-4 h-4 text-white" fill="white" />
-            </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              InterviewPro
-            </span>
+          <div className="flex flex-col">
+            <span className="font-serif text-lg font-bold tracking-tight text-black">TAVUS</span>
+            <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Intelligence</span>
           </div>
 
-          <div className="text-sm text-gray-500">
-            © 2024 InterviewPro. Built to help you succeed.
+          <div className="text-sm text-gray-500 font-light">
+            © 2024 Tavus. All rights reserved.
           </div>
         </div>
       </footer>

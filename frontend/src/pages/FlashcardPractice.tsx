@@ -9,13 +9,10 @@ import {
   CheckCircle2,
   BookOpen
 } from 'lucide-react';
-import {
-  PlayfulButton,
-  PlayfulCard,
-  Badge,
-  LoadingSpinner,
-  PlayfulCharacter
-} from '../components/PlayfulUI';
+import { LiquidButton } from '../components/LiquidButton';
+import { LiquidGlass } from '../components/LiquidGlass';
+import { LightLeakBackground } from '../components/LightLeakBackground';
+import { LoadingSpinner } from '../components/PlayfulUI';
 import { api, InterviewPack, InterviewQuestion } from '../lib/api';
 import { posthog } from '../lib/posthog';
 
@@ -61,7 +58,6 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
 
         setQuestions(data.questions);
 
-        // Track flashcard practice started
         posthog.capture('flashcard_practice_started', {
           pack_id: packId,
           pack_name: data.pack.name,
@@ -94,8 +90,6 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
       setIsFlipped(false);
     } else {
       setShowSummary(true);
-
-      // Track flashcard practice completed
       posthog.capture('flashcard_practice_completed', {
         pack_id: packId,
         pack_name: pack?.name,
@@ -146,28 +140,23 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingSpinner size="lg" color="primary" />
-          <p className="text-gray-600">Loading flashcards...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <LoadingSpinner size="lg" color="primary" />
       </div>
     );
   }
 
   if (error || !pack || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 flex items-center justify-center p-4">
-        <PlayfulCard className="max-w-md text-center">
-          <PlayfulCharacter emotion="surprised" size={100} className="mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
-          <p className="text-gray-600 mb-6">
-            {error || 'No questions found in this pack'}
-          </p>
-          <PlayfulButton onClick={() => navigate(`/pack/${packId}`)} icon={ArrowLeft}>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white relative">
+        <LightLeakBackground />
+        <LiquidGlass className="max-w-md text-center p-8">
+          <h2 className="font-serif text-3xl font-bold text-black mb-4">Error</h2>
+          <p className="text-gray-600 mb-8 font-light">{error || 'No questions found'}</p>
+          <LiquidButton onClick={() => navigate(`/pack/${packId}`)} icon={<ArrowLeft size={16} />} variant="black">
             Back to Pack
-          </PlayfulButton>
-        </PlayfulCard>
+          </LiquidButton>
+        </LiquidGlass>
       </div>
     );
   }
@@ -177,85 +166,53 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
     const difficultQuestions = questions.filter(q => markedDifficult.has(q.id));
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 p-4 md:p-8">
-        <div className="max-w-3xl mx-auto">
-          <PlayfulCard className="text-center">
-            <PlayfulCharacter emotion="excited" size={120} className="mx-auto mb-6" />
+      <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
+        <LightLeakBackground />
+        
+        <div className="max-w-4xl mx-auto px-6 py-24 relative z-10">
+          <LiquidGlass className="text-center p-16">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6 text-green-600">
+              <CheckCircle2 size={32} />
+            </div>
 
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
-              Great Job!
+            <h1 className="font-serif text-5xl text-black mb-4">
+              Session Complete
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              You've completed the {pack.name} flashcard practice
+            <p className="text-xl text-gray-600 font-light mb-12">
+              You've reviewed all cards in <span className="font-medium text-black">{pack.name}</span>.
             </p>
 
-            <div className="grid md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-sky-50 p-6 rounded-2xl border-2 border-sky-200">
-                <div className="text-4xl font-bold text-sky-600 mb-2">
-                  {questions.length}
-                </div>
-                <div className="text-sm text-gray-600">Questions Reviewed</div>
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <div className="p-6 border border-gray-100 rounded-2xl bg-white/50">
+                <div className="font-serif text-4xl text-black mb-1">{questions.length}</div>
+                <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Total Cards</div>
               </div>
 
-              <div className="bg-mint-50 p-6 rounded-2xl border-2 border-mint-200">
-                <div className="text-4xl font-bold text-mint-600 mb-2">
-                  {completed.size}
-                </div>
-                <div className="text-sm text-gray-600">Cards Flipped</div>
+              <div className="p-6 border border-gray-100 rounded-2xl bg-white/50">
+                <div className="font-serif text-4xl text-black mb-1">{completed.size}</div>
+                <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Flipped</div>
               </div>
 
-              <div className="bg-coral-50 p-6 rounded-2xl border-2 border-coral-200">
-                <div className="text-4xl font-bold text-coral-600 mb-2">
-                  {difficultQuestions.length}
-                </div>
-                <div className="text-sm text-gray-600">Marked Difficult</div>
+              <div className="p-6 border border-gray-100 rounded-2xl bg-white/50">
+                <div className="font-serif text-4xl text-black mb-1">{difficultQuestions.length}</div>
+                <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Marked Difficult</div>
               </div>
             </div>
 
-            {difficultQuestions.length > 0 && (
-              <div className="mb-6 p-6 bg-sunshine-50 rounded-2xl border-2 border-sunshine-200 text-left">
-                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <Flag className="w-5 h-5 text-sunshine-600" />
-                  Questions to Review
-                </h3>
-                <ul className="space-y-2">
-                  {difficultQuestions.map((q, idx) => (
-                    <li key={q.id} className="text-gray-700 text-sm">
-                      {idx + 1}. {q.question_text}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex gap-4 justify-center">
-              <PlayfulButton
-                variant="secondary"
-                icon={ArrowLeft}
-                onClick={() => navigate(`/pack/${packId}`)}
-              >
+            <div className="flex justify-center gap-4">
+              <LiquidButton variant="ghost" onClick={() => navigate(`/pack/${packId}`)}>
                 Back to Pack
-              </PlayfulButton>
-
-              <PlayfulButton
-                variant="sky"
-                icon={RotateCcw}
-                onClick={handleRestart}
-              >
+              </LiquidButton>
+              <LiquidButton variant="black" onClick={handleRestart} icon={<RotateCcw size={16} />}>
                 Practice Again
-              </PlayfulButton>
-
+              </LiquidButton>
               {difficultQuestions.length > 0 && (
-                <PlayfulButton
-                  variant="sunshine"
-                  icon={Flag}
-                  onClick={handleReviewDifficult}
-                >
+                <LiquidButton variant="secondary" onClick={handleReviewDifficult}>
                   Review Difficult
-                </PlayfulButton>
+                </LiquidButton>
               )}
             </div>
-          </PlayfulCard>
+          </LiquidGlass>
         </div>
       </div>
     );
@@ -266,205 +223,140 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
   const isDifficult = currentQuestion && markedDifficult.has(currentQuestion.id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
+      <LightLeakBackground />
+
+      <main className="max-w-4xl mx-auto px-6 py-12 relative z-10 flex flex-col min-h-screen justify-center">
+        
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <PlayfulButton
-              variant="secondary"
-              size="sm"
-              icon={ArrowLeft}
-              onClick={() => navigate(`/pack/${packId}`)}
-            >
-              Exit Practice
-            </PlayfulButton>
-
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-gray-600" />
-              <span className="font-semibold text-gray-900">{pack.name}</span>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="relative">
-            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary-500 to-mint-500 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <div className="mt-2 text-sm text-gray-600 text-center">
-              Question {currentIndex + 1} of {questions.length}
-            </div>
-          </div>
+        <div className="mb-8 flex items-center justify-between">
+           <LiquidButton variant="ghost" size="sm" onClick={() => navigate(`/pack/${packId}`)} icon={<ArrowLeft size={16} />}>
+             Exit
+           </LiquidButton>
+           
+           <div className="flex flex-col items-end">
+             <span className="font-serif text-lg text-black">{pack.name}</span>
+             <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">
+               Card {currentIndex + 1} / {questions.length}
+             </span>
+           </div>
         </div>
 
-        {/* Flashcard */}
-        <div className="perspective-1000 mb-6">
+        {/* Progress Bar */}
+        <div className="w-full h-1 bg-gray-200 rounded-full mb-12 overflow-hidden">
+          <div 
+            className="h-full bg-black transition-all duration-500 ease-out" 
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {/* Flashcard Area */}
+        <div className="perspective-1000 mb-12 h-[500px] w-full relative">
           <div
-            className={`relative w-full transition-transform duration-500 transform-style-3d cursor-pointer ${
+            className={`w-full h-full transition-transform duration-700 transform-style-3d cursor-pointer ${
               isFlipped ? 'rotate-y-180' : ''
             }`}
             onClick={handleFlip}
-            style={{
-              transformStyle: 'preserve-3d',
-              transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-            }}
           >
-            {/* Front of Card */}
-            <div
-              className={`${isFlipped ? 'invisible' : 'visible'}`}
-              style={{
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
-            >
-              <PlayfulCard
-                variant="sky"
-                className="min-h-[400px] flex flex-col items-center justify-center text-center p-12"
-              >
-                <div className="mb-6">
-                  <Badge variant="sky" icon={BookOpen}>
-                    Question
-                  </Badge>
-                </div>
-
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">
+            {/* Front */}
+            <div className="absolute inset-0 backface-hidden">
+              <LiquidGlass className="h-full flex flex-col items-center justify-center p-16 text-center border-2 !border-gray-100 shadow-xl">
+                <span className="font-mono text-xs text-gray-400 uppercase tracking-widest mb-8 border border-gray-200 px-3 py-1 rounded-full">
+                  Question
+                </span>
+                
+                <h2 className="font-serif text-4xl text-black leading-tight mb-8">
                   {currentQuestion?.question_text}
                 </h2>
 
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex gap-3">
                   {currentQuestion?.question_type && (
-                    <Badge variant="primary">
-                      {currentQuestion.question_type}
-                    </Badge>
+                     <span className="font-mono text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded uppercase tracking-widest">
+                       {currentQuestion.question_type}
+                     </span>
                   )}
                   {currentQuestion?.difficulty && (
-                    <Badge
-                      variant={
-                        currentQuestion.difficulty === 'easy' ? 'mint' :
-                        currentQuestion.difficulty === 'hard' ? 'coral' :
-                        'sunshine'
-                      }
-                    >
-                      {currentQuestion.difficulty}
-                    </Badge>
+                     <span className={`font-mono text-[10px] px-2 py-1 rounded uppercase tracking-widest ${
+                       currentQuestion.difficulty === 'hard' ? 'bg-red-50 text-red-600' : 
+                       currentQuestion.difficulty === 'easy' ? 'bg-green-50 text-green-600' : 
+                       'bg-yellow-50 text-yellow-600'
+                     }`}>
+                       {currentQuestion.difficulty}
+                     </span>
                   )}
                 </div>
-
-                <p className="text-gray-500 mt-8 text-sm">
-                  Click to see tips and approach
-                </p>
-              </PlayfulCard>
+                
+                <p className="mt-12 text-sm text-gray-400 font-light">Click card to reveal approach</p>
+              </LiquidGlass>
             </div>
 
-            {/* Back of Card */}
-            <div
-              className={`absolute inset-0 ${!isFlipped ? 'invisible' : 'visible'}`}
-              style={{
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                transform: 'rotateY(180deg)',
-              }}
-            >
-              <PlayfulCard
-                variant="mint"
-                className="min-h-[400px] flex flex-col p-12"
-              >
-                <div className="mb-6">
-                  <Badge variant="mint" icon={CheckCircle2}>
-                    Tips & Approach
-                  </Badge>
+            {/* Back */}
+            <div className="absolute inset-0 backface-hidden rotate-y-180">
+              <LiquidGlass className="h-full flex flex-col p-16 !bg-white/60 border-2 !border-blue-100 shadow-xl">
+                <div className="flex items-center gap-3 mb-8">
+                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                     <CheckCircle2 size={16} />
+                   </div>
+                   <span className="font-mono text-xs text-blue-600 uppercase tracking-widest font-bold">
+                     Recommended Approach
+                   </span>
                 </div>
 
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    How to Answer:
-                  </h3>
-
-                  <div className="space-y-4 text-gray-700">
-                    <p>
-                      <strong>Structure:</strong> Use the STAR method (Situation, Task, Action, Result) for behavioral questions.
-                    </p>
-                    <p>
-                      <strong>Key Points:</strong> Focus on specific examples from your experience.
-                    </p>
-                    <p>
-                      <strong>Duration:</strong> {currentQuestion?.expected_duration_seconds
-                        ? `Aim for ${Math.round(currentQuestion.expected_duration_seconds / 60)} minutes`
-                        : 'Take your time to answer thoroughly'}
-                    </p>
-                  </div>
+                <div className="flex-1 space-y-6 text-gray-800 text-lg font-light leading-relaxed">
+                   <p>
+                     <strong className="font-serif text-black font-medium block mb-2">Structure</strong>
+                     Use the STAR method (Situation, Task, Action, Result) to keep your answer focused.
+                   </p>
+                   <p>
+                     <strong className="font-serif text-black font-medium block mb-2">Key Focus</strong>
+                     Highlight your specific contribution and the impact on the business or team.
+                   </p>
                 </div>
-
-                <p className="text-gray-500 mt-6 text-sm text-center">
-                  Click to flip back to question
-                </p>
-              </PlayfulCard>
+                
+                <p className="mt-8 text-sm text-gray-400 font-light text-center">Click card to see question</p>
+              </LiquidGlass>
             </div>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-between gap-4">
-          <PlayfulButton
-            variant="secondary"
-            icon={ChevronLeft}
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-          >
-            Previous
-          </PlayfulButton>
+        <div className="flex items-center justify-between max-w-2xl mx-auto w-full">
+           <LiquidButton 
+             variant="ghost" 
+             onClick={handlePrevious} 
+             disabled={currentIndex === 0}
+             icon={<ChevronLeft size={20} />}
+           >
+             Prev
+           </LiquidButton>
 
-          <PlayfulButton
-            variant={isDifficult ? 'sunshine' : 'secondary'}
-            icon={Flag}
-            onClick={handleMarkDifficult}
-          >
-            {isDifficult ? 'Marked Difficult' : 'Mark Difficult'}
-          </PlayfulButton>
+           <button 
+             onClick={handleMarkDifficult}
+             className={`flex flex-col items-center gap-2 transition-colors ${isDifficult ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'}`}
+           >
+             <Flag size={24} fill={isDifficult ? "currentColor" : "none"} />
+             <span className="text-[10px] font-mono uppercase tracking-widest">
+               {isDifficult ? 'Flagged' : 'Flag'}
+             </span>
+           </button>
 
-          <PlayfulButton
-            variant="primary"
-            icon={currentIndex === questions.length - 1 ? CheckCircle2 : ChevronRight}
-            onClick={handleNext}
-          >
-            {currentIndex === questions.length - 1 ? 'Finish' : 'Next'}
-          </PlayfulButton>
+           <LiquidButton 
+             variant="black" 
+             onClick={handleNext}
+             icon={currentIndex === questions.length - 1 ? <CheckCircle2 size={20} /> : <ChevronRight size={20} />}
+             iconPosition="right"
+           >
+             {currentIndex === questions.length - 1 ? 'Finish' : 'Next'}
+           </LiquidButton>
         </div>
 
-        {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-white rounded-2xl border-2 border-gray-100">
-            <div className="text-2xl font-bold text-gray-900">{completed.size}</div>
-            <div className="text-sm text-gray-600">Reviewed</div>
-          </div>
-
-          <div className="text-center p-4 bg-white rounded-2xl border-2 border-gray-100">
-            <div className="text-2xl font-bold text-gray-900">
-              {questions.length - currentIndex - 1}
-            </div>
-            <div className="text-sm text-gray-600">Remaining</div>
-          </div>
-
-          <div className="text-center p-4 bg-white rounded-2xl border-2 border-gray-100">
-            <div className="text-2xl font-bold text-coral-600">{markedDifficult.size}</div>
-            <div className="text-sm text-gray-600">Difficult</div>
-          </div>
-        </div>
-      </div>
+      </main>
 
       <style>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
       `}</style>
     </div>
   );

@@ -10,10 +10,15 @@ import {
   ChevronRight,
   Loader2,
   Package,
-  ShoppingBag
+  ShoppingBag,
+  Activity,
+  ArrowRight
 } from 'lucide-react';
 import { api, Conversation } from '../lib/api';
 import { PackSelectionModal, ShopModal, PromoPopup } from '../components';
+import { LiquidGlass } from '../components/LiquidGlass';
+import { LiquidButton } from '../components/LiquidButton';
+import { LightLeakBackground } from '../components/LightLeakBackground';
 
 interface DashboardProps {
   userId: string;
@@ -48,36 +53,32 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   };
 
   const handleSelectPack = async (packId: string) => {
-    // Navigate to pack details page
     setShowPackModal(false);
     navigate(`/pack/${packId}`);
   };
 
   const handleCreateCustomPack = () => {
-    // TODO: Navigate to custom pack creation flow
-    console.log('Create custom pack');
-    // For now, just show an alert
     alert('Custom pack creation chatbot coming soon!');
   };
 
   const getScoreColor = (score: number | undefined) => {
-    if (!score) return 'text-gray-400';
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (!score) return 'text-gray-500';
+    if (score >= 80) return 'text-black';
+    if (score >= 60) return 'text-gray-800';
+    return 'text-gray-700';
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-      in_progress: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'In Progress' },
-      completed: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Processing' },
-      analyzing: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Analyzing' },
-      analyzed: { bg: 'bg-green-100', text: 'text-green-700', label: 'Complete' },
-      error: { bg: 'bg-red-100', text: 'text-red-700', label: 'Error' }
+    const statusConfig: Record<string, { label: string }> = {
+      in_progress: { label: 'In Progress' },
+      completed: { label: 'Processing' },
+      analyzing: { label: 'Analyzing' },
+      analyzed: { label: 'Complete' },
+      error: { label: 'Error' }
     };
     const config = statusConfig[status] || statusConfig.error;
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500 border border-gray-200 px-2 py-0.5 rounded">
         {config.label}
       </span>
     );
@@ -87,8 +88,6 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
@@ -99,7 +98,6 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate stats
   const completedInterviews = conversations.filter(c => c.status === 'analyzed');
   const avgScore = completedInterviews.length > 0
     ? Math.round(completedInterviews.reduce((sum, c) => sum + (c.overall_score || 0), 0) / completedInterviews.length)
@@ -110,202 +108,117 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden text-gray-900 font-sans selection:bg-pink-100">
+      <LightLeakBackground />
+      
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">InterviewPro</h1>
-            <p className="text-sm text-gray-500">Welcome back, {userName}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowShopModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sunshine-600 hover:bg-sunshine-50 rounded-xl transition border-2 border-sunshine-200"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              Shop
-            </button>
-            <button
-              onClick={onLogout}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
+        <div className="flex flex-col">
+          <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+          <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Executive Dashboard</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <button
+            onClick={() => setShowShopModal(true)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            Marketplace
+          </button>
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-6 pt-32 pb-24 relative z-10">
+        
+        {/* Welcome Section */}
+        <div className="mb-16">
+          <h1 className="font-serif text-5xl text-black mb-2">Welcome, {userName}</h1>
+          <p className="text-gray-600 font-light text-lg italic">Refining your professional signal.</p>
+        </div>
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
-                <Video className="w-6 h-6 text-primary-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total Sessions</p>
-                <p className="text-2xl font-bold text-gray-900">{conversations.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Average Score</p>
-                <p className="text-2xl font-bold text-gray-900">{avgScore || '--'}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
-                <Award className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Best Score</p>
-                <p className="text-2xl font-bold text-gray-900">{bestScore || '--'}</p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          <StatCard label="Total Sessions" value={conversations.length} icon={<Activity size={20} />} />
+          <StatCard label="Average Score" value={avgScore || '--'} icon={<TrendingUp size={20} />} />
+          <StatCard label="Highest Mark" value={bestScore || '--'} icon={<Award size={20} />} />
         </div>
 
-        {/* Action Buttons */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Start New Interview */}
-          <button
+        {/* Action Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+          <ActionCard 
+            title="Standard Interview" 
+            desc="Practice with our elite AI interviewer."
             onClick={() => navigate('/interview/setup')}
-            className="bg-primary-500 hover:bg-primary-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-primary-500/20"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                <Play className="w-6 h-6" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-lg font-semibold">Start New Interview</h3>
-                <p className="text-primary-100 text-sm">Practice with AI interviewer</p>
-              </div>
-            </div>
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          {/* Practice with Packs */}
-          <button
+            icon={<Play size={24} />}
+            variant="glass"
+          />
+          <ActionCard 
+            title="Question Packs" 
+            desc="Focused practice with curated sets."
             onClick={() => setShowPackModal(true)}
-            className="bg-sunshine-400 hover:bg-sunshine-500 text-gray-900 rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-sunshine-400/20"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/30 flex items-center justify-center">
-                <Package className="w-6 h-6" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-lg font-semibold">Practice with Packs</h3>
-                <p className="text-gray-700 text-sm">Use curated question sets</p>
-              </div>
-            </div>
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          {/* Video Call Interview - Tavus */}
-          <button
+            icon={<Package size={24} />}
+            variant="glass"
+          />
+          <ActionCard 
+            title="Tavus Premium" 
+            desc="AI Video avatars for ultimate realism."
             onClick={() => navigate('/interview/setup?type=tavus')}
-            className="bg-gradient-to-br from-sky-500 to-mint-500 hover:from-sky-600 hover:to-mint-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-sky-500/20 relative overflow-hidden"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                <Video className="w-6 h-6" />
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-semibold">Tavus Video Interview</h3>
-                  <span className="px-2 py-0.5 bg-sunshine-400 text-gray-900 text-xs font-bold rounded-full">
-                    PREMIUM
-                  </span>
-                </div>
-                <p className="text-sky-100 text-sm">AI video interviewer powered by Tavus</p>
-              </div>
-            </div>
-            <ChevronRight className="w-6 h-6" />
-          </button>
+            icon={<Video size={24} />}
+            variant="glass"
+            tag="PREMIUM"
+          />
         </div>
 
-        {/* Previous Sessions */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Previous Sessions</h2>
+        {/* History Section */}
+        <section>
+          <div className="flex items-end justify-between mb-8 border-b border-gray-200/50 pb-4">
+            <h2 className="font-serif text-3xl text-black">Session History</h2>
+            <span className="font-mono text-xs text-gray-500 uppercase tracking-widest">Archived Data</span>
+          </div>
 
           {conversations.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
-              <Video className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No interview sessions yet</p>
-              <p className="text-sm text-gray-400 mt-1">Start your first practice session above</p>
-            </div>
+            <LiquidGlass className="p-16 text-center">
+              <Video className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+              <p className="font-serif text-xl text-gray-800">No signals recorded yet.</p>
+              <p className="text-sm text-gray-500 mt-2">Initiate your first session to begin analysis.</p>
+            </LiquidGlass>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {conversations.map((conv) => (
-                <button
+                <HistoryItem 
                   key={conv.id}
+                  conv={conv}
                   onClick={() => {
-                    // Allow clicking on completed, analyzing, or analyzed conversations
                     if (['completed', 'analyzing', 'analyzed'].includes(conv.status)) {
                       navigate(`/results/${conv.id}`);
                     }
                   }}
-                  disabled={conv.status === 'in_progress' || conv.status === 'error'}
-                  className={`w-full bg-white rounded-xl p-4 flex items-center justify-between border border-gray-200 transition ${
-                    ['completed', 'analyzing', 'analyzed'].includes(conv.status) ? 'hover:border-primary-300 hover:shadow-md cursor-pointer' : 'opacity-75 cursor-default'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Video className="w-5 h-5 text-gray-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">
-                        Interview Session
-                      </p>
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatDuration(conv.duration_seconds)}
-                        </span>
-                        <span>{formatDate(conv.started_at)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    {conv.overall_score !== undefined && conv.overall_score !== null && (
-                      <span className={`text-2xl font-bold ${getScoreColor(conv.overall_score)}`}>
-                        {conv.overall_score}
-                      </span>
-                    )}
-                    {getStatusBadge(conv.status)}
-                    {['completed', 'analyzing', 'analyzed'].includes(conv.status) && (
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    )}
-                  </div>
-                </button>
+                  formatDuration={formatDuration}
+                  formatDate={formatDate}
+                  getStatusBadge={getStatusBadge}
+                  getScoreColor={getScoreColor}
+                />
               ))}
             </div>
           )}
-        </div>
+        </section>
       </main>
 
-      {/* Pack Selection Modal */}
+      {/* Modals */}
       <PackSelectionModal
         isOpen={showPackModal}
         onClose={() => setShowPackModal(false)}
@@ -313,16 +226,104 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         onSelectPack={handleSelectPack}
         onCreateCustomPack={handleCreateCustomPack}
       />
-
-      {/* Shop Modal */}
       <ShopModal
         isOpen={showShopModal}
         onClose={() => setShowShopModal(false)}
         userId={userId}
       />
-
-      {/* Promotional Popup */}
       <PromoPopup onOpenShop={() => setShowShopModal(true)} />
     </div>
   );
+}
+
+function StatCard({ label, value, icon }: { label: string, value: string | number, icon: any }) {
+  return (
+    <LiquidGlass className="p-8 flex flex-col justify-between h-40">
+      <div className="flex justify-between items-start">
+        <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">{label}</span>
+        <div className="text-gray-400">{icon}</div>
+      </div>
+      <div className="font-serif text-4xl text-black">{value}</div>
+    </LiquidGlass>
+  );
+}
+
+function ActionCard({ title, desc, onClick, icon, variant, tag }: { title: string, desc: string, onClick: () => void, icon: any, variant: 'black' | 'glass', tag?: string }) {
+  if (variant === 'black') {
+    return (
+      <LiquidButton 
+        variant="black" 
+        size="xl" 
+        className="w-full h-full flex flex-col !items-start !justify-between p-8 text-left group"
+        onClick={onClick}
+      >
+        <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center mb-12">
+          {icon}
+        </div>
+        <div>
+          <h3 className="font-serif text-2xl mb-2 flex items-center gap-2">
+            {title} <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
+          </h3>
+          <p className="text-sm text-gray-400 font-light">{desc}</p>
+        </div>
+      </LiquidButton>
+    )
+  }
+
+  return (
+    <LiquidGlass 
+      className="p-8 flex flex-col h-full justify-between cursor-pointer hover:!border-gray-400 transition-colors group"
+      onClick={onClick}
+    >
+      <div className="flex justify-between items-start mb-12">
+        <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-600">
+          {icon}
+        </div>
+        {tag && <span className="font-mono text-[10px] bg-black text-white px-2 py-0.5 rounded">{tag}</span>}
+      </div>
+      <div>
+        <h3 className="font-serif text-2xl text-black mb-2 flex items-center gap-2">
+          {title} <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
+        </h3>
+        <p className="text-sm text-gray-600 font-light">{desc}</p>
+      </div>
+    </LiquidGlass>
+  )
+}
+
+function HistoryItem({ conv, onClick, formatDuration, formatDate, getStatusBadge, getScoreColor }: any) {
+  const isClickable = ['completed', 'analyzing', 'analyzed'].includes(conv.status);
+  
+  return (
+    <LiquidGlass 
+      className={`p-6 flex items-center justify-between group ${isClickable ? 'cursor-pointer hover:!border-gray-400' : 'opacity-70'}`}
+      onClick={onClick}
+    >
+      <div className="flex items-center gap-6">
+        <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
+          <Activity size={20} />
+        </div>
+        <div>
+          <h4 className="font-serif text-xl text-black">Session Archive</h4>
+          <div className="flex items-center gap-4 mt-1">
+            <span className="font-mono text-[10px] text-gray-500 uppercase">{formatDate(conv.started_at)}</span>
+            <span className="font-mono text-[10px] text-gray-500 uppercase">{formatDuration(conv.duration_seconds)}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-8">
+        {conv.overall_score !== undefined && conv.overall_score !== null && (
+          <div className="text-right">
+            <div className={`font-serif text-3xl ${getScoreColor(conv.overall_score)}`}>{conv.overall_score}</div>
+            <div className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Score</div>
+          </div>
+        )}
+        <div className="flex flex-col items-end gap-2">
+          {getStatusBadge(conv.status)}
+          {isClickable && <ArrowRight size={16} className="text-gray-300 group-hover:text-black transition-colors" />}
+        </div>
+      </div>
+    </LiquidGlass>
+  )
 }
