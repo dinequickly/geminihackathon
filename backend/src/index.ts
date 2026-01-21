@@ -25,6 +25,7 @@ app.use(cors({
 app.options('*', cors()); // Enable pre-flight for all routes
 app.options('/api/ai/dynamic-components', cors());
 app.options('/api/ai/personality', cors());
+app.options('/api/ai/rewrite-personality', cors());
 
 // Stripe webhook needs raw body - must be BEFORE express.json()
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -477,6 +478,50 @@ Examples:
     } else {
       res.status(500).json({ error: error.message });
     }
+  }
+});
+
+app.post('/api/ai/rewrite-personality', async (req, res) => {
+  try {
+    const { current_personality, instruction } = req.body;
+    
+    if (!process.env.GROQ_API_KEY) {
+        return res.status(500).json({ error: 'API key missing' });
+    }
+
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: `You are an expert editor. Rewrite the following interviewer persona based on the user's instruction. Keep it under 3 sentences.
+        
+        Current Persona: "${current_personality}"` },
+        { role: 'user', content: instruction }
+      ],
+      model: 'openai/gpt-oss-120b',
+      temperature: 0.7,
+      max_completion_tokens: 1024,
+      top_p: 1,
+      stream: true,
+      stop: null
+    });
+
+    for await (const chunk of completion) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+            res.write(content);
+        }
+    }
+    res.end();
+
+  } catch (error: any) {
+    console.error('Personality rewrite error:', error);
+    if (!res.headersSent) res.status(500).json({ error: error.message });
+    else res.end();
   }
 });
 

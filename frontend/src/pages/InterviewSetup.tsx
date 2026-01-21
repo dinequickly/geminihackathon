@@ -5,10 +5,15 @@ import {
   Sparkles, 
   CheckCircle2,
   AlertCircle,
-  Video
+  Video,
+  Pencil,
+  X,
+  Check,
+  Bot
 } from 'lucide-react';
 import { 
   PlayfulButton, 
+  PlayfulCard
 } from '../components/PlayfulUI';
 import { DynamicRenderer, ComponentSchema } from '../components/DynamicRenderer';
 import { InfoCard } from '../components/DynamicComponents';
@@ -17,6 +22,121 @@ import { api } from '../lib/api';
 interface InterviewSetupProps {
   userId: string;
 }
+
+// Editable Personality Component
+const PersonalityEditor = ({ 
+  personality, 
+  setPersonality 
+}: { 
+  personality: string; 
+  setPersonality: (val: string) => void;
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempText, setTempText] = useState(personality);
+  const [showAiInput, setShowAiInput] = useState(false);
+  const [aiInstruction, setAiInstruction] = useState('');
+  const [isRewriting, setIsRewriting] = useState(false);
+
+  const handleSave = () => {
+    setPersonality(tempText);
+    setIsEditing(false);
+    setShowAiInput(false);
+  };
+
+  const handleRewrite = async () => {
+    if (!aiInstruction) return;
+    setIsRewriting(true);
+    setTempText(''); // Clear to show streaming
+    
+    try {
+      await api.streamPersonalityRewrite(personality, aiInstruction, (chunk) => {
+        setTempText(prev => prev + chunk);
+      });
+      setShowAiInput(false);
+      setAiInstruction('');
+    } catch (err) {
+      console.error('Rewrite failed:', err);
+    } finally {
+      setIsRewriting(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="bg-mint-50 border-2 border-mint-200 rounded-2xl p-6 relative animate-fade-in">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-mint-800 font-bold">
+            <Bot className="w-5 h-5" />
+            <h3>Edit Persona</h3>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowAiInput(!showAiInput)}
+              className={`p-2 rounded-lg transition-colors ${showAiInput ? 'bg-mint-200 text-mint-800' : 'bg-white text-mint-600 hover:bg-mint-100'}`}
+              title="Rewrite with AI"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => { setIsEditing(false); setTempText(personality); }}
+              className="p-2 bg-white text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={handleSave}
+              className="p-2 bg-mint-500 text-white rounded-lg hover:bg-mint-600 transition-colors"
+            >
+              <Check className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {showAiInput && (
+          <div className="mb-4 bg-white p-3 rounded-xl border border-mint-200 flex gap-2">
+            <input 
+              type="text" 
+              value={aiInstruction}
+              onChange={(e) => setAiInstruction(e.target.value)}
+              placeholder="e.g., Make it friendlier, more strict..."
+              className="flex-1 text-sm outline-none text-gray-700 placeholder:text-gray-400"
+              onKeyDown={(e) => e.key === 'Enter' && handleRewrite()}
+            />
+            <button 
+              onClick={handleRewrite}
+              disabled={isRewriting || !aiInstruction}
+              className="text-xs bg-mint-500 text-white px-3 py-1.5 rounded-lg hover:bg-mint-600 disabled:opacity-50 font-bold flex items-center gap-1"
+            >
+              {isRewriting ? '...' : <><Sparkles className="w-3 h-3" /> Rewrite</>}
+            </button>
+          </div>
+        )}
+
+        <textarea 
+          value={tempText}
+          onChange={(e) => setTempText(e.target.value)}
+          className="w-full h-24 p-3 rounded-xl border border-mint-200 focus:border-mint-400 focus:ring-2 focus:ring-mint-100 outline-none resize-none text-sm text-gray-800 bg-white/50"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="group relative">
+      <InfoCard 
+        title="Interviewer Persona" 
+        message={personality} 
+        variant="tip" 
+      />
+      <button 
+        onClick={() => { setIsEditing(true); setTempText(personality); }}
+        className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white text-mint-700 shadow-sm hover:shadow-md"
+      >
+        <Pencil className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
 
 export default function InterviewSetup({ userId }: InterviewSetupProps) {
   const navigate = useNavigate();
@@ -172,10 +292,9 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
 
       {personality && (
         <div className="animate-fade-in">
-            <InfoCard 
-                title="Interviewer Persona" 
-                message={personality} 
-                variant="tip" 
+            <PersonalityEditor 
+                personality={personality} 
+                setPersonality={setPersonality} 
             />
         </div>
       )}
@@ -211,7 +330,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
 
   return (
     <div className="min-h-screen bg-cream-50 p-4 md:p-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <PlayfulButton
