@@ -244,10 +244,12 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               <>
                 {[1, 2, 3].map((i) => {
                   // Stagger each card's appearance
-                  const cardDelay = i * 0.15; // Each card starts 15% later
+                  const cardDelay = i * 0.12; // Each card starts 12% later
+                  const fadeInEnd = Math.min(cardDelay + 0.25, 0.95);
+                  const holdEnd = Math.min(fadeInEnd + 0.3, 0.98);
                   const cardProgress = interpolate(
                     shuffleboardProgress,
-                    [cardDelay, cardDelay + 0.4, cardDelay + 0.7, 1],
+                    [cardDelay, fadeInEnd, holdEnd, 1],
                     [0, 1, 1, 0],
                     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
                   );
