@@ -56,13 +56,8 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
 
-  // Scroll amount for results
-  const resultsScrollY = interpolate(
-    frame,
-    [resultsScrollStart, resultsScrollEnd],
-    [0, 400],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
-  );
+  // Scroll amount for results (disabled - no scroll)
+  const resultsScrollY = 0;
 
   // Scene visibility
   const showTerminal = frame < browserOpenStart;
