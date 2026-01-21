@@ -10,12 +10,15 @@
   },
   "dependencies": {
     "@elevenlabs/client": "^0.12.2",
+    "@json-render/core": "^0.3.0",
+    "@json-render/react": "^0.2.0",
     "face-api.js": "^0.22.2",
     "lucide-react": "^0.303.0",
     "posthog-js": "^1.325.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.0"
+    "react-router-dom": "^6.21.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

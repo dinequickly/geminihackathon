@@ -9,6 +9,8 @@ import Stripe from 'stripe';
 import Groq from 'groq-sdk';
 import { runFullAnalysis } from './analysis/orchestrator.js';
 import { trackEvent } from './posthog.js';
+import { streamComponentGeneration, streamPersonalityGeneration } from './lib/anthropic.js';
+import { generateCatalogPrompt, validateUITree } from './lib/catalog.js';
 
 dotenv.config();
 
@@ -346,109 +348,87 @@ app.post('/api/ai/generate-interview-config', async (req, res) => {
 
 app.post('/api/ai/dynamic-components', async (req, res) => {
   try {
-    const { intent, personal_context, mode } = req.body;
-    
-    // Check for Groq API key
-    if (!process.env.GROQ_API_KEY) {
-      console.warn('GROQ_API_KEY not configured, falling back to mock data.');
-      throw new Error('GROQ_API_KEY missing');
+    const { intent, personal_context } = req.body;
+
+    // Check for Anthropic API key
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('ANTHROPIC_API_KEY not configured');
+      return res.status(500).json({ error: 'Anthropic API key missing' });
     }
 
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    
-    console.log('Generating dynamic components via Groq for intent (streaming):', intent);
-    
-    const systemPrompt = `I have a React application that dynamically renders UI components from a JSON tree. I need you to generate a JSON response that defines a specific UI form.
+    console.log('Generating dynamic components via Claude for intent:', intent);
 
-The System:
-- I use a DynamicRenderer that takes a tree array.
-- Each item in the array is an object: { type: "ComponentType", id: "unique_id", props: { ... } }.
-- Available Component Types and their Props:
+    // Generate the catalog prompt with component definitions
+    const catalogPrompt = generateCatalogPrompt();
+    const fullPrompt = `${catalogPrompt}
 
-1. InfoCard
-   - title (string): Title text.
-   - message (string): Body text.
-   - variant (string): 'info', 'tip', or 'warning'.
+${personal_context ? `\n**User Context**: ${personal_context}\n` : ''}
 
-2. MultiChoiceCard
-   - question (string): The label/question.
-   - options (string[]): Array of options to choose from.
+**User's Interview Goal**: ${intent}
 
-3. SliderCard
-   - label (string): The label.
-   - min (number): Minimum value.
-   - max (number): Maximum value.
-   - unitLabels (string[]): Optional. Two labels for min/max e.g., ["Easy", "Hard"].
-
-4. TagSelector
-   - label (string): The label.
-   - availableTags (string[]): List of tags to toggle.
-   - maxSelections (number): Max tags selectable.
-
-5. TextInputCard
-   - label (string): Input label.
-   - placeholder (string): Placeholder text.
-   - maxLength (number): Max characters.
-
-6. ScenarioCard
-   - title (string): Scenario title.
-   - description (string): Description text.
-   - includes (string[]): List of features included in this scenario (tags).
-
-7. QuestionCard
-   - question (string): Yes/No question text.
-
-8. TimeSelector
-   - label (string): Label.
-   - minMinutes (number): Min duration.
-   - maxMinutes (number): Max duration.
-
-The Task:
-Generate a JSON object with a key "tree" containing an array of these components to create a configuration form for: "${intent}".
-${personal_context ? `Additional Context: ${personal_context}` : ''}
-
-The form should collect relevant details like difficulty, specific topics, and duration. Use a mix of components to make it interactive.
-ALWAYS include a TimeSelector component first.
-
-Output Format:
-Strict JSON only.`;
+Generate a JSON configuration that creates 3-8 appropriate components for this interview setup. Focus on components that will help capture the user's preferences and requirements.`;
 
     // Set headers for SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: intent }
-      ],
-      model: 'openai/gpt-oss-120b',
-      temperature: 1,
-      max_completion_tokens: 8192,
-      top_p: 1,
-      // reasoning_effort: "low", // Uncomment if supported by the model
-      stream: true,
-      response_format: { type: "json_object" },
-      stop: null
-    });
+    let accumulatedResponse = '';
 
-    for await (const chunk of completion) {
-      const content = chunk.choices[0]?.delta?.content || '';
-      if (content) {
-        res.write(content);
+    // Stream from Claude
+    await streamComponentGeneration(
+      catalogPrompt,
+      fullPrompt,
+      (chunk) => {
+        accumulatedResponse += chunk;
+        // Write each chunk to the client in SSE format
+        res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
       }
+    );
+
+    // After streaming completes, validate the full response
+    console.log('Validating generated UI tree...');
+
+    try {
+      // Extract JSON from the response
+      const jsonMatch = accumulatedResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in response');
+      }
+
+      const parsedTree = JSON.parse(jsonMatch[0]);
+
+      // Validate the UITree structure
+      const validation = validateUITree(parsedTree);
+
+      if (!validation.success) {
+        console.error('Validation failed:', validation.errors || validation.error);
+        res.write(`data: ${JSON.stringify({
+          error: 'Generated components failed validation',
+          details: validation.errors || validation.error
+        })}\n\n`);
+      } else {
+        console.log('Validation successful');
+        res.write(`data: ${JSON.stringify({ complete: true })}\n\n`);
+      }
+    } catch (validationError: any) {
+      console.error('Validation error:', validationError.message);
+      res.write(`data: ${JSON.stringify({
+        error: 'Failed to parse generated response',
+        details: validationError.message
+      })}\n\n`);
     }
 
     res.end();
   } catch (error: any) {
     console.error('Dynamic components error:', error);
-    // If headers already sent, we can't send JSON error
-    if (!res.headersSent) {
-      // Fallback on exception (simplified for stream endpoint)
-      res.status(500).json({ error: error.message });
-    } else {
+
+    // If headers already sent, send error as SSE
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
       res.end();
+    } else {
+      res.status(500).json({ error: error.message });
     }
   }
 });
@@ -456,42 +436,45 @@ Strict JSON only.`;
 app.post('/api/ai/personality', async (req, res) => {
   try {
     const { intent } = req.body;
-    
-    if (!process.env.GROQ_API_KEY) {
-        return res.status(500).json({ error: 'API key missing' });
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: 'Anthropic API key missing' });
     }
 
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    console.log('Generating interviewer personality for intent:', intent);
+
+    const systemPrompt = `You are an expert interviewer. Based on the user's interview goal, describe the persona you will adopt for this interview.
+
+Keep your response under 3 sentences. Be specific about your interviewing style, tone, and approach.
+
+Examples:
+- "Strict but fair senior technical lead who digs deep into system design"
+- "Collaborative peer focused on behavioral questions and culture fit"
+- "Friendly but thorough hiring manager evaluating leadership potential"`;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: "You are an expert interviewer. Describe the persona you will adopt for this interview (e.g. 'Strict but fair', 'Collaborative peer'). Keep it under 3 sentences." },
-        { role: 'user', content: intent }
-      ],
-      model: 'openai/gpt-oss-120b',
-      temperature: 1,
-      max_completion_tokens: 1024,
-      top_p: 1,
-      stream: true,
-      stop: null
-    });
+    // Stream from Claude
+    await streamPersonalityGeneration(
+      systemPrompt,
+      intent,
+      (chunk) => {
+        // Write each chunk to the client (plain text streaming)
+        res.write(chunk);
+      }
+    );
 
-    for await (const chunk of completion) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
-            res.write(content);
-        }
-    }
     res.end();
-
   } catch (error: any) {
     console.error('Personality stream error:', error);
-    if (!res.headersSent) res.status(500).json({ error: error.message });
-    else res.end();
+
+    if (res.headersSent) {
+      res.end();
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 

@@ -866,52 +866,82 @@ class ApiClient {
     });
 
     if (!response.ok) {
-        // Fallback handled by caller or throw
-        throw new Error('Stream failed');
+      throw new Error('Stream failed');
     }
 
     const reader = response.body?.getReader();
     if (!reader) return;
 
     const decoder = new TextDecoder();
-    let accumulated = '';
-    let parsedCount = 0;
+    let accumulatedText = '';
+    let buffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
-      accumulated += decoder.decode(value, { stream: true });
-      
-      // Attempt to extract complete objects from the "tree" array
-      // Simplistic parser: find objects inside "tree": [ ... ]
-      // We look for { "type": ... } blocks.
-      
-      try {
-        // Very basic extraction: regex for objects that look like components
-        // This is a heuristic to support "pop out" streaming without a full stream parser
-        const matches = accumulated.match(/\{[\s\S]*?"type"\s*:\s*"[^"]+"[\s\S]*?\}(?=\s*,|\s*\])/g);
-        if (matches && matches.length > parsedCount) {
-            const validComponents = matches.map(s => {
-                try { return JSON.parse(s); } catch { return null; }
-            }).filter(Boolean);
-            
-            if (validComponents.length > 0) {
-                onUpdate(validComponents);
-                parsedCount = matches.length;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process SSE format: lines starting with "data: "
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataStr = line.slice(6); // Remove "data: " prefix
+          try {
+            const data = JSON.parse(dataStr);
+
+            if (data.chunk) {
+              // Accumulate the text chunks
+              accumulatedText += data.chunk;
+            } else if (data.complete) {
+              // Streaming complete - parse final JSON
+              console.log('Streaming complete, parsing final JSON...');
+            } else if (data.error) {
+              console.error('Stream error:', data.error);
+              throw new Error(data.error);
             }
+          } catch (e) {
+            console.warn('Failed to parse SSE data:', line);
+          }
         }
-      } catch (e) {
-        // Ignore parse errors during streaming
       }
     }
-    
-    // Final parse to ensure we got everything
+
+    // Parse the final accumulated JSON
     try {
-        const finalJson = JSON.parse(accumulated);
-        if (finalJson.tree) onUpdate(finalJson.tree);
-    } catch (e) {
-        console.warn('Final JSON parse failed', e);
+      const jsonMatch = accumulatedText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in response');
+      }
+
+      const parsedTree = JSON.parse(jsonMatch[0]);
+
+      // Convert json-render format to ComponentSchema format
+      // json-render uses: { tree: { root: "container", elements: { key: {...}, ... } } }
+      // We need: [ { type: "...", id: "...", props: {...} } ]
+      if (parsedTree.tree && parsedTree.tree.elements) {
+        const components = Object.entries(parsedTree.tree.elements)
+          .filter(([_, element]: [string, any]) => {
+            // Filter out root/container elements, only keep actual components
+            return element.type && element.type !== 'container';
+          })
+          .map(([key, element]: [string, any]) => ({
+            type: element.type,
+            id: key,
+            props: element.props || {},
+            visible: element.visible !== false,
+          }));
+
+        onUpdate(components);
+      } else {
+        console.error('Invalid tree structure:', parsedTree);
+        throw new Error('Invalid component tree structure');
+      }
+    } catch (e: any) {
+      console.error('Final JSON parse failed:', e);
+      throw new Error(`Failed to parse components: ${e.message}`);
     }
   }
 
@@ -934,7 +964,7 @@ class ApiClient {
   }
 
   async getDynamicComponents(intent: string, personalContext?: string): Promise<any[]> {
-    // Call backend proxy to avoid CORS issues with n8n
+    // Call backend to generate dynamic components using Claude
     return this.request('/api/ai/dynamic-components', {
       method: 'POST',
       body: JSON.stringify({
@@ -943,68 +973,13 @@ class ApiClient {
         mode: 'component_tree'
       })
     }).then((data: any) => {
-        if (data && Array.isArray(data.tree)) return data.tree;
-        if (Array.isArray(data)) return data;
-        return []; // Fallback handled below if empty
+      if (data && Array.isArray(data.tree)) return data.tree;
+      if (Array.isArray(data)) return data;
+      throw new Error('Invalid response format from backend');
     }).catch(e => {
-        console.warn('Backend proxy failed, using mock catalog:', e);
-        // Fallback mock data
-        return [
-          {
-            type: 'InfoCard',
-            id: 'info1',
-            props: {
-              title: 'Interview Context',
-              message: `We've analyzed your request for "${intent}". Please configure the specifics below.`,
-              variant: 'info'
-            }
-          },
-          {
-            type: 'MultiChoiceCard',
-            id: 'role_level',
-            props: {
-              question: 'Target Role Level',
-              options: ['Associate / Junior', 'Mid-Level', 'Senior', 'Staff / Principal', 'Executive']
-            }
-          },
-          {
-            type: 'TagSelector',
-            id: 'focus_areas',
-            props: {
-              label: 'Key Focus Areas',
-              availableTags: ['System Design', 'Behavioral', 'Live Coding', 'Product Sense', 'Leadership', 'Culture Fit'],
-              maxSelections: 3
-            }
-          },
-          {
-            type: 'ScenarioCard',
-            id: 'scenario_pressure',
-            props: {
-              title: 'Pressure Test Mode',
-              description: 'Simulate a high-stakes environment with challenging follow-ups and shorter time limits.',
-              includes: ['Rapid Fire', 'Deep Drill-down', 'Skeptical Interviewer']
-            }
-          },
-          {
-            type: 'SliderCard',
-            id: 'duration',
-            props: {
-              label: 'Session Duration (Minutes)',
-              min: 15,
-              max: 60,
-              unitLabels: ['Quick', 'Marathon']
-            }
-          },
-          {
-            type: 'TextInputCard',
-            id: 'specific_topic',
-            props: {
-              label: 'Specific Topic to Drill (Optional)',
-              placeholder: 'e.g., React Hooks, Distributed Caching, Conflict Resolution...',
-              maxLength: 50
-            }
-          }
-        ];
+      console.error('Failed to get dynamic components:', e);
+      // Re-throw the error instead of returning mock data
+      throw new Error(`Failed to generate interview configuration: ${e.message}`);
     });
   }
 }
