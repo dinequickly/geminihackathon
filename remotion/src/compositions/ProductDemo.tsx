@@ -42,7 +42,11 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   // Results timeline (after interview)
   const resultsStart = 570;          // was 840
   const resultsScrollStart = 580;    // was 950
-  const resultsScrollEnd = 660;      // was 1030
+  const resultsScrollEnd = 620;      // was 1030
+
+  // Shuffleboard effect timeline
+  const shuffleboardStart = 630;     // When card starts moving
+  const shuffleboardShootOut = 650;  // When card shoots into space
 
   // Scroll amount for config
   const configScrollY = interpolate(
@@ -103,6 +107,20 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
+
+  // Shuffleboard 3D card effect
+  const shuffleboardProgress = interpolate(
+    frame,
+    [shuffleboardStart, shuffleboardShootOut],
+    [0, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
+  );
+
+  // Card moves left and rotates
+  const cardTranslateX = interpolate(shuffleboardProgress, [0, 0.5, 1], [0, -200, -800]);
+  const cardRotateX = interpolate(shuffleboardProgress, [0, 0.5, 1], [0, 30, 45]); // Clockwise tilt
+  const cardScale = interpolate(shuffleboardProgress, [0, 0.5, 1], [1, 0.95, 0.6]); // Shrink as it goes away
+  const cardOpacity = interpolate(shuffleboardProgress, [0, 0.8, 1], [1, 1, 0]); // Fade out at end
 
   return (
     <AbsoluteFill
@@ -220,18 +238,49 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
 
         {/* Combined Results View (Performance + Live Emotions + Transcript) */}
         {showResults && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 30,
-              opacity: interpolate(interviewToResultsProgress, [0, 1], [0, 1]),
-              borderRadius: 16,
-              overflow: "hidden",
-              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
-            }}
-          >
-            <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} />
-          </div>
+          <>
+            {/* Background cards (deck effect) - only visible during shuffleboard */}
+            {frame >= shuffleboardStart && (
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      inset: 30,
+                      borderRadius: 16,
+                      backgroundColor: "#fff",
+                      boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
+                      transformStyle: "preserve-3d",
+                      transform: `translateX(${-150 - i * 10}px) translateY(${i * 8}px) rotateX(${20 + i * 5}deg) scale(${0.95 - i * 0.05})`,
+                      opacity: interpolate(shuffleboardProgress, [0, 0.3, 1], [0, 0.6, 0]),
+                      zIndex: -i,
+                    }}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Main results card with shuffleboard effect */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 30,
+                opacity: frame < shuffleboardStart
+                  ? interpolate(interviewToResultsProgress, [0, 1], [0, 1])
+                  : cardOpacity,
+                borderRadius: 16,
+                overflow: "hidden",
+                boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
+                transformStyle: "preserve-3d",
+                transform: frame >= shuffleboardStart
+                  ? `translateX(${cardTranslateX}px) rotateX(${cardRotateX}deg) scale(${cardScale})`
+                  : "none",
+              }}
+            >
+              <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} />
+            </div>
+          </>
         )}
 
         {/* Cursor for clicking InterviewPro link in terminal */}
