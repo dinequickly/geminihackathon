@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ShoppingBag, Check, Crown, Zap, Sparkles, Package, BookOpen, Plus, ChevronRight, Lock } from 'lucide-react';
+import { X, Sparkles, Package, BookOpen, ChevronRight, Lock, ArrowLeft } from 'lucide-react';
 import { api, InterviewPack, UserSubscription } from '../lib/api';
 import { LiquidButton } from './LiquidButton';
 import { LiquidGlass } from './LiquidGlass';

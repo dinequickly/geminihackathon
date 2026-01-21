@@ -123,7 +123,7 @@ export default function LandingPage() {
 
           {/* Stats */}
           <div className="flex flex-wrap items-center justify-center gap-6 pt-16">
-            {stats.map((stat, idx) => (
+            {stats.map((stat) => (
               <LiquidGlass
                 key={stat.label}
                 className="px-8 py-4 flex flex-col items-center min-w-[200px]"

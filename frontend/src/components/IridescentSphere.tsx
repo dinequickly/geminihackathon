@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface IridescentSphereProps {
   size?: number;
   color?: 'blue' | 'pink' | 'silver' | 'purple';
