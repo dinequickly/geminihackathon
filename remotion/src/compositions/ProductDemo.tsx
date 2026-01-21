@@ -41,12 +41,12 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
 
   // Results timeline (after interview)
   const resultsStart = 570;          // was 840
-  const resultsScrollStart = 580;    // was 950
-  const resultsScrollEnd = 620;      // was 1030
+  const resultsScrollStart = 600;    // was 950 (added 1 second pause: 30 frames)
+  const resultsScrollEnd = 640;      // was 1030
 
   // Shuffleboard effect timeline
-  const shuffleboardStart = 630;     // When card starts moving
-  const shuffleboardShootOut = 650;  // When card shoots into space
+  const shuffleboardStart = 650;     // When card starts moving
+  const shuffleboardShootOut = 690;  // When card shoots into space (slower: 40 frames instead of 20)
 
   // Scroll amount for config
   const configScrollY = interpolate(
@@ -242,22 +242,33 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
             {/* Background cards (deck effect) - only visible during shuffleboard */}
             {frame >= shuffleboardStart && (
               <>
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: "absolute",
-                      inset: 30,
-                      borderRadius: 16,
-                      backgroundColor: "#fff",
-                      boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
-                      transformStyle: "preserve-3d",
-                      transform: `translateX(${-150 - i * 10}px) translateY(${i * 8}px) rotateX(${20 + i * 5}deg) scale(${0.95 - i * 0.05})`,
-                      opacity: interpolate(shuffleboardProgress, [0, 0.3, 1], [0, 0.6, 0]),
-                      zIndex: -i,
-                    }}
-                  />
-                ))}
+                {[1, 2, 3].map((i) => {
+                  // Stagger each card's appearance
+                  const cardDelay = i * 0.15; // Each card starts 15% later
+                  const cardProgress = interpolate(
+                    shuffleboardProgress,
+                    [cardDelay, cardDelay + 0.4, cardDelay + 0.7, 1],
+                    [0, 1, 1, 0],
+                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                  );
+
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        position: "absolute",
+                        inset: 30,
+                        borderRadius: 16,
+                        backgroundColor: "#fff",
+                        boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
+                        transformStyle: "preserve-3d",
+                        transform: `translateX(${-150 - i * 10}px) translateY(${i * 8}px) rotateX(${20 + i * 5}deg) scale(${0.95 - i * 0.05})`,
+                        opacity: cardProgress * 0.6,
+                        zIndex: -i,
+                      }}
+                    />
+                  );
+                })}
               </>
             )}
 
