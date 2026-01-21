@@ -157,18 +157,18 @@ function verifyElevenLabsSignature(signature: string, rawBody: Buffer, secret: s
     const parts = signature.split(',');
     const tPart = parts.find(p => p.startsWith('t='));
     const vPart = parts.find(p => p.startsWith('v0='));
-    
+
     if (!tPart || !vPart) return false;
-    
+
     const timestamp = tPart.split('=')[1];
     const hash = vPart.split('=')[1];
-    
+
     const signedPayload = `${timestamp}${rawBody.toString()}`;
     const expectedHash = crypto
       .createHmac('sha256', secret)
       .update(signedPayload)
       .digest('hex');
-      
+
     return expectedHash === hash;
   } catch (err) {
     console.error('Signature verification error:', err);
@@ -198,7 +198,7 @@ const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, {
 
 // Supabase client
 const supabase = createClient(
-  SUPABASE_URL || 'https://placeholder.supabase.co', 
+  SUPABASE_URL || 'https://placeholder.supabase.co',
   process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_KEY || 'placeholder'
 );
 
@@ -305,15 +305,15 @@ app.use(express.json());
 app.post('/api/ai/generate-interview-config', async (req, res) => {
   try {
     const { intent, rework_feedback, previous_config } = req.body;
-    
+
     // In a real implementation, we would call Anthropic here.
     // For now, we return a structured mock response based on the intent.
-    
+
     console.log('Generating interview config for intent:', intent);
-    
+
     const isTechnical = intent.toLowerCase().includes('technical') || intent.toLowerCase().includes('design') || intent.toLowerCase().includes('code');
     const isBehavioral = intent.toLowerCase().includes('behavioral');
-    
+
     const mockConfig = {
       interview_type: isTechnical ? 'specific_focus' : 'full_interview',
       duration_minutes: isTechnical ? 45 : 30,
@@ -331,17 +331,17 @@ app.post('/api/ai/generate-interview-config', async (req, res) => {
         { phase: 'Closing', duration_minutes: 5 }
       ]
     };
-    
+
     // If reworking, we might toggle something for demo purposes
     if (rework_feedback) {
-       console.log('Reworking with feedback:', rework_feedback);
-       mockConfig.duration_minutes += 15;
-       mockConfig.focus_areas.push('New Focus');
+      console.log('Reworking with feedback:', rework_feedback);
+      mockConfig.duration_minutes += 15;
+      mockConfig.focus_areas.push('New Focus');
     }
 
     // Simulate AI delay
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     res.json(mockConfig);
   } catch (error: any) {
     console.error('AI generation error:', error);
@@ -363,14 +363,14 @@ const groq = createOpenAI({
 app.post('/api/ai/dynamic-components', async (req, res) => {
   try {
     const { intent, personal_context, mode } = req.body;
-    
+
     if (!process.env.GROQ_API_KEY) {
       throw new Error('GROQ_API_KEY missing');
     }
 
     console.log('Generating dynamic components via Vercel AI SDK (Groq):', intent);
-    
-    const systemPrompt = `You are a UI generator using the json-render format. You must generate a valid JSON object in this exact structure:
+
+    const systemPrompt = `You are a UI generator using the json-render format. The idea is that you are to generate componenets that give users the option to modify their practice interview so everything you serve is designed ot be a split second decision as to their prefrences. You must generate a valid JSON object in this exact structure:
 
 {
   "tree": {
@@ -442,7 +442,7 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
 app.post('/api/ai/personality', async (req, res) => {
   try {
     const { intent } = req.body;
-    
+
     if (!process.env.GROQ_API_KEY) {
       throw new Error('GROQ_API_KEY missing');
     }
@@ -450,10 +450,10 @@ app.post('/api/ai/personality', async (req, res) => {
     const result = await streamText({
       model: groq('openai/gpt-oss-120b'),
       messages: [
-        { role: 'system', content: "You are an expert interviewer. Describe the persona you will adopt for this interview (e.g. 'Strict but fair', 'Collaborative peer'). Keep it under 3 sentences." },
+        { role: 'system', content: "The user is about to do a practice interview based on the input of what you get, your job is to output a general system prompt or decscription of hwo the interviewer would act. Describe the persona you will adopt for this interview (e.g. 'Strict but fair', 'Collaborative peer'). Keep it under 3 sentences." },
         { role: 'user', content: intent }
       ],
-      temperature: 1,
+      temperature: 0.8,
     });
 
     result.pipeTextStreamToResponse(res);
@@ -492,9 +492,11 @@ app.post('/api/ai/rewrite-personality', async (req, res) => {
     const result = await streamText({
       model: groq('llama-3.3-70b-versatile'),
       messages: [
-        { role: 'system', content: `You are an expert editor. Rewrite the following interviewer persona based on the user's instruction. Keep it under 3 sentences.
+        {
+          role: 'system', content: `You are an expert editor. Rewrite the following interviewer persona based on the user's instruction. Keep it under 3 sentences.
 
-        Current Persona: "${current_personality}"` },
+        Current Persona: "${current_personality}"`
+        },
         { role: 'user', content: instruction }
       ],
       temperature: 0.7,
@@ -535,27 +537,27 @@ app.post('/api/users/check', async (req, res) => {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-       throw error;
+      throw error;
     }
 
     if (data) {
-        // User exists, verify password if provided
-        if (password) {
-            if (!data.password) {
-                 return res.json({ exists: true, user: data, password_valid: false }); 
-            }
-            
-            const match = await bcrypt.compare(password, data.password);
-            if (match) {
-                res.json({ exists: true, user: data, password_valid: true });
-            } else {
-                res.json({ exists: true, password_valid: false });
-            }
-        } else {
-            res.json({ exists: true, user: data });
+      // User exists, verify password if provided
+      if (password) {
+        if (!data.password) {
+          return res.json({ exists: true, user: data, password_valid: false });
         }
+
+        const match = await bcrypt.compare(password, data.password);
+        if (match) {
+          res.json({ exists: true, user: data, password_valid: true });
+        } else {
+          res.json({ exists: true, password_valid: false });
+        }
+      } else {
+        res.json({ exists: true, user: data });
+      }
     } else {
-        res.json({ exists: false });
+      res.json({ exists: false });
     }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -739,8 +741,8 @@ app.post('/api/interviews/start', async (req, res) => {
       .single();
 
     if (convError) {
-        console.error('Supabase create conversation error:', convError);
-        throw convError;
+      console.error('Supabase create conversation error:', convError);
+      throw convError;
     }
 
     // Get ElevenLabs signed URL
@@ -1297,25 +1299,25 @@ app.post('/api/analysis/audio', upload.single('audio'), async (req, res) => {
     const base64Audio = file.buffer.toString('base64');
 
     const response = await fetch(HUGGING_FACE_AUDIO_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            inputs: base64Audio,
-            parameters: {}
-        })
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        inputs: base64Audio,
+        parameters: {}
+      })
     });
 
     if (!response.ok) {
-        const errorText = await response.text();
-        console.warn(`Hugging Face API warning: ${response.status} ${errorText}`);
-        // Return mock data if endpoint is paused/unavailable so we don't break the flow
-        if (response.status === 400 || response.status === 503) {
-            return res.json([{ label: 'neutral', score: 0.99 }]);
-        }
-        throw new Error(`Hugging Face API failed: ${response.status} ${errorText}`);
+      const errorText = await response.text();
+      console.warn(`Hugging Face API warning: ${response.status} ${errorText}`);
+      // Return mock data if endpoint is paused/unavailable so we don't break the flow
+      if (response.status === 400 || response.status === 503) {
+        return res.json([{ label: 'neutral', score: 0.99 }]);
+      }
+      throw new Error(`Hugging Face API failed: ${response.status} ${errorText}`);
     }
 
     const result = await response.json();
@@ -2402,10 +2404,10 @@ app.post('/api/webhooks/conversation-complete', async (req: any, res) => {
     // Handle potential wrapper
     let payload = req.body;
     if (payload.type === 'speech_to_text_transcription' && payload.data) {
-        payload = {
-            ...payload.data,
-            transcript: payload.data.transcription?.text
-        };
+      payload = {
+        ...payload.data,
+        transcript: payload.data.transcription?.text
+      };
     }
 
     const { conversation_id, user_id, transcript, transcript_json, duration_seconds } = payload;
