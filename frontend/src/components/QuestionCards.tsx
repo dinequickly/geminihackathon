@@ -1,19 +1,6 @@
-import React, { useState } from 'react';
-import { 
-  HelpCircle, 
-  List, 
-  Type, 
-  Sliders, 
-  Lightbulb, 
-  AlertTriangle, 
-  Hash, 
-  Clock, 
-  Check, 
-  Plus, 
-  Minus,
-  X
-} from 'lucide-react';
-
+import { useState } from 'react';
+import { Check, ChevronRight, Info } from 'lucide-react';
+import { PlayfulCard, PlayfulInput, Badge } from './PlayfulUI';
 // Common Icon Wrapper
 const IconWrapper = ({ children, colorClass }: { children: React.ReactNode, colorClass: string }) => (
   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold ${colorClass} shadow-sm mb-4`}>

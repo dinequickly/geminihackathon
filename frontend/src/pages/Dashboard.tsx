@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Play,
   Video,
-  Clock,
   TrendingUp,
   Award,
   LogOut,
-  ChevronRight,
   Loader2,
   Package,
   ShoppingBag,

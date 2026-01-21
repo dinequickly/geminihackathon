@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Brain, Heart, MessageCircle, Sparkles, Star, Zap } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { ArrowRight, Brain, Heart, MessageCircle, Sparkles, Zap } from 'lucide-react';
+import { useRef } from 'react';
 import { LiquidGlass } from '../components/LiquidGlass';
 import { LiquidButton } from '../components/LiquidButton';
 import { LightLeakBackground } from '../components/LightLeakBackground';

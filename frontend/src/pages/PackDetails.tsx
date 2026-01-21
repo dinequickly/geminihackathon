@@ -5,16 +5,13 @@ import {
   BookOpen,
   Mic,
   Clock,
-  BarChart3,
   Sparkles,
-  ChevronRight,
-  Play
+  ChevronRight
 } from 'lucide-react';
 import { LiquidButton } from '../components/LiquidButton';
 import { LiquidGlass } from '../components/LiquidGlass';
 import { LightLeakBackground } from '../components/LightLeakBackground';
-import { LoadingSpinner, Badge } from '../components/PlayfulUI'; // Keep simple badge or replace? I'll stick to new styling inside render if possible, or keep simple badge for now but styled better.
-// Actually, let's replace Badge usage with simple styled spans to be consistent with the "Executive" look
+import { LoadingSpinner } from '../components/PlayfulUI';
 import { api, InterviewPack, InterviewQuestion } from '../lib/api';
 
 interface PackDetailsProps {

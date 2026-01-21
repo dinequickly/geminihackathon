@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
 import { LiquidGlass } from '../components/LiquidGlass';
 import { LiquidButton } from '../components/LiquidButton';
 import { IridescentSphere } from '../components/IridescentSphere';
 import { LightLeakBackground } from '../components/LightLeakBackground';
-import { Sparkles, ArrowRight, Activity, Smile, Globe, Zap } from 'lucide-react';
+import { ArrowRight, Activity, Smile, Globe, Zap } from 'lucide-react';
 
 export default function DesignSystem() {
   return (

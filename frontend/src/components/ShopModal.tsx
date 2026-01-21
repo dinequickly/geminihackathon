@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ShoppingBag, Check, Crown, Zap, Sparkles, CreditCard } from 'lucide-react';
+import { X, ShoppingBag, Check } from 'lucide-react';
 import { api, StripeProduct, UserSubscriptionRecord } from '../lib/api';
 import { LiquidButton } from './LiquidButton';
 import { LiquidGlass } from './LiquidGlass';

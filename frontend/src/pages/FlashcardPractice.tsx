@@ -6,8 +6,7 @@ import {
   ChevronRight,
   RotateCcw,
   Flag,
-  CheckCircle2,
-  BookOpen
+  CheckCircle2
 } from 'lucide-react';
 import { LiquidButton } from '../components/LiquidButton';
 import { LiquidGlass } from '../components/LiquidGlass';

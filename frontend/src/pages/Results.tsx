@@ -7,8 +7,6 @@ import {
   Heart,
   Users,
   Sparkles,
-  TrendingUp,
-  MessageSquare,
   ChevronDown,
   ChevronUp,
   RefreshCw,
