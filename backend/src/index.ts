@@ -467,16 +467,33 @@ app.post('/api/ai/personality', async (req, res) => {
 app.post('/api/ai/rewrite-personality', async (req, res) => {
   try {
     const { current_personality, instruction } = req.body;
-    
+
+    console.log('Rewrite personality request received:', {
+      hasPersonality: !!current_personality,
+      hasInstruction: !!instruction,
+      hasGroqKey: !!process.env.GROQ_API_KEY
+    });
+
     if (!process.env.GROQ_API_KEY) {
-      throw new Error('GROQ_API_KEY missing');
+      console.error('GROQ_API_KEY is missing');
+      return res.status(500).json({
+        error: 'GROQ_API_KEY not configured on server',
+        details: 'Please add GROQ_API_KEY to environment variables'
+      });
+    }
+
+    if (!current_personality || !instruction) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: 'Both current_personality and instruction are required'
+      });
     }
 
     const result = await streamText({
-      model: groq('openai/gpt-oss-120b'),
+      model: groq('llama-3.3-70b-versatile'),
       messages: [
         { role: 'system', content: `You are an expert editor. Rewrite the following interviewer persona based on the user's instruction. Keep it under 3 sentences.
-        
+
         Current Persona: "${current_personality}"` },
         { role: 'user', content: instruction }
       ],
@@ -487,7 +504,12 @@ app.post('/api/ai/rewrite-personality', async (req, res) => {
 
   } catch (error: any) {
     console.error('Personality rewrite error:', error);
-    if (!res.headersSent) res.status(500).json({ error: error.message });
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: error.message || 'Failed to rewrite personality',
+        details: error.stack
+      });
+    }
   }
 });
 
