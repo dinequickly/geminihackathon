@@ -1,5 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { Cursor } from "../components/Cursor";
 
 export type MacOSTerminalProps = {
   promptUser?: string;
@@ -9,6 +10,9 @@ export type MacOSTerminalProps = {
   framesPerChar?: number;
   linkHoverFrame?: number; // Frame when cursor starts hovering over InterviewPro
   linkClickFrame?: number; // Frame when link is clicked
+  showCursor?: boolean;
+  cursorMoveStartFrame?: number;
+  cursorClickFrame?: number;
 };
 
 export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
@@ -17,8 +21,11 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
   typedText = "@claude help me get a job",
   typeStartFrame = 30,
   framesPerChar = 3,
-  linkHoverFrame = 280,
-  linkClickFrame = 288,
+  linkHoverFrame = 380,
+  linkClickFrame = 440,
+  showCursor = true,
+  cursorMoveStartFrame = 350,
+  cursorClickFrame = 440,
 }) => {
   const frame = useCurrentFrame();
 
@@ -44,23 +51,35 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
   const displayedResponse1 = response1Text.slice(0, response1CharsToShow);
   const showResponse1 = frame >= response1StartFrame;
 
-  // Claude response 2: appears 30 frames after response 1 finishes
+  // Claude response 2: "bro is cooked" - appears 30 frames after response 1 finishes
   const response2StartFrame = response1StartFrame + response1Text.length * 6 + 30;
-  const response2Prefix = "wait just use\u00A0";
-  const response2Link = "InterviewPro";
-  const response2Full = response2Prefix + response2Link;
+  const response2Text = "bro is cooked 💀🤣";
   const response2Progress = Math.max(0, frame - response2StartFrame);
   const response2CharsToShow = Math.min(
-    Math.floor(response2Progress / 2), // Faster typing
-    response2Full.length
+    Math.floor(response2Progress / 4), // Slower typing for emphasis
+    response2Text.length
   );
-  const displayedResponse2 = response2Full.slice(0, response2CharsToShow);
+  const displayedResponse2 = response2Text.slice(0, response2CharsToShow);
   const showResponse2 = frame >= response2StartFrame;
 
+  // Claude response 3: "wait just use InterviewPro" - appears 40 frames after response 2 finishes
+  const response2EndFrame = response2StartFrame + response2Text.length * 4;
+  const response3StartFrame = response2EndFrame + 40;
+  const response3Prefix = "oh just use\u00A0";
+  const response3Link = "InterviewPro";
+  const response3Full = response3Prefix + response3Link;
+  const response3Progress = Math.max(0, frame - response3StartFrame);
+  const response3CharsToShow = Math.min(
+    Math.floor(response3Progress / 2), // Faster typing
+    response3Full.length
+  );
+  const displayedResponse3 = response3Full.slice(0, response3CharsToShow);
+  const showResponse3 = frame >= response3StartFrame;
+
   // Split displayed text into prefix and link parts
-  const displayedPrefix = displayedResponse2.slice(0, Math.min(response2CharsToShow, response2Prefix.length));
-  const displayedLink = response2CharsToShow > response2Prefix.length
-    ? displayedResponse2.slice(response2Prefix.length)
+  const displayedPrefix = displayedResponse3.slice(0, Math.min(response3CharsToShow, response3Prefix.length));
+  const displayedLink = response3CharsToShow > response3Prefix.length
+    ? displayedResponse3.slice(response3Prefix.length)
     : "";
 
   // Link hover/click states
@@ -73,7 +92,8 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
   // Determine which line cursor is on
   const cursorOnUser = !showResponse1;
   const cursorOnResponse1 = showResponse1 && !showResponse2;
-  const cursorOnResponse2 = showResponse2;
+  const cursorOnResponse2 = showResponse2 && !showResponse3;
+  const cursorOnResponse3 = showResponse3;
 
   return (
     <AbsoluteFill
