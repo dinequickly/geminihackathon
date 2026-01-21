@@ -28,7 +28,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="MacOSTerminal"
           component={MacOSTerminal}
-          durationInFrames={300}
+          durationInFrames={500}
           fps={30}
           width={1280}
           height={1000}
@@ -38,6 +38,8 @@ export const RemotionRoot: React.FC = () => {
             typedText: "@claude, help me get a job",
             typeStartFrame: 30,
             framesPerChar: 3,
+            cursorMoveStartFrame: 350,
+            cursorClickFrame: 440,
           } satisfies MacOSTerminalProps}
         />
 

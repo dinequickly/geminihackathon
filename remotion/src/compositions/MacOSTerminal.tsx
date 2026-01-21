@@ -284,8 +284,28 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
             </div>
           )}
 
-          {/* Claude Response 2 */}
+          {/* Claude Response 2 - "bro is cooked" */}
           {showResponse2 && (
+            <div style={{ display: "flex", alignItems: "center", marginTop: 16 }}>
+              <span style={{ color: "#9ca3af", marginRight: 8 }}>&gt;</span>
+              <span style={{ color: "#e65100", fontWeight: 600 }}>@claude:</span>
+              <span style={{ marginLeft: 8 }}>{displayedResponse2}</span>
+              {cursorOnResponse2 && (
+                <span
+                  style={{
+                    width: 2,
+                    height: 18,
+                    backgroundColor: "#1a1a1a",
+                    opacity: cursorVisible ? 1 : 0,
+                    marginLeft: 1,
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Claude Response 3 - InterviewPro link */}
+          {showResponse3 && (
             <div style={{ display: "flex", alignItems: "center", marginTop: 16 }}>
               <span style={{ color: "#9ca3af", marginRight: 8 }}>&gt;</span>
               <span style={{ color: "#e65100", fontWeight: 600 }}>@claude:</span>
@@ -303,7 +323,7 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
                   {displayedLink}
                 </span>
               )}
-              {cursorOnResponse2 && !isLinkClicked && (
+              {cursorOnResponse3 && !isLinkClicked && (
                 <span
                   style={{
                     width: 2,
@@ -327,6 +347,20 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Mouse Cursor Animation */}
+      {showCursor && (
+        <Cursor
+          startX={100}
+          startY={150}
+          endX={580}
+          endY={520}
+          moveStartFrame={cursorMoveStartFrame}
+          moveDuration={90}
+          clickFrame={cursorClickFrame}
+          visible={true}
+        />
+      )}
     </AbsoluteFill>
   );
 };
