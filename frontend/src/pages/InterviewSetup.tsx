@@ -11,9 +11,8 @@ import {
   Check,
   Bot
 } from 'lucide-react';
-import { 
-  PlayfulButton, 
-  PlayfulCard
+import {
+  PlayfulButton
 } from '../components/PlayfulUI';
 import { DynamicRenderer, ComponentSchema } from '../components/DynamicRenderer';
 import { InfoCard } from '../components/DynamicComponents';
@@ -205,15 +204,15 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         personality: personality
       };
 
-      // Start ElevenLabs interview
+      // Start Tavus video interview
       await api.startInterview(
         userId,
-        fullConfig 
+        fullConfig
       );
 
-      // Navigate to the ElevenLabs interview page
-      navigate('/interview');
-      
+      // Navigate to the Tavus video interview page
+      navigate('/live-avatar-interview');
+
     } catch (err: any) {
       console.error('Failed to start:', err);
       setError(err.message || 'Failed to start interview session.');

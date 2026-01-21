@@ -188,7 +188,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Start New Interview */}
           <button
-            onClick={() => navigate('/interview')}
+            onClick={() => navigate('/interview/setup')}
             className="bg-primary-500 hover:bg-primary-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-primary-500/20"
           >
             <div className="flex items-center gap-4">
