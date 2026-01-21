@@ -13,40 +13,36 @@ export type ProductDemoProps = {};
 export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const frame = useCurrentFrame();
 
-  // Timeline:
-  // 0-300: Terminal scene (user types, claude responds)
-  // 270-290: Cursor moves to "InterviewPro" text, clicks
-  // 300-450: Dashboard with pulsing button
-  // 420-440: Cursor moves to Start Interview button, clicks
-  // 450-680: Interview Config screen with scroll
-  // 680-695: Loading screen (0.5 sec)
-  // 695-825: Interview in progress
-  // 825+: Results view with scroll
+  // Timeline with 2x speedup except frames 690-840 (23-28 sec):
+  // Everything before 23s speeds up 2x, 23-28s normal, after 28s continues
+  const NORMAL_SPEED_START = 690; // 23 seconds at 30fps
+  const NORMAL_SPEED_END = 840;   // 28 seconds at 30fps
 
-  const browserOpenStart = 300;
-  const dashboardStart = 310;
-  const cursorMoveToStartNew = 400;
-  const startNewClickFrame = 435;
-  const dashboardToConfigTransition = 450;
-  const configStart = 470;
+  // Speed up timeline: divide frame times by 2 up to 23s
+  const browserOpenStart = 150;      // was 300
+  const dashboardStart = 155;        // was 310
+  const cursorMoveToStartNew = 200;  // was 400
+  const startNewClickFrame = 217;    // was 435
+  const dashboardToConfigTransition = 225;  // was 450
+  const configStart = 235;           // was 470
 
-  // Config scrolling timeline
-  const scrollStartFrame = 580;
-  const scrollEndFrame = 620;
-  const cursorMoveToStartInterview = 630;
-  const startInterviewClickFrame = 665;
-  const configToLoadingTransition = 680;
-  const loadingStart = 685;
+  // Config scrolling timeline (also sped up)
+  const scrollStartFrame = 290;      // was 580
+  const scrollEndFrame = 310;        // was 620
+  const cursorMoveToStartInterview = 315; // was 630
+  const startInterviewClickFrame = 332;   // was 665
+  const configToLoadingTransition = 340;  // was 680
+  const loadingStart = 342;          // was 685
 
-  // Interview in progress timeline (loading is only 0.5 sec)
-  const loadingToInterviewTransition = 695;
-  const interviewStart = 705;
-  const interviewToResultsTransition = 825;
+  // Interview in progress timeline (transition into normal speed zone)
+  const loadingToInterviewTransition = 345; // was 695 (still in speedup)
+  const interviewStart = 350;        // was 705
+  const interviewToResultsTransition = 690; // was 825 (now aligns with normal speed start)
 
-  // Results timeline
-  const resultsStart = 840;
-  const resultsScrollStart = 950;
-  const resultsScrollEnd = 1030;
+  // Results timeline (after normal speed zone)
+  const resultsStart = 840;          // was 840 (now at normal speed end)
+  const resultsScrollStart = 875;    // was 950 (shifted for 2x speedup compression)
+  const resultsScrollEnd = 920;      // was 1030
 
   // Scroll amount for config
   const configScrollY = interpolate(
