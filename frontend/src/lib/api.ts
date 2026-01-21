@@ -878,21 +878,12 @@ class ApiClient {
 
     // Parse the final accumulated JSON
     try {
-      // First, try to extract JSON from the response (handle markdown code blocks)
       const jsonMatch = accumulatedText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.error('No JSON found in response. Raw response:', accumulatedText);
         throw new Error('No valid JSON found in response');
       }
 
-      console.log('Extracted JSON:', jsonMatch[0].substring(0, 500) + '...');
       const parsedTree = JSON.parse(jsonMatch[0]);
-      console.log('Parsed tree structure:', {
-        hasTree: !!parsedTree.tree,
-        hasRoot: !!parsedTree.tree?.root,
-        hasElements: !!parsedTree.tree?.elements,
-        elementCount: parsedTree.tree?.elements ? Object.keys(parsedTree.tree.elements).length : 0
-      });
 
       // Convert json-render format to ComponentSchema format
       // json-render uses: { tree: { root: "container", elements: { key: {...}, ... } } }
@@ -910,16 +901,13 @@ class ApiClient {
             visible: element.visible !== false,
           }));
 
-        console.log('Converted components:', components);
         onUpdate(components);
       } else {
         console.error('Invalid tree structure:', parsedTree);
-        console.error('Expected format: { tree: { root: "container", elements: { ... } } }');
         throw new Error('Invalid component tree structure');
       }
     } catch (e: any) {
       console.error('Final JSON parse failed:', e);
-      console.error('Raw response text:', accumulatedText);
       throw new Error(`Failed to parse components: ${e.message}`);
     }
   }
