@@ -23,6 +23,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
 }));
 app.options('*', cors()); // Enable pre-flight for all routes
+app.options('/api/ai/dynamic-components', cors());
+app.options('/api/ai/personality', cors());
 
 // Stripe webhook needs raw body - must be BEFORE express.json()
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
