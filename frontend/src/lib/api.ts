@@ -931,7 +931,7 @@ class ApiClient {
   }
 
   async streamPersonalityRewrite(currentPersonality: string, instruction: string, onChunk: (text: string) => void): Promise<void> {
-    const response = await fetch('/api/ai/rewrite-personality', {
+    const response = await fetch(withApiBase('/api/ai/rewrite-personality'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ current_personality: currentPersonality, instruction })
