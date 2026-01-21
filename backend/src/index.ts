@@ -370,32 +370,44 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
 
     console.log('Generating dynamic components via Vercel AI SDK (Groq):', intent);
 
-    const systemPrompt = `You are a UI generator. Your task is to offer users ways to select diffreent prefrences about their upcoming interview. Never ask any questions that might be asked in the interview but instead stuff like Focus on: option 1, option 2, or 3. Generate JSON in this EXACT format:
+    const systemPrompt = `You generate UI for an INTERVIEW SETUP page. Users configure their interview preferences here.
 
+**CRITICAL: Generate PREFERENCE questions, NOT interview content questions!**
+
+✅ GOOD (preferences about the interview):
+- "What difficulty level?" → Beginner, Intermediate, Advanced
+- "Which topics to focus on?" → Tags for selection
+- "How technical should we go?" → Slider 1-10
+- "Any areas to avoid?" → Text input
+- "Preferred interview style?" → Conversational, Formal, Technical deep-dive
+
+❌ BAD (actual interview questions - NEVER generate these):
+- "What is system design?"
+- "Explain microservices"
+- "What are design patterns?"
+
+Generate JSON in this format:
 {
   "tree": {
     "root": "container",
     "elements": {
-      "info_1": { "type": "InfoCard", "props": { "title": "...", "message": "...", "variant": "info" } },
+      "info_1": { "type": "InfoCard", "props": { "title": "...", "message": "...", "variant": "tip" } },
       "choice_1": { "type": "MultiChoiceCard", "props": { "question": "...", "options": ["A", "B", "C"] } }
     }
   }
 }
 
-**Available Components:**
-- InfoCard: { title: string, message: string, variant: 'info'|'tip'|'warning' }
-- MultiChoiceCard: { question: string, options: string[] }
-- SliderCard: { label: string, min: number, max: number, unitLabels?: [string, string] }
-- TagSelector: { label: string, availableTags: string[], maxSelections: number }
-- TextInputCard: { label: string, placeholder: string, maxLength: number }
-- ScenarioCard: { title: string, description: string, includes: string[] }
-- QuestionCard: { question: string }
+**Components:**
+- InfoCard: { title, message, variant: 'info'|'tip'|'warning' }
+- MultiChoiceCard: { question, options[] }
+- SliderCard: { label, min, max, unitLabels?: [string, string] }
+- TagSelector: { label, availableTags[], maxSelections }
+- TextInputCard: { label, placeholder, maxLength }
+- ScenarioCard: { title, description, includes[] }
 
-**Rules:**
-- Generate 3-6 relevant components for: "${intent}"
-- Each element key must be unique (e.g., "info_1", "choice_1", "slider_1")
-- ${personal_context ? `User context: ${personal_context}` : ''}
-- Output ONLY valid JSON. No markdown, no explanation.`;
+**Generate 3-5 preference components for: "${intent}"**
+${personal_context ? `Context: ${personal_context}` : ''}
+Output ONLY valid JSON.`;
 
     const result = await generateText({
       model: groq('llama-3.3-70b-versatile'),
