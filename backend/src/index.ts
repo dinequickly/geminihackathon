@@ -349,7 +349,7 @@ app.post('/api/ai/generate-interview-config', async (req, res) => {
   }
 });
 
-import { streamText } from 'ai';
+import { generateText, streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
 
@@ -370,17 +370,16 @@ app.post('/api/ai/dynamic-components', async (req, res) => {
 
     console.log('Generating dynamic components via Vercel AI SDK (Groq):', intent);
     
-    const systemPrompt = `You are a UI generator. You must generate a valid JSON object with a "tree" property containing an array of components.\n\n**Available Components & Props:**\n1. InfoCard { title: string, message: string, variant: 'info'|'tip'|'warning' }\n2. MultiChoiceCard { question: string, options: string[] }\n3. SliderCard { label: string, min: number, max: number, unitLabels?: [string, string] }\n4. TagSelector { label: string, availableTags: string[], maxSelections: number }\n5. TextInputCard { label: string, placeholder: string, maxLength: number }\n6. ScenarioCard { title: string, description: string, includes: string[] }\n7. QuestionCard { question: string }\n8. TimeSelector { label: string, minMinutes: number, maxMinutes: number }\n\n**Rules:**\n- ALWAYS start with a TimeSelector component.\n- Generate a form configuration for: "${intent}".\n- ${personal_context ? `Context: ${personal_context}` : ''}\n- Output strictly clean JSON. No markdown.`;
+    const systemPrompt = `You are a UI generator. You must generate a valid JSON object with a "tree" property containing an array of components.\n\n**Available Components & Props:**\n1. InfoCard { title: string, message: string, variant: 'info'|'tip'|'warning' }\n2. MultiChoiceCard { question: string, options: string[] }\n3. SliderCard { label: string, min: number, max: number, unitLabels?: [string, string] }\n4. TagSelector { label: string, availableTags: string[], maxSelections: number }\n5. TextInputCard { label: string, placeholder: string, maxLength: number }\n6. ScenarioCard { title: string, description: string, includes: string[] }\n7. QuestionCard { question: string }\n\n**Rules:**\n- Do not include TimeSelector; duration is configured elsewhere.\n- Generate a form configuration for: "${intent}".\n- ${personal_context ? `Context: ${personal_context}` : ''}\n- Output strictly clean JSON. No markdown.`;
 
-    const result = await streamText({
-      model: groq('openai/gpt-oss-120b'), // Using the requested model ID
+    const result = await generateText({
+      model: groq('openai/gpt-oss-20b'),
       system: systemPrompt,
       prompt: "Generate the JSON tree.",
       temperature: 0.7,
     });
 
-    // Pipe the text stream directly to the response
-    result.pipeTextStreamToResponse(res);
+    res.type('text/plain').send(result.text);
 
   } catch (error: any) {
     console.error('Dynamic components error:', error);

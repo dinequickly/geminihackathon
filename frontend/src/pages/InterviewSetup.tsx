@@ -159,12 +159,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
     setLoading(true);
     setError(null);
     
-    // Instant Pop: Add TimeSelector immediately
-    const initialTree: ComponentSchema[] = [{
-      type: 'TimeSelector',
-      id: 'duration',
-      props: { label: 'Session Duration', minMinutes: 5, maxMinutes: 15, default: 8 }
-    }];
+    const initialTree: ComponentSchema[] = [];
     setDynamicTree(initialTree);
     setDynamicValues({ duration: 8 });
     

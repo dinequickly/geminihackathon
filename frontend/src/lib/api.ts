@@ -871,48 +871,10 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error('Stream failed');
+      throw new Error('Request failed');
     }
 
-    const reader = response.body?.getReader();
-    if (!reader) return;
-
-    const decoder = new TextDecoder();
-    let accumulatedText = '';
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Process SSE format: lines starting with "data: "
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || ''; // Keep incomplete line in buffer
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataStr = line.slice(6); // Remove "data: " prefix
-          try {
-            const data = JSON.parse(dataStr);
-
-            if (data.chunk) {
-              // Accumulate the text chunks
-              accumulatedText += data.chunk;
-            } else if (data.complete) {
-              // Streaming complete - parse final JSON
-              console.log('Streaming complete, parsing final JSON...');
-            } else if (data.error) {
-              console.error('Stream error:', data.error);
-              throw new Error(data.error);
-            }
-          } catch (e) {
-            console.warn('Failed to parse SSE data:', line);
-          }
-        }
-      }
-    }
+    const accumulatedText = await response.text();
 
     // Parse the final accumulated JSON
     try {
