@@ -1,4 +1,9 @@
 const API_BASE = import.meta.env.VITE_API_URL || '';
+const withApiBase = (path: string) => {
+  if (!API_BASE) return path;
+  const trimmedBase = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+  return `${trimmedBase}${path}`;
+};
 
 export interface User {
   id: string;
@@ -859,7 +864,7 @@ class ApiClient {
   }
 
   async streamDynamicComponents(intent: string, onUpdate: (components: any[]) => void): Promise<void> {
-    const response = await fetch('/api/ai/dynamic-components', {
+    const response = await fetch(withApiBase('/api/ai/dynamic-components'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ intent, mode: 'component_tree' })
@@ -946,7 +951,7 @@ class ApiClient {
   }
 
   async streamPersonality(intent: string, onChunk: (text: string) => void): Promise<void> {
-    const response = await fetch('/api/ai/personality', {
+    const response = await fetch(withApiBase('/api/ai/personality'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intent })
