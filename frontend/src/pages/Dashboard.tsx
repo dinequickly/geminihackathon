@@ -222,7 +222,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
           {/* Video Call Interview - Tavus */}
           <button
-            onClick={() => navigate('/live-avatar-interview')}
+            onClick={() => navigate('/interview/setup?type=tavus')}
             className="bg-gradient-to-br from-sky-500 to-mint-500 hover:from-sky-600 hover:to-mint-600 text-white rounded-xl p-6 flex items-center justify-between transition shadow-lg shadow-sky-500/20 relative overflow-hidden"
           >
             <div className="flex items-center gap-4">

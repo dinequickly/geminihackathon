@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Sparkles,
@@ -140,7 +140,9 @@ const PersonalityEditor = ({
 
 export default function InterviewSetup({ userId }: InterviewSetupProps) {
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const interviewType = searchParams.get('type') || 'elevenlabs'; // Default to elevenlabs
+
   // Steps: 1=Intent, 2=DynamicConfiguration
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -215,11 +217,15 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
       // Start ElevenLabs interview
       await api.startInterview(
         userId,
-        fullConfig 
+        fullConfig
       );
 
-      // Navigate to the ElevenLabs interview page
-      navigate('/interview');
+      // Navigate to the appropriate interview page based on type
+      if (interviewType === 'tavus') {
+        navigate('/live-avatar-interview');
+      } else {
+        navigate('/interview');
+      }
       
     } catch (err: any) {
       console.error('Failed to start:', err);
