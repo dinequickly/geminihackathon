@@ -371,7 +371,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
 
   return (
     <div className="min-h-screen bg-cream-50 p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-[95%] mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <PlayfulButton
