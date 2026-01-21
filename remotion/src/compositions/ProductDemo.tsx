@@ -257,7 +257,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
             startX={900}
             startY={600}
             endX={220}
-            endY={340}
+            endY={335}
             moveStartFrame={cursorMoveToStartNew}
             moveDuration={30}
             clickFrame={startNewClickFrame}
