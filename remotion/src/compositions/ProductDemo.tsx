@@ -41,12 +41,12 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
 
   // Results timeline (after interview)
   const resultsStart = 570;          // was 840
-  const resultsScrollStart = 600;    // was 950 (added 1 second pause: 30 frames)
-  const resultsScrollEnd = 640;      // was 1030
+  const resultsScrollStart = 600;    // was 950 (disabled scroll animation)
+  const resultsScrollEnd = 600;      // was 1030 (no scroll - same as start)
 
   // Shuffleboard effect timeline
-  const shuffleboardStart = 650;     // When card starts moving
-  const shuffleboardShootOut = 690;  // When card shoots into space (slower: 40 frames instead of 20)
+  const shuffleboardStart = 671;     // When card starts moving (added 0.7s = 21 frames)
+  const shuffleboardShootOut = 711;  // When card shoots into space (slower: 40 frames instead of 20)
 
   // Scroll amount for config
   const configScrollY = interpolate(
