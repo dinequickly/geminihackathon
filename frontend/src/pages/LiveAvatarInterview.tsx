@@ -150,114 +150,91 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
 
   // Main interface
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-50 via-sky-50 to-mint-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-bold text-gray-900">Tavus Video Interview</h1>
-                <Badge variant="sunshine" icon={Sparkles}>
-                  Premium
-                </Badge>
-              </div>
-              <p className="text-lg text-gray-600">
-                Practice with an AI video interviewer in real-time
-              </p>
-            </div>
-            <PlayfulCharacter emotion="excited" size={80} />
+    <div className="h-screen w-screen bg-gray-900 flex flex-col overflow-hidden">
+      {/* Top Controls Bar */}
+      <div className="bg-gray-800/90 backdrop-blur-sm border-b border-gray-700 px-4 py-3 flex items-center justify-between z-10">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Video className="w-5 h-5 text-sky-400" />
+            <h1 className="text-lg font-semibold text-white">Tavus Video Interview</h1>
+            <Badge variant="sunshine" icon={Sparkles}>
+              Premium
+            </Badge>
           </div>
+          {sessionActive && (
+            <div className="flex items-center gap-2 bg-mint-500/20 text-mint-400 px-3 py-1.5 rounded-full text-sm">
+              <div className="w-2 h-2 bg-mint-400 rounded-full animate-pulse" />
+              Live
+            </div>
+          )}
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <PlayfulCard variant="coral" className="mb-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-6 h-6 text-coral-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-bold text-gray-900 mb-1">Error</h3>
-                <p className="text-gray-700">{error}</p>
-              </div>
+        <div className="flex items-center gap-3">
+          {error && (
+            <div className="flex items-center gap-2 bg-coral-500/20 text-coral-400 px-3 py-1.5 rounded-lg text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {error}
             </div>
-          </PlayfulCard>
+          )}
+
+          {!sessionActive ? (
+            <PlayfulButton
+              variant="primary"
+              icon={Video}
+              onClick={handleStartSession}
+              disabled={starting}
+              size="sm"
+            >
+              {starting ? 'Starting...' : 'Start Session'}
+            </PlayfulButton>
+          ) : (
+            <PlayfulButton
+              variant="coral"
+              icon={VideoOff}
+              onClick={handleStopSession}
+              disabled={stopping}
+              size="sm"
+            >
+              {stopping ? 'Stopping...' : 'End Session'}
+            </PlayfulButton>
+          )}
+        </div>
+      </div>
+
+      {/* Full Screen Video Area */}
+      <div className="flex-1 relative">
+        {sessionActive && conversationUrl ? (
+          <iframe
+            src={conversationUrl}
+            title="Tavus Interview"
+            allow="camera; microphone; autoplay; fullscreen; display-capture"
+            allowFullScreen
+            className="w-full h-full border-0"
+          />
+        ) : starting ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+            <LoadingSpinner size="lg" color="primary" />
+            <p className="text-xl mt-4">Starting Tavus session...</p>
+            <p className="text-sm mt-2 text-gray-500">Preparing your AI interviewer</p>
+          </div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+            <div className="text-center">
+              <VideoOff className="w-24 h-24 mb-6 mx-auto opacity-50" />
+              <h2 className="text-2xl font-semibold text-gray-300 mb-2">Ready to Start</h2>
+              <p className="text-gray-500 mb-6">Click "Start Session" to begin your AI video interview</p>
+              <PlayfulButton
+                variant="primary"
+                icon={Video}
+                onClick={handleStartSession}
+                disabled={starting}
+                size="lg"
+              >
+                Start Session
+              </PlayfulButton>
+            </div>
+          </div>
         )}
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Video Display */}
-          <div className="md:col-span-2">
-            <PlayfulCard className="aspect-video bg-gray-900 relative overflow-hidden">
-              {sessionActive && conversationUrl ? (
-                <>
-                  <iframe
-                    src={conversationUrl}
-                    title="Tavus Interview"
-                    allow="camera; microphone; autoplay; fullscreen; display-capture"
-                    allowFullScreen
-                    className="w-full h-full"
-                  />
-                  <div className="absolute top-4 left-4 right-4">
-                    <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-2xl text-sm">
-                      <Video className="w-4 h-4 inline mr-2" />
-                      Tavus session active
-                    </div>
-                  </div>
-                </>
-              ) : starting ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                  <LoadingSpinner size="lg" color="primary" />
-                  <p className="text-lg mt-4">Starting Tavus session...</p>
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                  <VideoOff className="w-16 h-16 mb-4" />
-                  <p className="text-lg">No active session</p>
-                  <p className="text-sm mt-2">Start a session to begin your interview</p>
-                </div>
-              )}
-            </PlayfulCard>
-          </div>
-
-          {/* Controls */}
-          <div className="space-y-4">
-            <PlayfulCard variant="sky">
-              <h3 className="font-bold text-gray-900 mb-4">Session Controls</h3>
-
-              <div className="space-y-3">
-                {!sessionActive ? (
-                  <PlayfulButton
-                    variant="primary"
-                    icon={Video}
-                    onClick={handleStartSession}
-                    disabled={starting}
-                    className="w-full"
-                  >
-                    {starting ? 'Starting...' : 'Start Session'}
-                  </PlayfulButton>
-                ) : (
-                  <PlayfulButton
-                    variant="secondary"
-                    icon={VideoOff}
-                    onClick={handleStopSession}
-                    disabled={stopping}
-                    className="w-full"
-                  >
-                    {stopping ? 'Stopping...' : 'Stop Session'}
-                  </PlayfulButton>
-                )}
-              </div>
-
-              {sessionActive && (
-                <div className="mt-4 p-3 bg-mint-50 rounded-2xl border-2 border-mint-200">
-                  <div className="flex items-center gap-2 text-mint-700 text-sm">
-                    <div className="w-2 h-2 bg-mint-500 rounded-full animate-pulse" />
-                    Session Active
-                  </div>
-                </div>
-              )}
-            </PlayfulCard>
-          </div>
-        </div>
       </div>
     </div>
   );
