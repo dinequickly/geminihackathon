@@ -34,15 +34,15 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const configToLoadingTransition = 340;  // was 680
   const loadingStart = 342;          // was 685
 
-  // Interview in progress timeline (transition into normal speed zone)
+  // Interview in progress timeline (7 seconds = 210 frames)
   const loadingToInterviewTransition = 345; // was 695 (still in speedup)
   const interviewStart = 350;        // was 705
-  const interviewToResultsTransition = 690; // was 825 (now aligns with normal speed start)
+  const interviewToResultsTransition = 560; // was 825 (now 7 seconds: 350 + 210)
 
-  // Results timeline (after normal speed zone)
-  const resultsStart = 840;          // was 840 (now at normal speed end)
-  const resultsScrollStart = 875;    // was 950 (shifted for 2x speedup compression)
-  const resultsScrollEnd = 920;      // was 1030
+  // Results timeline (after interview)
+  const resultsStart = 570;          // was 840
+  const resultsScrollStart = 580;    // was 950
+  const resultsScrollEnd = 660;      // was 1030
 
   // Scroll amount for config
   const configScrollY = interpolate(
