@@ -1,6 +1,11 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 
+// Import fonts
+import "@fontsource/dm-serif-display";
+import "@fontsource/jetbrains-mono";
+import "@fontsource/plus-jakarta-sans";
+
 export type DashboardProps = {
   animationStartFrame?: number;
   showPulsingButton?: boolean;
@@ -85,8 +90,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           }}
         >
           <div>
-            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 24, fontWeight: 700, color: "#000000", margin: 0, letterSpacing: "-0.02em" }}>TAVUS</h1>
-            <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: "#999999", margin: "4px 0 0 0", letterSpacing: "0.05em", textTransform: "uppercase" }}>Dashboard</p>
+            <h1 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, fontWeight: 400, color: "#000000", margin: 0, letterSpacing: "-0.02em", textTransform: "uppercase" }}>TAVUS</h1>
+            <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#888888", margin: "2px 0 0 0", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400 }}>Dashboard</p>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
             {/* Shop Button */}
@@ -101,9 +106,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               backdropFilter: "blur(12px)",
               color: "#000000",
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: "pointer",
-              fontFamily: '"Plus Jakarta Sans", sans-serif',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
             }}>
               Shop
             </div>
@@ -120,9 +125,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               backdropFilter: "blur(12px)",
               color: "#000000",
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: "pointer",
-              fontFamily: '"Plus Jakarta Sans", sans-serif',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
             }}>
               Sign out
             </div>
@@ -185,7 +190,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Previous Sessions */}
         <div style={{ opacity: sessionsOpacity }}>
-          <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 28, fontWeight: 700, color: "#000000", margin: "0 0 32px 0", letterSpacing: "-0.02em" }}>Previous Sessions</h2>
+          <h2 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 32, fontWeight: 400, color: "#000000", margin: "0 0 32px 0", letterSpacing: "-0.02em" }}>Previous Sessions</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <SessionRow date="Jan 20, 10:46 PM" status="Processing" />
             <SessionRow date="Jan 20, 10:45 PM" status="In Progress" />
@@ -217,8 +222,8 @@ const LiquidGlassCard: React.FC<{ icon: string; label: string; value: string }> 
   >
     <div style={{ fontSize: 32 }}>{icon}</div>
     <div>
-      <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: "#999999", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 28, fontWeight: 700, color: "#000000", letterSpacing: "-0.02em" }}>{value}</div>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6, fontWeight: 400 }}>{label}</div>
+      <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 32, fontWeight: 400, color: "#000000", letterSpacing: "-0.02em" }}>{value}</div>
     </div>
   </div>
 );
@@ -241,7 +246,7 @@ const ActionCard: React.FC<{ emoji: string; title: string; subtitle: string; bad
     }}
   >
     {badge && (
-      <div style={{ position: "absolute", top: 16, right: 16, backgroundColor: "rgba(0, 0, 0, 0.2)", borderRadius: 8, padding: "4px 10px", fontSize: 10, fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', letterSpacing: "0.05em", textTransform: "uppercase", color: "#000000" }}>
+      <div style={{ position: "absolute", top: 16, right: 16, backgroundColor: "rgba(0, 0, 0, 0.2)", borderRadius: 8, padding: "4px 10px", fontSize: 9, fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', letterSpacing: "0.08em", textTransform: "uppercase", color: "#000000" }}>
         {badge}
       </div>
     )}
@@ -249,14 +254,14 @@ const ActionCard: React.FC<{ emoji: string; title: string; subtitle: string; bad
     <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
       <div style={{ fontSize: 40, marginTop: 4 }}>{emoji}</div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 22, fontWeight: 700, color: "#000000", marginBottom: 6, letterSpacing: "-0.02em" }}>
+        <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, fontWeight: 400, color: "#000000", marginBottom: 8, letterSpacing: "-0.02em" }}>
           {title}
         </div>
-        <div style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: 14, color: "#666666", fontWeight: 400 }}>
+        <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 14, color: "#666666", fontWeight: 400, lineHeight: 1.4 }}>
           {subtitle}
         </div>
       </div>
-      <div style={{ fontSize: 24, color: "#999999", marginTop: 4 }}>›</div>
+      <div style={{ fontSize: 20, color: "#999999", marginTop: 6 }}>›</div>
     </div>
   </div>
 );
@@ -264,9 +269,9 @@ const ActionCard: React.FC<{ emoji: string; title: string; subtitle: string; bad
 // Session Row Component
 const SessionRow: React.FC<{ date: string; status: "Processing" | "In Progress" | "Complete"; score?: number }> = ({ date, status, score }) => {
   const statusStyles = {
-    Processing: { bg: "rgba(217, 119, 6, 0.1)", text: "#d97706" },
-    "In Progress": { bg: "rgba(59, 130, 246, 0.1)", text: "#3b82f6" },
-    Complete: { bg: "rgba(5, 150, 105, 0.1)", text: "#059669" },
+    Processing: { bg: "rgba(217, 119, 6, 0.15)", text: "#d97706" },
+    "In Progress": { bg: "rgba(59, 130, 246, 0.15)", text: "#3b82f6" },
+    Complete: { bg: "rgba(5, 150, 105, 0.15)", text: "#059669" },
   };
 
   const style = statusStyles[status];
@@ -279,39 +284,47 @@ const SessionRow: React.FC<{ date: string; status: "Processing" | "In Progress" 
         WebkitBackdropFilter: "blur(12px)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
         borderRadius: 24,
-        padding: 20,
+        padding: 24,
         display: "flex",
         alignItems: "center",
         gap: 16,
         boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
       }}
     >
-      <div style={{ fontSize: 24 }}>🎥</div>
+      {/* Icon */}
+      <div style={{ fontSize: 28, flexShrink: 0 }}>🎥</div>
+
+      {/* Left content */}
       <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 16, fontWeight: 700, color: "#000000", marginBottom: 4, letterSpacing: "-0.02em" }}>Interview Session</div>
-        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: "#999999", letterSpacing: "0.05em", textTransform: "uppercase" }}>⏱ {date}</div>
+        <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#000000", marginBottom: 6, letterSpacing: "-0.02em" }}>Interview Session</div>
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#999999", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400 }}>⏱ {date}</div>
       </div>
-      {score && (
-        <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 22, fontWeight: 700, color: "#000000", marginRight: 8 }}>
-          {score}
+
+      {/* Right content - score, status, arrow */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+        {score && (
+          <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 32, fontWeight: 400, color: "#000000", marginRight: 4, letterSpacing: "-0.02em" }}>
+            {score}
+          </div>
+        )}
+        <div
+          style={{
+            backgroundColor: style.bg,
+            color: style.text,
+            padding: "8px 16px",
+            borderRadius: 12,
+            fontSize: 10,
+            fontFamily: 'JetBrains Mono, monospace',
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {status}
         </div>
-      )}
-      <div
-        style={{
-          backgroundColor: style.bg,
-          color: style.text,
-          padding: "6px 12px",
-          borderRadius: 8,
-          fontSize: 11,
-          fontFamily: '"JetBrains Mono", monospace',
-          fontWeight: 600,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-        }}
-      >
-        {status}
+        <span style={{ color: "#cccccc", fontSize: 20, marginLeft: 4 }}>›</span>
       </div>
-      <span style={{ color: "#cccccc", fontSize: 18 }}>›</span>
     </div>
   );
 };

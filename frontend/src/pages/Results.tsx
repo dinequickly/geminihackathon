@@ -11,7 +11,9 @@ import {
   ChevronUp,
   RefreshCw,
   Mic,
-  AlertCircle
+  AlertCircle,
+  Rows,
+  Columns
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
 import { VideoEmotionPlayer, TranscriptViewer, VideoEmotionPlayerRef } from '../components';
@@ -30,6 +32,7 @@ export default function Results() {
   const [error, setError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview', 'transcript', 'video', 'categories']));
   const [currentVideoTimeMs, setCurrentVideoTimeMs] = useState(0);
+  const [displayMode, setDisplayMode] = useState<'review' | 'watch'>('review');
   const videoPlayerRef = useRef<VideoEmotionPlayerRef>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 

@@ -9,12 +9,8 @@ import {
   Pencil,
   X,
   Check,
-  Bot,
-  Clock
+  Bot
 } from 'lucide-react';
-import {
-  PlayfulButton
-} from '../components/PlayfulUI';
 import { DynamicRenderer, ComponentSchema } from '../components/DynamicRenderer';
 import { InfoCard } from '../components/DynamicComponents';
 import { api } from '../lib/api';
@@ -63,29 +59,40 @@ const PersonalityEditor = ({
 
   if (isEditing) {
     return (
-      <div className="bg-mint-50 border-2 border-mint-200 rounded-2xl p-6 relative animate-fade-in">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-mint-800 font-bold">
-            <Bot className="w-5 h-5" />
-            <h3>Edit Persona</h3>
+      <div className="rounded-2xl border border-[#f1e4d6] bg-white/90 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)] animate-fade-in">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
+                Persona
+              </div>
+              <h3 className="font-serif text-lg text-gray-900">Edit tone</h3>
+            </div>
           </div>
           <div className="flex gap-2">
             <button 
               onClick={() => setShowAiInput(!showAiInput)}
-              className={`p-2 rounded-lg transition-colors ${showAiInput ? 'bg-mint-200 text-mint-800' : 'bg-white text-mint-600 hover:bg-mint-100'}`}
+              className={`p-2 rounded-full border transition-colors ${
+                showAiInput
+                  ? 'bg-amber-100 border-amber-200 text-amber-800'
+                  : 'bg-white border-[#f1e4d6] text-gray-600 hover:bg-amber-50'
+              }`}
               title="Rewrite with AI"
             >
               <Sparkles className="w-4 h-4" />
             </button>
             <button 
               onClick={() => { setIsEditing(false); setTempText(personality); }}
-              className="p-2 bg-white text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors"
+              className="p-2 bg-white border border-[#f1e4d6] text-gray-500 rounded-full hover:bg-amber-50 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
             <button 
               onClick={handleSave}
-              className="p-2 bg-mint-500 text-white rounded-lg hover:bg-mint-600 transition-colors"
+              className="p-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 transition-colors"
             >
               <Check className="w-4 h-4" />
             </button>
@@ -93,19 +100,19 @@ const PersonalityEditor = ({
         </div>
 
         {showAiInput && (
-          <div className="mb-4 bg-white p-3 rounded-xl border border-mint-200 flex gap-2">
+          <div className="mb-4 bg-white p-3 rounded-xl border border-amber-200 flex gap-2">
             <input 
               type="text" 
               value={aiInstruction}
               onChange={(e) => setAiInstruction(e.target.value)}
               placeholder="e.g., Make it friendlier, more strict..."
-              className="flex-1 text-sm outline-none text-gray-700 placeholder:text-gray-400"
+              className="flex-1 text-sm outline-none text-gray-700 placeholder:text-gray-400 bg-transparent"
               onKeyDown={(e) => e.key === 'Enter' && handleRewrite()}
             />
             <button 
               onClick={handleRewrite}
               disabled={isRewriting || !aiInstruction}
-              className="text-xs bg-mint-500 text-white px-3 py-1.5 rounded-lg hover:bg-mint-600 disabled:opacity-50 font-bold flex items-center gap-1"
+              className="text-xs bg-amber-500 text-white px-3 py-1.5 rounded-full hover:bg-amber-600 disabled:opacity-50 font-semibold flex items-center gap-1"
             >
               {isRewriting ? '...' : <><Sparkles className="w-3 h-3" /> Rewrite</>}
             </button>
@@ -115,7 +122,7 @@ const PersonalityEditor = ({
         <textarea 
           value={tempText}
           onChange={(e) => setTempText(e.target.value)}
-          className="w-full h-24 p-3 rounded-xl border border-mint-200 focus:border-mint-400 focus:ring-2 focus:ring-mint-100 outline-none resize-none text-sm text-gray-800 bg-white/50"
+          className="w-full min-h-[120px] p-3 rounded-xl border border-[#f1e4d6] focus:border-amber-300 focus:ring-2 focus:ring-amber-100 outline-none resize-none text-sm text-gray-800 bg-white"
         />
       </div>
     );
@@ -130,7 +137,7 @@ const PersonalityEditor = ({
       />
       <button 
         onClick={() => { setIsEditing(true); setTempText(personality); }}
-        className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white text-mint-700 shadow-sm hover:shadow-md"
+        className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-full border border-[#f1e4d6] opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-amber-50 text-amber-700 shadow-sm hover:shadow-md"
       >
         <Pencil className="w-4 h-4" />
       </button>
@@ -238,32 +245,44 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
   // Render Helpers
 
   const renderStep1 = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">What do you want to practice?</h2>
-        <p className="text-gray-600">
-          Describe the role, company, or specific skills you want to target.
+        <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
+          Step 1
+        </div>
+        <h2 className="font-serif text-3xl text-gray-900 mt-3">
+          Describe the interview you want to practice
+        </h2>
+        <p className="text-gray-600 mt-2 max-w-2xl">
+          Share the role, company, and the skills you want the interviewer to test.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="rounded-2xl border border-[#f1e4d6] bg-white/90 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+        <label className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
+          Your prompt
+        </label>
         <textarea
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
           placeholder="I want to practice a full-length interview for my Product Manager role at Google..."
           rows={5}
-          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
+          className="mt-3 w-full rounded-xl border border-[#f1e4d6] bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:ring-2 focus:ring-amber-100 outline-none"
         />
-        
-        <div className="flex justify-between items-center text-sm text-gray-500">
+        <div className="mt-3 flex justify-between items-center text-xs text-gray-500">
           <span>{intent.length} / 10 characters minimum</span>
           {intent.length >= 10 && (
-            <span className="text-green-600 flex items-center gap-1">
+            <span className="text-emerald-600 flex items-center gap-1 font-semibold">
               <CheckCircle2 className="w-4 h-4" /> Ready
             </span>
           )}
         </div>
+      </div>
 
+      <div>
+        <div className="text-xs font-semibold text-gray-600 mb-2">
+          Try a starter
+        </div>
         <div className="flex flex-wrap gap-2">
           {[
             "Product Manager at Google",
@@ -273,7 +292,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
             <button
               key={example}
               onClick={() => setIntent(example)}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 transition"
+              className="px-4 py-2 rounded-full border border-amber-100 bg-white text-sm text-gray-700 hover:border-amber-200 hover:bg-amber-50 transition"
             >
               "{example}"
             </button>
@@ -281,140 +300,210 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         </div>
       </div>
 
-      <PlayfulButton
-        variant="primary"
-        size="lg"
+      <button
         onClick={handleIntentSubmit}
         disabled={intent.length < 10 || loading}
-        className="w-full"
-        icon={loading ? undefined : Sparkles}
+        className={`w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
+          intent.length < 10 || loading
+            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+            : 'bg-amber-500 text-white hover:bg-amber-600 shadow-[0_14px_30px_rgba(251,191,36,0.35)]'
+        }`}
       >
+        {!loading && <Sparkles className="w-4 h-4" />}
         {loading ? 'Analyzing...' : 'Next'}
-      </PlayfulButton>
+      </button>
     </div>
   );
 
-  const renderStep2 = () => (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Configure Your Interview</h2>
-        <p className="text-gray-600">
-          We've tailored these settings based on your goal. Customize them as needed.
-        </p>
-      </div>
+  const renderStep2 = () => {
+    const duration = dynamicValues.duration || 8;
+    const componentCount = dynamicTree.length;
+    const interviewLabel = interviewType === 'tavus' ? 'Video avatar' : 'Voice AI';
 
-      {/* Interview Length Slider */}
-      <div className="bg-gradient-to-r from-primary-50 to-sky-50 border-2 border-primary-200 rounded-2xl p-6 animate-fade-in">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-sky-500 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-white" />
+    return (
+      <div className="space-y-8">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
+            Step 2
+          </div>
+          <h2 className="font-serif text-3xl text-gray-900 mt-3">
+            Shape the session flow
+          </h2>
+          <p className="text-gray-600 mt-2 max-w-2xl">
+            Adjust the length and preferences below. Everything stays within your guardrails.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-[1.35fr_0.65fr] gap-6">
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-[#f1e4d6] bg-white/90 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.08)] animate-fade-in">
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
+                    Duration
+                  </div>
+                  <h3 className="font-serif text-xl text-gray-900 mt-2">
+                    Interview length
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Tune the pacing for quick checks or deeper dives.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-amber-100 px-3 py-2 text-2xl font-semibold text-amber-800">
+                  {duration}
+                  <span className="text-base text-amber-400 ml-1">min</span>
+                </div>
+              </div>
+
+              <input
+                type="range"
+                min={5}
+                max={15}
+                value={duration}
+                onChange={(e) => setDynamicValues(prev => ({ ...prev, duration: Number(e.target.value) }))}
+                className="w-full accent-orange-500"
+              />
+              <div className="flex justify-between mt-3 text-[11px] font-semibold text-gray-500 uppercase tracking-[0.2em]">
+                <span>Quick (5)</span>
+                <span>Standard (10)</span>
+                <span>Deep (15)</span>
+              </div>
             </div>
-            <h3 className="font-display font-bold text-lg text-gray-900">Interview Length</h3>
-          </div>
-          <div className="text-right">
-            <span className="text-3xl font-display font-black text-primary-600">
-              {dynamicValues.duration || 8}
-            </span>
-            <span className="text-lg font-bold text-primary-400 ml-1">min</span>
-          </div>
-        </div>
 
-        <div className="relative pt-2 pb-4">
-          <input
-            type="range"
-            min={5}
-            max={15}
-            value={dynamicValues.duration || 8}
-            onChange={(e) => setDynamicValues(prev => ({ ...prev, duration: Number(e.target.value) }))}
-            className="w-full h-3 bg-gradient-to-r from-primary-200 to-sky-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-primary-500 [&::-webkit-slider-thumb]:to-sky-500 [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:active:scale-95"
-          />
-          <div className="flex justify-between mt-3 text-xs font-bold text-gray-500 uppercase tracking-wide">
-            <span>Quick (5 min)</span>
-            <span>Standard (10 min)</span>
-            <span>Deep (15 min)</span>
-          </div>
-        </div>
-      </div>
+            {personality && (
+              <div className="animate-fade-in">
+                  <PersonalityEditor
+                      personality={personality}
+                      setPersonality={setPersonality}
+                  />
+              </div>
+            )}
 
-      {personality && (
-        <div className="animate-fade-in">
-            <PersonalityEditor
-                personality={personality}
-                setPersonality={setPersonality}
+            <DynamicRenderer 
+              tree={dynamicTree} 
+              onValuesChange={setDynamicValues} 
+              initialValues={dynamicValues}
             />
+
+            {loading && dynamicTree.length === 0 && (
+              <div className="text-center py-12 text-gray-500 animate-pulse">
+                  Analyzing your request...
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-[#f1e4d6] bg-white/90 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
+                Session snapshot
+              </div>
+              <h3 className="font-serif text-xl text-gray-900 mt-2">
+                Ready when you are
+              </h3>
+              <div className="mt-4 space-y-3 text-sm text-gray-600">
+                <div className="flex items-center justify-between">
+                  <span>Length</span>
+                  <span className="font-semibold text-gray-900">{duration} min</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Modules</span>
+                  <span className="font-semibold text-gray-900">
+                    {componentCount || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Experience</span>
+                  <span className="font-semibold text-gray-900">{interviewLabel}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-5">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
+                Guardrails
+              </div>
+              <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+                The assistant can only use components in your catalog. Every control stays predictable and safe.
+              </p>
+              <div className="mt-3 text-xs text-gray-500">
+                Streaming updates appear as the model responds.
+              </div>
+            </div>
+
+            <button
+              onClick={handleStartInterview}
+              disabled={loading || dynamicTree.length === 0}
+              className={`w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
+                loading || dynamicTree.length === 0
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-amber-500 text-white hover:bg-amber-600 shadow-[0_14px_30px_rgba(251,191,36,0.35)]'
+              }`}
+            >
+              {!loading && <Video className="w-4 h-4" />}
+              {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
+            </button>
+          </div>
         </div>
-      )}
-
-      <DynamicRenderer 
-        tree={dynamicTree} 
-        onValuesChange={setDynamicValues} 
-        initialValues={dynamicValues}
-      />
-
-      {loading && dynamicTree.length === 0 && (
-        <div className="text-center py-12 text-gray-500 animate-pulse">
-            Analyzing your request...
-        </div>
-      )}
-
-      <div className="pt-4 border-t border-gray-100">
-        <PlayfulButton
-          variant="sunshine"
-          size="lg"
-          onClick={handleStartInterview}
-          disabled={loading || dynamicTree.length === 0}
-          className="w-full"
-          icon={loading ? undefined : Video}
-        >
-          {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
-        </PlayfulButton>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Main Render
 
   return (
-    <div className="min-h-screen bg-cream-50 p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <PlayfulButton
-            variant="sky"
-            size="sm"
-            icon={ArrowLeft}
-            onClick={() => {
+    <div className="min-h-screen bg-[#fef9f3] text-gray-900 relative overflow-hidden">
+      <div className="absolute top-[-180px] right-[-120px] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-amber-200/60 to-transparent blur-2xl" />
+      <div className="absolute bottom-[-220px] left-[-140px] w-[520px] h-[520px] rounded-full bg-gradient-to-tr from-teal-200/50 to-transparent blur-2xl" />
+
+      <div className="relative max-w-6xl mx-auto px-4 py-10">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.3em] text-amber-700 font-mono">
+              InterviewPro
+            </div>
+            <h1 className="font-serif text-3xl text-gray-900 mt-2">
+              Interview setup
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end gap-2">
+              <span className="text-[11px] uppercase tracking-[0.24em] text-gray-500 font-mono">
+                Step {step} of 2
+              </span>
+              <div className="flex gap-2">
+                {[1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 w-10 rounded-full transition-colors ${
+                      step >= i ? 'bg-amber-500' : 'bg-amber-100'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => {
                 if (step > 1) setStep(step - 1);
                 else navigate('/dashboard');
-            }}
-          >
-            Back
-          </PlayfulButton>
-          
-          <div className="flex gap-2">
-            {[1, 2].map(i => (
-              <div 
-                key={i}
-                className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                  step >= i ? 'bg-primary-500' : 'bg-gray-200'
-                }`}
-              />
-            ))}
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/80 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-amber-50 transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
           </div>
-        </div>
+        </header>
 
-        {/* Content */}
-        <div className="bg-white rounded-2xl shadow-soft p-6 md:p-8 relative min-h-[400px]">
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p>{error}</p>
-                </div>
-            )}
+        <div className="rounded-3xl border border-[#f1e4d6] bg-white/85 p-6 md:p-10 shadow-[0_20px_60px_rgba(15,23,42,0.08)] relative min-h-[400px]">
+          {error && (
+              <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl flex items-start gap-3 border border-red-100">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <p>{error}</p>
+              </div>
+          )}
 
-            {step === 1 && renderStep1()}
-            {step === 2 && renderStep2()}
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
         </div>
       </div>
     </div>
