@@ -11,9 +11,7 @@ import {
   ChevronUp,
   RefreshCw,
   Mic,
-  AlertCircle,
-  Rows,
-  Columns
+  AlertCircle
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
 import { VideoEmotionPlayer, TranscriptViewer, VideoEmotionPlayerRef } from '../components';

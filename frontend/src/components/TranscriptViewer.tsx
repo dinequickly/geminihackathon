@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, EmotionTimelineItem, TranscriptHighlight } from '../lib/api';
-import { MessageSquare, User, Bot, ChevronDown, ChevronUp, AlertCircle, Terminal, Database, Smile, Mic, Highlighter, X, Sparkles } from 'lucide-react';
-import { PlayfulCard, Badge, PlayfulButton, LoadingSpinner } from './PlayfulUI';
+import { AlertCircle, Highlighter, X } from 'lucide-react';
+import { PlayfulButton, LoadingSpinner } from './PlayfulUI';
 
 interface TranscriptViewerProps {
   conversationId: string;
@@ -36,45 +36,12 @@ interface EmotionData {
   prosody: EmotionTimelineItem[];
 }
 
-const EMOTION_COLORS: Record<string, string> = {
-  joy: '#06A77D',
-  happiness: '#06A77D',
-  amusement: '#FFC857',
-  excitement: '#FF6B35',
-  interest: '#4D9DE0',
-  surprise: '#FF9B71',
-  concentration: '#4D9DE0',
-  contemplation: '#9B59B6',
-  determination: '#FF6B35',
-  calmness: '#4D9DE0',
-  contentment: '#06A77D',
-  realization: '#FFC857',
-  admiration: '#FF9B71',
-  sadness: '#7B8794',
-  disappointment: '#95A5A6',
-  tiredness: '#BDC3C7',
-  confusion: '#9B59B6',
-  anxiety: '#E74C3C',
-  fear: '#C0392B',
-  anger: '#E74C3C',
-  disgust: '#95A5A6',
-  contempt: '#7F8C8D',
-  embarrassment: '#FF9B71',
-  awkwardness: '#FFC857',
-  neutral: '#BDC3C7',
-};
-
 const HIGHLIGHT_COLORS = {
   yellow: { bg: 'bg-sunshine-100', border: 'border-sunshine-300', text: 'text-sunshine-800', light: 'bg-sunshine-50' },
   green: { bg: 'bg-mint-100', border: 'border-mint-300', text: 'text-mint-800', light: 'bg-mint-50' },
   blue: { bg: 'bg-sky-100', border: 'border-sky-300', text: 'text-sky-800', light: 'bg-sky-50' },
   pink: { bg: 'bg-coral-100', border: 'border-coral-300', text: 'text-coral-800', light: 'bg-coral-50' },
   orange: { bg: 'bg-primary-100', border: 'border-primary-300', text: 'text-primary-800', light: 'bg-primary-50' },
-};
-
-const getEmotionColor = (emotionName: string): string => {
-  const lower = emotionName.toLowerCase();
-  return EMOTION_COLORS[lower] || '#9ca3af';
 };
 
 const formatTimestamp = (seconds: number): string => {
@@ -99,8 +66,7 @@ export default function TranscriptViewer({
   const [highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [autoScroll, setAutoScroll] = useState(true);
+  const [autoScroll] = useState(true);
   const [actionHighlight, setActionHighlight] = useState<TranscriptHighlight | null>(null);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -337,51 +303,25 @@ export default function TranscriptViewer({
 
   if (isLoading) {
     return (
-      <PlayfulCard variant="white" className="animate-fade-in">
+      <div className="bg-white h-full flex items-center justify-center animate-fade-in">
         <div className="flex flex-col items-center justify-center py-12">
           <LoadingSpinner size="lg" color="primary" />
           <span className="mt-4 text-gray-600 font-medium">Loading transcript...</span>
         </div>
-      </PlayfulCard>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <PlayfulCard variant="white" className="animate-fade-in">
+      <div className="bg-white h-full flex items-center justify-center p-8 animate-fade-in">
         <div className="flex items-center gap-3 text-red-600 p-4 bg-red-50 rounded-2xl border-2 border-red-200">
           <AlertCircle className="w-5 h-5" />
           <span className="font-medium">{error}</span>
         </div>
-      </PlayfulCard>
+      </div>
     );
   }
-
-  // Emotion badge component
-  const EmotionBadge = ({ emotion, type }: { emotion: EmotionTimelineItem; type: 'face' | 'prosody' }) => (
-    <div className="flex items-center gap-2 px-3 py-2 bg-cream-50 rounded-2xl border-2 border-gray-100 shadow-soft">
-      <div className="flex items-center gap-1.5">
-        {type === 'face' ? (
-          <Smile className="w-4 h-4 text-primary-500" />
-        ) : (
-          <Mic className="w-4 h-4 text-sky-500" />
-        )}
-        <span className="text-xs text-gray-600 uppercase tracking-wide font-semibold">{type}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <div
-          className="w-3 h-3 rounded-full shadow-sm"
-          style={{ backgroundColor: getEmotionColor(emotion.top_emotion_name) }}
-        />
-        <span className="text-sm font-bold text-gray-800 capitalize">
-          {emotion.top_emotion_name}
-        </span>
-        <span className="text-xs text-gray-500 font-semibold">
-          {(emotion.top_emotion_score * 100).toFixed(0)}%
-        </span>
-      </div>
-    </div>
-  );
 
   // Render transcript with emotions
   const renderTranscriptWithEmotions = () => (
