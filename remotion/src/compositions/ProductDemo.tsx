@@ -19,30 +19,34 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const NORMAL_SPEED_END = 840;   // 28 seconds at 30fps
 
   // Speed up timeline: divide frame times by 2 up to 23s
-  const browserOpenStart = 168;      // was 300 (delayed by 18 frames = 0.6s)
-  const dashboardStart = 173;        // was 310 (delayed by 18 frames)
-  const cursorMoveToStartNew = 218;  // was 400 (delayed by 18 frames)
-  const startNewClickFrame = 235;    // was 435 (delayed by 18 frames)
-  const dashboardToConfigTransition = 243;  // was 450 (delayed by 18 frames)
-  const configStart = 253;           // was 470 (delayed by 18 frames)
+  const terminalFrames = 12 * 30;
+  const baseBrowserOpenStart = 168;
+  const terminalOffset = terminalFrames - baseBrowserOpenStart;
+
+  const browserOpenStart = baseBrowserOpenStart + terminalOffset;
+  const dashboardStart = 173 + terminalOffset;
+  const cursorMoveToStartNew = 218 + terminalOffset;
+  const startNewClickFrame = 235 + terminalOffset;
+  const dashboardToConfigTransition = 243 + terminalOffset;
+  const configStart = 253 + terminalOffset;
 
   // Config scrolling timeline (also sped up)
-  const scrollStartFrame = 308;      // was 580 (delayed by 18 frames)
-  const scrollEndFrame = 328;        // was 620 (delayed by 18 frames)
-  const cursorMoveToStartInterview = 333; // was 630 (delayed by 18 frames)
-  const startInterviewClickFrame = 350;   // was 665 (delayed by 18 frames)
-  const configToLoadingTransition = 358;  // was 680 (delayed by 18 frames)
-  const loadingStart = 360;          // was 685 (delayed by 18 frames)
+  const scrollStartFrame = 308 + terminalOffset;
+  const scrollEndFrame = 328 + terminalOffset;
+  const cursorMoveToStartInterview = 333 + terminalOffset;
+  const startInterviewClickFrame = 350 + terminalOffset;
+  const configToLoadingTransition = 358 + terminalOffset;
+  const loadingStart = 360 + terminalOffset;
 
   // Interview in progress timeline (7 seconds = 210 frames)
-  const loadingToInterviewTransition = 363; // was 695 (delayed by 18 frames)
-  const interviewStart = 368;        // was 705 (delayed by 18 frames)
-  const interviewToResultsTransition = 578; // was 825 (now 7 seconds: 368 + 210)
+  const loadingToInterviewTransition = 363 + terminalOffset;
+  const interviewStart = 368 + terminalOffset;
+  const interviewToResultsTransition = 578 + terminalOffset;
 
   // Results timeline (after interview)
-  const resultsStart = 588;          // was 840 (delayed by 18 frames)
-  const resultsScrollStart = 618;    // was 950 (disabled scroll animation)
-  const resultsScrollEnd = 618;      // was 1030 (no scroll - same as start)
+  const resultsStart = 588 + terminalOffset;
+  const resultsScrollStart = 618 + terminalOffset;
+  const resultsScrollEnd = 618 + terminalOffset;
 
 
   // Scroll amount for config
@@ -101,7 +105,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   );
 
   // Cards slide off to the left with 0.2 second (6 frame) delays
-  const cardSlideStart = 692; // 23.06 sec
+  const cardSlideStart = 692 + terminalOffset;
   const cardSlideDuration = 58; // ~2 seconds to slide off
   const cardStaggerDelay = 6; // 0.2 seconds between each card
 

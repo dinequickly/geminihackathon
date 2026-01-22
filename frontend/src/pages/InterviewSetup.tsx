@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { DynamicRenderer, ComponentSchema } from '../components/DynamicRenderer';
 import { api } from '../lib/api';
-import { LiquidButton } from '../components/LiquidButton';
 
 interface InterviewSetupProps {
   userId: string;
@@ -421,17 +420,20 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
           </div>
         </div>
 
-        {/* Start Interview Button - Centered at Bottom */}
-        <div className="flex justify-center mt-12">
-          <LiquidButton
+        {/* Start Interview Button - Left aligned at Bottom */}
+        <div className="flex justify-start mt-12">
+          <button
             onClick={handleStartInterview}
             disabled={loading || dynamicTree.length === 0}
-            variant="black"
-            size="lg"
-            icon={!loading && <Video size={18} />}
+            className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-serif text-lg transition-all duration-300 ${
+              loading || dynamicTree.length === 0
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-black hover:bg-black hover:text-white border border-black'
+            }`}
           >
+            {!loading && <Video size={20} />}
             {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
-          </LiquidButton>
+          </button>
         </div>
       </div>
     );
