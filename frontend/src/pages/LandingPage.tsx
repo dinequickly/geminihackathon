@@ -9,75 +9,90 @@ import { IridescentSphere } from '../components/IridescentSphere';
 export default function LandingPage() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0); // 0 to 1 (Phase 1)
-  const [phase2Progress, setPhase2Progress] = useState(0); // 0 to 1 (Phase 2)
-  const canFlyOffRef = useRef(false);
-  const isLockedRef = useRef(false);
+  const [scrollProgress, setScrollProgress] = useState(0); // Phase 1: 0 to 1
+  const [phase2Progress, setPhase2Progress] = useState(0); // Phase 2: 0 to 1
+  const [phase3Progress, setPhase3Progress] = useState(0); // Phase 3: 0 to 1
+  
+  const canPhase2Ref = useRef(false);
+  const isLock1Ref = useRef(false);
+  const canPhase3Ref = useRef(false);
+  const isLock2Ref = useRef(false);
 
   // Constants
-  const PHASE_1_ZOOM = 1.6;
-  const PHASE_2_ZOOM = 3.5; // Zoom in much more for the detail view
+  const PHASE_1_ZOOM = 1.8;
+  const PHASE_2_ZOOM = 2.2;
+  const PHASE_3_ZOOM = 2.4; // Deepest zoom
 
   useEffect(() => {
     const windowHeight = window.innerHeight;
-    const phase1Length = windowHeight * 0.8;
-    const phase2Length = windowHeight * 0.8; // Length of the second scroll phase
-    const totalScrollLength = phase1Length + phase2Length;
+    const p1Len = windowHeight * 0.8;
+    const p2Len = windowHeight * 0.8;
+    const p3Len = windowHeight * 0.8;
 
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
+      const y = window.scrollY;
 
-      // --- Phase 1: Main Scroll & Lock ---
-      if (scrollPosition <= phase1Length) {
-        // Reset Phase 2
+      // --- Phase 1 ---
+      if (y <= p1Len) {
         setPhase2Progress(0);
-
-        // Handle Lock at end of Phase 1
-        if (scrollPosition >= phase1Length - 5) { // Tolerance
-           if (!isLockedRef.current && !canFlyOffRef.current) {
-             // Engage Lock
-             isLockedRef.current = true;
-             window.scrollTo(0, phase1Length); // Snap to lock point
-             setScrollProgress(1); // Ensure full completion
-
-             // Start Timer
-             setTimeout(() => {
-               canFlyOffRef.current = true;
-               isLockedRef.current = false; // Unlock
-             }, 500);
-             return;
-           }
+        setPhase3Progress(0);
+        
+        if (y >= p1Len - 5 && !canPhase2Ref.current && !isLock1Ref.current) {
+          isLock1Ref.current = true;
+          window.scrollTo(0, p1Len);
+          setScrollProgress(1);
+          setTimeout(() => {
+            canPhase2Ref.current = true;
+            isLock1Ref.current = false;
+          }, 500);
+          return;
         }
-
-        // Normal Phase 1 Progress
-        const p1 = Math.min(scrollPosition / phase1Length, 1);
-        setScrollProgress(p1);
+        setScrollProgress(Math.min(y / p1Len, 1));
       } 
-      // --- Phase 2: Progressive Zoom to Bottom Right ---
-      else {
-        // Ensure Phase 1 is complete
+      // --- Phase 2 ---
+      else if (y <= p1Len + p2Len) {
         setScrollProgress(1);
+        setPhase3Progress(0);
 
-        // If we haven't unlocked yet, force stay at Phase 1 end
-        if (!canFlyOffRef.current) {
-           window.scrollTo(0, phase1Length);
-           return;
+        if (!canPhase2Ref.current) {
+          window.scrollTo(0, p1Len);
+          return;
         }
 
-        // Calculate Phase 2 Progress
-        const p2 = Math.min((scrollPosition - phase1Length) / phase2Length, 1);
-        setPhase2Progress(p2);
+        const p2Rel = y - p1Len;
+        if (p2Rel >= p2Len - 5 && !canPhase3Ref.current && !isLock2Ref.current) {
+          isLock2Ref.current = true;
+          window.scrollTo(0, p1Len + p2Len);
+          setPhase2Progress(1);
+          setTimeout(() => {
+            canPhase3Ref.current = true;
+            isLock2Ref.current = false;
+          }, 500);
+          return;
+        }
+        setPhase2Progress(Math.min(p2Rel / p2Len, 1));
+      }
+      // --- Phase 3 ---
+      else {
+        setScrollProgress(1);
+        setPhase2Progress(1);
+
+        if (!canPhase3Ref.current) {
+          window.scrollTo(0, p1Len + p2Len);
+          return;
+        }
+
+        setPhase3Progress(Math.min((y - p1Len - p2Len) / p3Len, 1));
       }
     };
 
-    // Wheel handler only needed to prevent default IF locked
     const handleWheel = (e: WheelEvent) => {
-      if (isLockedRef.current) {
+      if (isLock1Ref.current || isLock2Ref.current) {
         e.preventDefault();
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: false }); // non-passive for scrollTo overrides if needed, though usually passive is better for perf. kept simple here.
+    window.addEventListener('scroll', handleScroll, { passive: false });
     window.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
@@ -87,39 +102,38 @@ export default function LandingPage() {
   }, []);
 
   // --- Visual Calculations ---
-
-  // Phase 1 Values (End state)
-  const p1_Scale = 1 + (scrollProgress * (PHASE_1_ZOOM - 1));
-  // We need to resolve the calc() to numbers for interpolation in Phase 2
-  // Origin 1: "calc(56% + 780px) 40%"
-  // We will approximate the visual center for interpolation or use CSS variables if cleaner.
-  // JS Interpolation is smoother for scrolling.
   const winW = typeof window !== 'undefined' ? window.innerWidth : 1000;
   const winH = typeof window !== 'undefined' ? window.innerHeight : 800;
   
-  const origin1_X = (winW * 0.56) + 780;
-  const origin1_Y = winH * 0.40;
+  // Phase 1 Target (Center/Philosophers)
+  const o1X = (winW * 0.56) + 780;
+  const o1Y = winH * 0.40;
 
-  // Phase 2 Values (Target state: Bottom Right)
-  const origin2_X = winW * 0.85; // 85% width
-  const origin2_Y = winH * 0.85; // 85% height
+  // Phase 2 Target (Bottom Right)
+  const o2X = winW * 0.85;
+  const o2Y = winH * 0.85;
 
-  // Interpolate
+  // Phase 3 Target (Requested: 650, 820)
+  const o3X = 900;
+  const o3Y = 820;
+
   let currentScale, currentOriginX, currentOriginY;
 
-  if (phase2Progress === 0) {
-    // Pure Phase 1
-    currentScale = p1_Scale;
-    currentOriginX = origin1_X;
-    currentOriginY = origin1_Y;
-  } else {
-    // Phase 2 Interpolation
-    // Scale: 1.6 -> 3.5
+  if (phase3Progress > 0) {
+    // Interpolate Phase 2 -> Phase 3
+    currentScale = PHASE_2_ZOOM + (phase3Progress * (PHASE_3_ZOOM - PHASE_2_ZOOM));
+    currentOriginX = o2X + (phase3Progress * (o3X - o2X));
+    currentOriginY = o2Y + (phase3Progress * (o3Y - o2Y));
+  } else if (phase2Progress > 0) {
+    // Interpolate Phase 1 -> Phase 2
     currentScale = PHASE_1_ZOOM + (phase2Progress * (PHASE_2_ZOOM - PHASE_1_ZOOM));
-    
-    // Origin: Origin1 -> Origin2
-    currentOriginX = origin1_X + (phase2Progress * (origin2_X - origin1_X));
-    currentOriginY = origin1_Y + (phase2Progress * (origin2_Y - origin1_Y));
+    currentOriginX = o1X + (phase2Progress * (o2X - o1X));
+    currentOriginY = o1Y + (phase2Progress * (o2Y - o1Y));
+  } else {
+    // Phase 1
+    currentScale = 1 + (scrollProgress * (PHASE_1_ZOOM - 1));
+    currentOriginX = o1X;
+    currentOriginY = o1Y;
   }
 
   const zoomOrigin = `${currentOriginX}px ${currentOriginY}px`;
@@ -212,19 +226,17 @@ export default function LandingPage() {
         </div>
 
       {/* Spacer to create scroll space. 
-          Total Height = 100vh (view) + Phase 1 Scroll + Phase 2 Scroll
-          phase1Length = 0.8vh, phase2Length = 0.8vh -> Total spacer needs to cover this.
+          Total Height = 100vh (view) + Phase 1 Scroll + Phase 2 Scroll + Phase 3 Scroll
+          Each phase is 0.8vh -> Total spacer needs to cover this.
       */}
-        <div className="h-[280vh] pointer-events-none" />
+        <div className="h-[380vh] pointer-events-none" />
       </section>
 
-      {/* White content panel - Right half - Slides up from bottom, then exits */}
+      {/* White content panel 1 - Right half - Slides up (P1), Flies out Up (P2) */}
       <div
         className={`fixed right-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out`}
         style={{
           top: '95px',
-          // Phase 1: Come in (100% -> 0%)
-          // Phase 2: Fly out (0% -> -150%)
           transform: phase2Progress > 0 
             ? `translateY(${0 - phase2Progress * 150}%)` 
             : `translateY(${100 - scrollProgress * 100}%)`,
@@ -379,16 +391,20 @@ export default function LandingPage() {
         </footer>
       </div>
 
-      {/* Second White Panel - Left half - Slides down from top during Phase 2 */}
+      {/* Second White Panel - Left half - Slides down (P2), Flies out Down (P3) */}
       <div
         className="fixed left-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out flex flex-col justify-end"
         style={{
           top: 0,
           // Phase 2: Slide down ( -100% -> 0% )
-          transform: `translateY(${-100 + (phase2Progress * 100)}%)`
+          // Phase 3: Fly out down ( 0% -> 200% )
+          transform: phase3Progress > 0
+            ? `translateY(${phase3Progress * 200}%)`
+            : `translateY(${-100 + (phase2Progress * 100)}%)`
         }}
       >
         <section className="px-6 pb-32 pt-20 max-w-7xl mx-auto text-left">
+          {/* ... existing P2 content ... */}
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-mono tracking-wider uppercase text-blue-700">
                <Brain className="w-3 h-3" />
@@ -421,6 +437,51 @@ export default function LandingPage() {
            {/* Decorative Sphere for this panel */}
           <div className="absolute top-1/4 right-10 opacity-30 pointer-events-none">
             <IridescentSphere size={200} color="purple" delay={0.5} />
+          </div>
+        </section>
+      </div>
+
+      {/* Third White Panel - Right half - Slides in from Right during Phase 3 */}
+      <div
+        className="fixed right-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out"
+        style={{
+          top: '95px',
+          // Phase 3: Slide in from right ( 100% -> 0% )
+          transform: `translateX(${100 - (phase3Progress * 100)}%)`
+        }}
+      >
+        <section className="px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-xs font-mono tracking-wider uppercase text-orange-700">
+               <Sparkles className="w-3 h-3" />
+               Expert Mastery
+            </div>
+
+            <h2 className="font-serif text-6xl md:text-8xl font-medium text-black mb-8 leading-[0.9] tracking-tight">
+              Refine Your <br />
+              <span className="italic text-gray-800">Presence.</span>
+            </h2>
+
+            <p className="text-xl text-gray-800 font-light max-w-2xl mx-auto leading-relaxed">
+              Achieve total clarity and confidence. Our advanced simulations push you
+              to find your authentic voice and command every room you enter.
+            </p>
+
+            <div className="flex items-center justify-center pt-8">
+              <LiquidButton
+                onClick={() => navigate('/onboarding')}
+                variant="secondary"
+                size="xl"
+                icon={<ArrowRight size={20} />}
+                iconPosition="right"
+              >
+                Complete Your Training
+              </LiquidButton>
+            </div>
+          </div>
+
+          <div className="absolute bottom-20 left-10 opacity-40 pointer-events-none">
+            <IridescentSphere size={180} color="blue" delay={0.2} />
           </div>
         </section>
       </div>
