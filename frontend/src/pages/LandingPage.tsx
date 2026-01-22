@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Brain, Heart, MessageCircle, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
-import { LiquidGlass } from '../components/LiquidGlass';
 import { LiquidButton } from '../components/LiquidButton';
 import { LightLeakBackground } from '../components/LightLeakBackground';
-import { IridescentSphere } from '../components/IridescentSphere';
+
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -13,6 +12,7 @@ export default function LandingPage() {
   const [phase2Progress, setPhase2Progress] = useState(0); // Phase 2: 0 to 1
   const [phase3Progress, setPhase3Progress] = useState(0); // Phase 3: 0 to 1
   const [phase4Progress, setPhase4Progress] = useState(0); // Phase 4: 0 to 1
+  const [phase5Progress, setPhase5Progress] = useState(0); // Phase 5: 0 to 1
   
   const canPhase2Ref = useRef(false);
   const isLock1Ref = useRef(false);
@@ -20,12 +20,15 @@ export default function LandingPage() {
   const isLock2Ref = useRef(false);
   const canPhase4Ref = useRef(false);
   const isLock3Ref = useRef(false);
+  const canPhase5Ref = useRef(false);
+  const isLock4Ref = useRef(false);
 
   // Constants
   const PHASE_1_ZOOM = 1.8;
   const PHASE_2_ZOOM = 2.2;
   const PHASE_3_ZOOM = 2.4;
   const PHASE_4_ZOOM = 2.8;
+  const PHASE_5_ZOOM = 1.5; // Zoom out slightly for finale
 
   useEffect(() => {
     const windowHeight = window.innerHeight;
@@ -33,6 +36,7 @@ export default function LandingPage() {
     const p2Len = windowHeight * 0.8;
     const p3Len = windowHeight * 0.8;
     const p4Len = windowHeight * 0.8;
+    const p5Len = windowHeight * 0.8;
 
     const handleScroll = () => {
       const y = window.scrollY;
@@ -42,6 +46,7 @@ export default function LandingPage() {
         setPhase2Progress(0);
         setPhase3Progress(0);
         setPhase4Progress(0);
+        setPhase5Progress(0);
         
         if (y >= p1Len - 5 && !canPhase2Ref.current && !isLock1Ref.current) {
           isLock1Ref.current = true;
@@ -60,6 +65,7 @@ export default function LandingPage() {
         setScrollProgress(1);
         setPhase3Progress(0);
         setPhase4Progress(0);
+        setPhase5Progress(0);
 
         if (!canPhase2Ref.current) {
           window.scrollTo(0, p1Len);
@@ -84,6 +90,7 @@ export default function LandingPage() {
         setScrollProgress(1);
         setPhase2Progress(1);
         setPhase4Progress(0);
+        setPhase5Progress(0);
 
         if (!canPhase3Ref.current) {
           window.scrollTo(0, p1Len + p2Len);
@@ -104,22 +111,48 @@ export default function LandingPage() {
         setPhase3Progress(Math.min(p3Rel / p3Len, 1));
       }
       // --- Phase 4 ---
-      else {
+      else if (y <= p1Len + p2Len + p3Len + p4Len) {
         setScrollProgress(1);
         setPhase2Progress(1);
         setPhase3Progress(1);
+        setPhase5Progress(0);
 
         if (!canPhase4Ref.current) {
           window.scrollTo(0, p1Len + p2Len + p3Len);
           return;
         }
 
-        setPhase4Progress(Math.min((y - p1Len - p2Len - p3Len) / p4Len, 1));
+        const p4Rel = y - p1Len - p2Len - p3Len;
+        if (p4Rel >= p4Len - 5 && !canPhase5Ref.current && !isLock4Ref.current) {
+          isLock4Ref.current = true;
+          window.scrollTo(0, p1Len + p2Len + p3Len + p4Len);
+          setPhase4Progress(1);
+          setTimeout(() => {
+            canPhase5Ref.current = true;
+            isLock4Ref.current = false;
+          }, 500);
+          return;
+        }
+        setPhase4Progress(Math.min(p4Rel / p4Len, 1));
+      }
+      // --- Phase 5 ---
+      else {
+        setScrollProgress(1);
+        setPhase2Progress(1);
+        setPhase3Progress(1);
+        setPhase4Progress(1);
+
+        if (!canPhase5Ref.current) {
+          window.scrollTo(0, p1Len + p2Len + p3Len + p4Len);
+          return;
+        }
+
+        setPhase5Progress(Math.min((y - p1Len - p2Len - p3Len - p4Len) / p5Len, 1));
       }
     };
 
     const handleWheel = (e: WheelEvent) => {
-      if (isLock1Ref.current || isLock2Ref.current || isLock3Ref.current) {
+      if (isLock1Ref.current || isLock2Ref.current || isLock3Ref.current || isLock4Ref.current) {
         e.preventDefault();
       }
     };
@@ -153,9 +186,18 @@ export default function LandingPage() {
   const o4X = 280;
   const o4Y = 420;
 
+  // Phase 5 Target (Center Finale)
+  const o5X = winW * 0.5;
+  const o5Y = winH * 0.5;
+
   let currentScale, currentOriginX, currentOriginY;
 
-  if (phase4Progress > 0) {
+  if (phase5Progress > 0) {
+    // Interpolate Phase 4 -> Phase 5
+    currentScale = PHASE_4_ZOOM + (phase5Progress * (PHASE_5_ZOOM - PHASE_4_ZOOM));
+    currentOriginX = o4X + (phase5Progress * (o5X - o4X));
+    currentOriginY = o4Y + (phase5Progress * (o5Y - o4Y));
+  } else if (phase4Progress > 0) {
     // Interpolate Phase 3 -> Phase 4
     currentScale = PHASE_3_ZOOM + (phase4Progress * (PHASE_4_ZOOM - PHASE_3_ZOOM));
     currentOriginX = o3X + (phase4Progress * (o4X - o3X));
@@ -179,45 +221,18 @@ export default function LandingPage() {
 
   const zoomOrigin = `${currentOriginX}px ${currentOriginY}px`;
 
-  const dimensions = [
-    {
-      icon: Brain,
-      title: 'Technical Skills',
-      description: 'Master the questions that matter with targeted practice across your domain.',
-      delay: 0
-    },
-    {
-      icon: Heart,
-      title: 'Emotional Intelligence',
-      description: 'Develop self-awareness and authentic responses that resonate.',
-      delay: 0.1
-    },
-    {
-      icon: MessageCircle,
-      title: 'Communication',
-      description: 'Articulate complex ideas clearly and confidently under pressure.',
-      delay: 0.2
-    },
-    {
-      icon: Sparkles,
-      title: 'Executive Presence',
-      description: 'Command the room with poise, energy, and authentic confidence.',
-      delay: 0.3
-    },
-  ];
-
-  const stats = [
-    { value: '10k+', label: 'Interviews Completed' },
-    { value: '94%', label: 'Success Rate' },
-    { value: '4.9/5', label: 'User Rating' },
-  ];
-
   return (
     <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
       <LightLeakBackground />
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
+      <nav 
+        className={`fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b transition-all duration-500 ${
+          phase5Progress > 0.1 
+            ? 'bg-transparent border-transparent' 
+            : 'border-gray-200/50 bg-white/30 backdrop-blur-md'
+        }`}
+      >
         <div className="flex flex-col">
           <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
           <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Intelligence</span>
@@ -267,10 +282,10 @@ export default function LandingPage() {
         </div>
 
       {/* Spacer to create scroll space. 
-          Total Height = 100vh (view) + Phase 1-4 Scrolls
+          Total Height = 100vh (view) + Phase 1-5 Scrolls
           Each phase is 0.8vh -> Total spacer needs to cover this.
       */}
-        <div className="h-[480vh] pointer-events-none" />
+        <div className="h-[580vh] pointer-events-none" />
       </section>
 
       {/* White content panel 1 - Right half - Slides up (P1), Flies out Up (P2) */}
@@ -421,13 +436,17 @@ export default function LandingPage() {
         </section>
       </div>
 
-      {/* Fourth White Panel - Left half - Slides in from Left during Phase 4 */}
+      {/* Fourth White Panel - Left half - Slides in from Left during Phase 4, Flies out Left (P5) */}
       <div
         className="fixed left-0 z-20 w-1/2 h-screen bg-white/90 backdrop-blur-md overflow-hidden transition-transform duration-100 ease-out flex flex-col justify-center"
         style={{
           top: 0,
           // Phase 4: Slide in from left ( -100% -> 0% )
-          transform: `translateX(${-100 + (phase4Progress * 100)}%)`
+          // Phase 5: Fly out left ( 0% -> -150% )
+          transform: phase5Progress > 0
+            ? `translateX(${0 - phase5Progress * 150}%)`
+            : `translateX(${-100 + (phase4Progress * 100)}%)`,
+          opacity: phase5Progress > 0 ? Math.max(0, 1 - phase5Progress * 5) : 1
         }}
       >
         <section className="px-12 py-32 max-w-7xl mx-auto text-left">
@@ -459,6 +478,57 @@ export default function LandingPage() {
               </LiquidButton>
             </div>
           </div>
+        </section>
+      </div>
+
+      {/* Fifth White Panel - Centered Modal Style - Slides down from Top during Phase 5 */}
+      <div
+        className="fixed z-30 bg-white/30 backdrop-blur-md overflow-hidden transition-transform duration-100 ease-out flex flex-col items-center justify-center text-center"
+        style={{
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          // Phase 5: Slide down ( -100% -> 0% )
+          transform: `translateY(${-100 + (phase5Progress * 100)}%)`,
+          // T-shape: Full width for top 100px, then 250px margins on sides
+          clipPath: `polygon(
+            0% 0%, 
+            100% 0%, 
+            100% 100px, 
+            calc(100% - 250px) 100px, 
+            calc(100% - 250px) 100%, 
+            250px 100%, 
+            250px 100px, 
+            0% 100px
+          )`
+        }}
+      >
+        <section className="w-full px-12 py-16 max-w-6xl mx-auto flex flex-col items-center mt-[100px]">
+           <div className="space-y-10 w-full flex flex-col items-center">
+            <div className="rounded-2xl overflow-hidden border border-gray-200/50 shadow-2xl bg-black/5" style={{ width: '850px', height: '650px' }}>
+              <video 
+                src="https://nlobsjnpcjxfabhnbvza.supabase.co/storage/v1/object/public/interview-videos/interviews/ProductDemo.mp4"
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <div className="pt-8">
+               <LiquidButton
+                onClick={() => navigate('/onboarding')}
+                variant="secondary"
+                size="xl"
+                icon={<ArrowRight size={24} />}
+                iconPosition="right"
+              >
+                Enter the Platform
+              </LiquidButton>
+            </div>
+           </div>
         </section>
       </div>
     </div>
