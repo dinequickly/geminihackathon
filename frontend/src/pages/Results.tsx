@@ -316,36 +316,79 @@ export default function Results() {
           )}
         </div>
 
-        {/* Video & Transcript */}
-        <div className="grid lg:grid-cols-2 gap-8">
-           {conversationId && conversation?.video_url && (
-            <div className="rounded-3xl overflow-hidden shadow-2xl border border-gray-200">
-              <VideoEmotionPlayer
-                ref={videoPlayerRef}
-                conversationId={conversationId}
-                videoUrl={conversation.video_url}
-                audioUrl={conversation.audio_url}
-                humeJobId={analysis?.url}
-                onTimeUpdate={setCurrentVideoTimeMs}
-                onReviewTranscript={scrollToTranscript}
-              />
+        {/* Video & Transcript - Unified Player */}
+        <div className="space-y-4">
+          {/* Mode Toggle Header */}
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif text-2xl text-black">Playback & Review</h2>
+            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-2xl">
+              <button
+                onClick={() => setDisplayMode('review')}
+                className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                  displayMode === 'review'
+                    ? 'bg-white text-primary-600 shadow-soft'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Review mode: transcript primary"
+              >
+                <Rows size={16} />
+                Review
+              </button>
+              <button
+                onClick={() => setDisplayMode('watch')}
+                className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                  displayMode === 'watch'
+                    ? 'bg-white text-primary-600 shadow-soft'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Watch mode: video primary"
+              >
+                <Columns size={16} />
+                Watch
+              </button>
             </div>
-           )}
+          </div>
 
-           {conversationId && (
-            <div ref={transcriptRef} className="h-[500px] rounded-3xl overflow-hidden shadow-soft border border-gray-100 bg-white">
-              <TranscriptViewer
-                conversationId={conversationId}
-                currentTimeMs={currentVideoTimeMs}
-                humeJobId={analysis?.url}
-                onSegmentClick={(startTime) => {
-                  setCurrentVideoTimeMs(startTime * 1000);
-                  videoPlayerRef.current?.seekTo(startTime);
-                  videoPlayerRef.current?.pause();
-                }}
-              />
-            </div>
-           )}
+          {/* Video & Transcript Container */}
+          <div className={`rounded-3xl overflow-hidden shadow-soft border border-gray-100 bg-white flex flex-col ${
+            displayMode === 'review' ? 'h-[800px]' : 'h-[600px]'
+          }`}>
+            {/* Video Player */}
+            {conversationId && conversation?.video_url && (
+              <div className={`flex-shrink-0 overflow-hidden ${
+                displayMode === 'review' ? 'h-[35%]' : 'h-[65%]'
+              }`}>
+                <VideoEmotionPlayer
+                  ref={videoPlayerRef}
+                  conversationId={conversationId}
+                  videoUrl={conversation.video_url}
+                  audioUrl={conversation.audio_url}
+                  humeJobId={analysis?.url}
+                  onTimeUpdate={setCurrentVideoTimeMs}
+                  onReviewTranscript={scrollToTranscript}
+                />
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200" />
+
+            {/* Transcript */}
+            {conversationId && (
+              <div ref={transcriptRef} className={`flex-1 overflow-hidden`}>
+                <TranscriptViewer
+                  conversationId={conversationId}
+                  currentTimeMs={currentVideoTimeMs}
+                  humeJobId={analysis?.url}
+                  onSegmentClick={(startTime) => {
+                    setCurrentVideoTimeMs(startTime * 1000);
+                    videoPlayerRef.current?.seekTo(startTime);
+                    videoPlayerRef.current?.pause();
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer Actions */}

@@ -411,9 +411,9 @@ export default function TranscriptViewer({
             className={`transition-all duration-200 ${isActive ? 'scale-[1.01]' : ''}`}
           >
             <div
-              className={`rounded-3xl border-2 transition-all duration-300 shadow-soft ${
+              className={`rounded-3xl border-2 transition-all duration-300 shadow-soft group relative ${
                 highlightColors
-                  ? `${highlightColors.border} ${highlightColors.light}`
+                  ? `${highlightColors.border} ${highlightColors.light} border-l-4 cursor-pointer hover:shadow-soft-lg`
                   : isActive
                   ? 'border-primary-400 bg-primary-50/50 shadow-soft-lg'
                   : isUser
@@ -422,6 +422,12 @@ export default function TranscriptViewer({
               }`}
               onClick={() => highlight && openActionModal(highlight)}
             >
+              {highlight && (
+                <>
+                  <div className={`absolute -left-1 top-0 bottom-0 w-1 rounded-l-2xl ${highlightColors?.bg}`} />
+                  <HighlightTooltip highlight={highlight} colors={highlightColors} />
+                </>
+              )}
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-3 border-b-2 border-gray-100 bg-cream-50/50">
                 <div className="flex items-center gap-3">
@@ -549,63 +555,16 @@ export default function TranscriptViewer({
     </div>
   );
 
-  // Highlights panel
-  const renderHighlightsPanel = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-gray-900 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-sunshine-100 flex items-center justify-center">
-            <Highlighter className="w-4 h-4 text-sunshine-600" />
-          </div>
-          Highlights
-        </h3>
-        <Badge variant="sunshine">{highlights.length}</Badge>
-      </div>
-
-      {highlights.length === 0 ? (
-        <div className="text-center py-12 animate-fade-in">
-          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <Highlighter className="w-8 h-8 text-gray-300" />
-          </div>
-          <p className="text-sm font-semibold text-gray-600">No highlights yet</p>
-          <p className="text-xs text-gray-500 mt-1">Highlights appear after review</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {highlights.map((highlight) => {
-            const colors = HIGHLIGHT_COLORS[highlight.color];
-            const isActive = activeHighlightId === highlight.id;
-
-            return (
-              <div
-                key={highlight.id}
-                className={`rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300 shadow-soft hover:shadow-soft-lg hover:scale-105 ${
-                  isActive
-                    ? `${colors.border} ${colors.bg}`
-                    : `border-gray-100 ${colors.light} hover:${colors.border}`
-                }`}
-                onClick={() => openActionModal(highlight)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className={`text-sm ${colors.text} font-semibold line-clamp-2 leading-relaxed`}>
-                    "{highlight.highlighted_sentence}"
-                  </p>
-                </div>
-                {highlight.comment && (
-                  <p className="text-xs text-gray-700 mt-3 bg-white/70 rounded-xl p-2 border border-gray-100">
-                    {highlight.comment}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-3">
-                  <div className={`w-3 h-3 rounded-full ${colors.bg} border-2 ${colors.border} shadow-sm`} />
-                  <span className="text-xs text-gray-500 font-medium">
-                    {new Date(highlight.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+  // Highlight tooltip component
+  const HighlightTooltip = ({ highlight, colors }: { highlight: TranscriptHighlight; colors: any }) => (
+    <div className={`absolute bottom-full left-0 mb-2 p-3 rounded-xl bg-white border-2 ${colors.border} shadow-soft-lg z-10 whitespace-normal w-max max-w-xs opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-300`}>
+      {highlight.comment && (
+        <p className={`text-xs ${colors.text} font-semibold leading-relaxed`}>
+          {highlight.comment}
+        </p>
+      )}
+      {!highlight.comment && (
+        <p className="text-xs text-gray-600 font-medium">Highlighted</p>
       )}
     </div>
   );
@@ -647,13 +606,19 @@ export default function TranscriptViewer({
       {isExpanded && (
         <div className="border-t-2 border-gray-100 flex-1 min-h-0 flex flex-col">
           {/* Controls */}
-          <div className="px-5 py-3 bg-cream-50/50 border-b-2 border-gray-100 flex items-center justify-between">
+          <div className="px-5 py-3 bg-cream-50/50 border-b-2 border-gray-100 flex items-center justify-between flex-wrap gap-4">
             <div className="text-sm text-gray-700 font-medium">
               <span className="text-primary-600 font-bold">{transcriptJson.length}</span> messages
               {emotionData.face.length > 0 && (
                 <>
                   {' • '}
                   <span className="text-sky-600 font-bold">{emotionData.face.length}</span> emotion readings
+                </>
+              )}
+              {highlights.length > 0 && (
+                <>
+                  {' • '}
+                  <span className="text-sunshine-600 font-bold">{highlights.length}</span> highlights
                 </>
               )}
             </div>
@@ -668,30 +633,22 @@ export default function TranscriptViewer({
             </label>
           </div>
 
-          {/* Two-column layout: Transcript + Highlights */}
-          <div className="flex flex-1 min-h-0">
-            {/* Transcript - Left side */}
-            <div
-              ref={containerRef}
-              className="flex-1 min-h-0 overflow-y-auto p-4 border-r border-gray-100"
-            >
-              {transcriptJson.length > 0 ? (
-                renderTranscriptWithEmotions()
-              ) : rawTranscript ? (
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 whitespace-pre-wrap">{rawTranscript}</p>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No transcript available
-                </div>
-              )}
-            </div>
-
-            {/* Highlights Panel - Right side */}
-            <div className="w-80 min-h-0 overflow-y-auto p-5 bg-sunshine-50/30">
-              {renderHighlightsPanel()}
-            </div>
+          {/* Single-column Transcript with Inline Highlights */}
+          <div
+            ref={containerRef}
+            className="flex-1 min-h-0 overflow-y-auto p-4"
+          >
+            {transcriptJson.length > 0 ? (
+              renderTranscriptWithEmotions()
+            ) : rawTranscript ? (
+              <div className="prose prose-sm max-w-none">
+                <p className="text-gray-700 whitespace-pre-wrap">{rawTranscript}</p>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No transcript available
+              </div>
+            )}
           </div>
         </div>
       )}
