@@ -74,7 +74,7 @@ export default function PromoPopup({ onOpenShop }: PromoPopupProps) {
             <Crown className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-serif text-lg font-bold text-black mb-1 flex items-center gap-2">
+            <h3 className="font-sans font-bold text-lg text-black mb-1 flex items-center gap-2">
               Upgrade to Premium
               <Sparkles className="w-4 h-4 text-purple-500" />
             </h3>

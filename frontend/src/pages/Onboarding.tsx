@@ -110,7 +110,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {/* Header */}
           <div className="text-center mb-12">
             <div className="flex flex-col items-center justify-center">
-              <span className="font-serif text-2xl font-bold tracking-tight text-black mb-2">TAVUS</span>
+              <span className="font-sans font-bold text-2xl tracking-tight text-black mb-2">TAVUS</span>
               <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Onboarding</span>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {step === 0 && (
             <div className="space-y-8">
               <div>
-                <h2 className="font-serif text-3xl text-black mb-2">Welcome</h2>
+                <h2 className="font-sans font-semibold text-3xl tracking-tight text-black mb-2">Welcome</h2>
                 <p className="text-gray-600 font-light">Enter your email to get started or sign in.</p>
               </div>
 
@@ -176,7 +176,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {step === 1 && (
             <div className="space-y-8">
               <div>
-                <h2 className="font-serif text-3xl text-black mb-2">Create your profile</h2>
+                <h2 className="font-sans font-semibold text-3xl tracking-tight text-black mb-2">Create your profile</h2>
               </div>
 
               <div>
@@ -238,7 +238,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {step === 2 && (
             <div className="space-y-8">
               <div>
-                <h2 className="font-serif text-3xl text-black mb-2">Target Job Details</h2>
+                <h2 className="font-sans font-semibold text-3xl tracking-tight text-black mb-2">Target Job Details</h2>
               </div>
 
               <div>

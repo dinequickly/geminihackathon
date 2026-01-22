@@ -68,7 +68,7 @@ const PersonalityEditor = ({
               <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
                 Persona
               </div>
-              <h3 className="font-serif text-lg text-gray-900">Edit tone</h3>
+              <h3 className="font-sans font-semibold text-lg tracking-tight text-gray-900">Edit tone</h3>
             </div>
           </div>
           <div className="flex gap-2">
@@ -130,7 +130,7 @@ const PersonalityEditor = ({
   return (
     <div className="group relative rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200">
       <div className="flex items-start justify-between mb-3">
-        <h3 className="font-serif text-lg text-gray-900">Interviewer Persona</h3>
+        <h3 className="font-sans font-semibold text-lg tracking-tight text-gray-900">Interviewer Persona</h3>
         <button
           onClick={() => { setIsEditing(true); setTempText(personality); }}
           className="p-2 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all"
@@ -250,7 +250,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
           Step 1
         </div>
-        <h2 className="font-serif text-3xl text-gray-900 mt-3">
+        <h2 className="font-sans font-semibold text-3xl tracking-tight text-gray-900 mt-3">
           Describe the interview you want to practice
         </h2>
         <p className="text-gray-600 mt-2 max-w-2xl">
@@ -326,7 +326,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
           <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
             Step 2
           </div>
-          <h2 className="font-serif text-3xl text-gray-900 mt-3">
+          <h2 className="font-sans font-semibold text-3xl tracking-tight text-gray-900 mt-3">
             Shape the session flow
           </h2>
           <p className="text-gray-600 mt-2 max-w-2xl">
@@ -342,7 +342,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
                   <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
                     Duration
                   </div>
-                  <h3 className="font-serif text-xl text-gray-900 mt-2">
+                  <h3 className="font-sans font-semibold text-xl tracking-tight text-gray-900 mt-2">
                     Interview length
                   </h3>
                   <p className="text-sm text-gray-600 mt-2">
@@ -397,7 +397,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
               <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
                 Session snapshot
               </div>
-              <h3 className="font-serif text-xl text-gray-900 mt-2">
+              <h3 className="font-sans font-semibold text-xl tracking-tight text-gray-900 mt-2">
                 Ready when you are
               </h3>
               <div className="mt-4 space-y-3 text-sm text-gray-600 mb-6">
@@ -421,7 +421,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
               <button
                 onClick={handleStartInterview}
                 disabled={loading || dynamicTree.length === 0}
-                className={`w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-serif text-lg transition-all duration-300 ${
+                className={`w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-sans font-semibold text-lg transition-all duration-300 ${
                   loading || dynamicTree.length === 0
                     ? 'text-gray-400 cursor-not-allowed border border-gray-200'
                     : 'text-black hover:bg-black hover:text-white border border-black'
@@ -450,7 +450,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
             <div className="text-[11px] uppercase tracking-[0.3em] text-amber-700 font-mono">
               InterviewPro
             </div>
-            <h1 className="font-serif text-3xl text-gray-900 mt-2">
+            <h1 className="font-sans font-semibold text-3xl tracking-tight text-gray-900 mt-2">
               Interview setup
             </h1>
           </div>

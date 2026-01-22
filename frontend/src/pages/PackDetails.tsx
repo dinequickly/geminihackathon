@@ -78,7 +78,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
       <div className="min-h-screen flex items-center justify-center p-4 bg-white relative">
         <LightLeakBackground />
         <LiquidGlass className="max-w-md text-center p-8">
-          <h2 className="font-serif text-3xl font-bold text-black mb-4">Unavailable</h2>
+          <h2 className="font-sans font-bold text-3xl tracking-tight text-black mb-4">Unavailable</h2>
           <p className="text-gray-600 mb-8 font-light">{error || 'Pack not found'}</p>
           <LiquidButton onClick={() => navigate('/dashboard')} icon={<ArrowLeft size={16} />} variant="black">
             Back to Dashboard
@@ -106,7 +106,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
         <div className="flex flex-col">
-          <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+          <span className="font-sans font-bold text-xl tracking-tight text-black">TAVUS</span>
           <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Pack Details</span>
         </div>
         <LiquidButton
@@ -139,7 +139,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
             )}
           </div>
 
-          <h1 className="font-serif text-6xl text-black mb-6">{pack.name}</h1>
+          <h1 className="font-sans font-bold text-6xl tracking-tight text-black mb-6">{pack.name}</h1>
           
           <p className="text-xl text-gray-600 font-light max-w-3xl leading-relaxed mb-8">
             {pack.description || 'Practice interview questions with this pack.'}
@@ -170,7 +170,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
                   <ChevronRight className="w-6 h-6 text-gray-300 group-hover:text-black transition-colors" />
                 </div>
 
-                <h3 className="font-serif text-3xl text-black mb-2">
+                <h3 className="font-sans font-semibold text-3xl tracking-tight text-black mb-2">
                   Flashcards
                 </h3>
                 <p className="text-gray-600 font-light text-sm">
@@ -201,7 +201,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
                 </span>
               </div>
 
-              <h3 className="font-serif text-3xl text-gray-400 mb-2">
+              <h3 className="font-sans font-semibold text-3xl tracking-tight text-gray-400 mb-2">
                 Audio Mode
               </h3>
               <p className="text-gray-500 font-light text-sm">
@@ -219,7 +219,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
         {/* Questions List */}
         <div className="mb-8">
           <div className="flex items-end justify-between mb-8 border-b border-gray-200/50 pb-4">
-            <h2 className="font-serif text-3xl text-black">Questions</h2>
+            <h2 className="font-sans font-semibold text-3xl tracking-tight text-black">Questions</h2>
             <div className="flex gap-2">
               {Object.entries(difficultyCount).map(([difficulty, count]) => (
                 <span key={difficulty} className="font-mono text-[10px] text-gray-500 uppercase tracking-widest border border-gray-200 px-2 py-0.5 rounded">

@@ -107,7 +107,7 @@ export default function Results() {
           <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 border border-red-100">
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
-          <h2 className="font-serif text-2xl text-black mb-2">Analysis Failed</h2>
+          <h2 className="font-sans font-semibold text-2xl tracking-tight text-black mb-2">Analysis Failed</h2>
           <p className="text-gray-600 mb-8 font-light">{error}</p>
           <LiquidButton
             onClick={() => navigate('/dashboard')}
@@ -129,7 +129,7 @@ export default function Results() {
           <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-6 border border-gray-100">
             <RefreshCw className="w-10 h-10 text-gray-900 animate-spin" />
           </div>
-          <h2 className="font-serif text-3xl text-black mb-4">Processing Signal</h2>
+          <h2 className="font-sans font-semibold text-3xl tracking-tight text-black mb-4">Processing Signal</h2>
           <p className="text-gray-600 mb-8 font-light">
             Our AI is analyzing your performance metrics. This typically takes 1-2 minutes.
           </p>
@@ -164,7 +164,7 @@ export default function Results() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
         <div className="flex flex-col">
-          <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+          <span className="font-sans font-bold text-xl tracking-tight text-black">TAVUS</span>
           <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Analysis Report</span>
         </div>
         <LiquidButton
@@ -183,13 +183,13 @@ export default function Results() {
         <LiquidGlass className="p-10">
           <div className="flex items-start justify-between mb-8">
             <div>
-              <h2 className="font-serif text-4xl text-black mb-2">Performance Summary</h2>
+              <h2 className="font-sans font-semibold text-4xl tracking-tight text-black mb-2">Performance Summary</h2>
               <span className={`inline-block px-3 py-1 rounded border text-xs font-mono uppercase tracking-widest ${getScoreBg(analysis.overall_score).replace('bg-', 'border-').replace('text-', 'text-')}`}>
                 {getLevelLabel(analysis.overall_level)}
               </span>
             </div>
             <div className="text-right">
-              <div className={`font-serif text-7xl ${getScoreColor(analysis.overall_score)}`}>
+              <div className={`font-mono text-7xl ${getScoreColor(analysis.overall_score)}`}>
                 {analysis.overall_score}
               </div>
               <p className="font-mono text-xs text-gray-400 uppercase tracking-widest mt-1">Score Index</p>
@@ -210,7 +210,7 @@ export default function Results() {
                   <div className={`w-10 h-10 rounded-full mb-3 flex items-center justify-center border border-gray-100 bg-white`}>
                     <Icon className="w-5 h-5 text-gray-600" />
                   </div>
-                  <span className={`font-serif text-2xl mb-1 ${getScoreColor(score!)}`}>{score}</span>
+                  <span className={`font-mono text-2xl mb-1 ${getScoreColor(score!)}`}>{score}</span>
                   <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">{label}</span>
                 </div>
               ))}
@@ -220,7 +220,7 @@ export default function Results() {
                   <div className="w-10 h-10 rounded-full mb-3 flex items-center justify-center border border-gray-100 bg-white">
                     <span className="text-gray-600 font-bold text-sm">φ</span>
                   </div>
-                  <span className="font-serif text-2xl mb-1 text-black">{analysis.filler_word_count}</span>
+                  <span className="font-mono text-2xl mb-1 text-black">{analysis.filler_word_count}</span>
                   <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Filler Words</span>
                 </div>
               )}
@@ -230,7 +230,7 @@ export default function Results() {
                   <div className="w-10 h-10 rounded-full mb-3 flex items-center justify-center border border-gray-100 bg-white">
                     <span className="text-gray-600 font-bold text-sm">⚡</span>
                   </div>
-                  <span className="font-serif text-2xl mb-1 text-black">{analysis.speaking_pace_wpm}</span>
+                  <span className="font-mono text-2xl mb-1 text-black">{analysis.speaking_pace_wpm}</span>
                   <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Words / Min</span>
                 </div>
               )}
@@ -241,7 +241,7 @@ export default function Results() {
         {/* Key Improvements */}
         {analysis.top_improvements && analysis.top_improvements.length > 0 && (
           <LiquidGlass className="p-10">
-            <h2 className="font-serif text-4xl text-black mb-8">Key Improvements</h2>
+            <h2 className="font-sans font-semibold text-4xl tracking-tight text-black mb-8">Key Improvements</h2>
             <div className="space-y-4">
               {analysis.top_improvements.map((imp: any, i: number) => (
                 <div key={i} className="rounded-2xl bg-gradient-to-br from-orange-50/80 to-amber-50/60 p-6 border border-orange-100/50">
@@ -264,11 +264,11 @@ export default function Results() {
         <div className="space-y-4">
           {/* Mode Toggle Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-serif text-3xl text-black">Playback & Review</h2>
+            <h2 className="font-sans font-semibold text-3xl tracking-tight text-black">Playback & Review</h2>
             <div className="flex items-center gap-8">
               <button
                 onClick={() => setDisplayMode('review')}
-                className={`font-serif text-lg transition-all ${
+                className={`font-sans font-medium text-lg transition-all ${
                   displayMode === 'review'
                     ? 'text-black'
                     : 'text-gray-400 hover:text-gray-600'
@@ -279,7 +279,7 @@ export default function Results() {
               </button>
               <button
                 onClick={() => setDisplayMode('watch')}
-                className={`font-serif text-lg transition-all ${
+                className={`font-sans font-medium text-lg transition-all ${
                   displayMode === 'watch'
                     ? 'text-black'
                     : 'text-gray-400 hover:text-gray-600'

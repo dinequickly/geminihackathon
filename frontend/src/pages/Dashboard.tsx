@@ -79,7 +79,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         {/* Header */}
         <div className="flex justify-between items-start mb-12">
           <div className="flex flex-col">
-            <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+            <span className="font-sans font-bold text-xl tracking-tight text-black">TAVUS</span>
             <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Dashboard</span>
           </div>
           <div className="flex gap-3">
@@ -103,24 +103,21 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <LiquidGlass className="p-6 flex items-center gap-4">
-            <div className="text-3xl">📹</div>
             <div>
               <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">Total Sessions</div>
-              <div className="font-serif text-3xl text-black">{conversations.length}</div>
+              <div className="font-mono text-3xl text-black">{conversations.length}</div>
             </div>
           </LiquidGlass>
           <LiquidGlass className="p-6 flex items-center gap-4">
-            <div className="text-3xl">📈</div>
             <div>
               <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">Average Score</div>
-              <div className="font-serif text-3xl text-black">{avgScore}</div>
+              <div className="font-mono text-3xl text-black">{avgScore}</div>
             </div>
           </LiquidGlass>
           <LiquidGlass className="p-6 flex items-center gap-4">
-            <div className="text-3xl">🏆</div>
             <div>
               <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">Best Score</div>
-              <div className="font-serif text-3xl text-black">{bestScore}</div>
+              <div className="font-mono text-3xl text-black">{bestScore}</div>
             </div>
           </LiquidGlass>
         </div>
@@ -132,8 +129,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
             onClick={() => navigate('/interview/setup')}
             className="p-8 group cursor-pointer hover:!border-gray-400 transition-all"
           >
-            <div className="text-4xl mb-4">▶</div>
-            <h3 className="font-serif text-2xl text-black mb-2">Start New Interview</h3>
+            <h3 className="font-sans font-semibold text-2xl text-black mb-2">Start New Interview</h3>
             <p className="text-gray-600 font-light mb-6">Practice with AI interviewer</p>
             <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
               EXPLORE
@@ -146,8 +142,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
             onClick={() => setShowPackModal(true)}
             className="p-8 group cursor-pointer hover:!border-gray-400 transition-all"
           >
-            <div className="text-4xl mb-4">📦</div>
-            <h3 className="font-serif text-2xl text-black mb-2">Practice with Packs</h3>
+            <h3 className="font-sans font-semibold text-2xl text-black mb-2">Practice with Packs</h3>
             <p className="text-gray-600 font-light mb-6">Use curated question sets</p>
             <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
               EXPLORE
@@ -160,11 +155,10 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
             onClick={() => navigate('/interview/setup?type=tavus')}
             className="p-8 group cursor-pointer hover:!border-gray-400 transition-all relative"
           >
-            <div className="absolute top-4 right-4 bg-black/50 rounded-lg px-2.5 py-1 text-[10px] font-mono text-white uppercase tracking-widest">
+            <div className="absolute bottom-4 right-4 bg-black text-white rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-widest shadow-md">
               Premium
             </div>
-            <div className="text-4xl mb-4">🎥</div>
-            <h3 className="font-serif text-2xl text-black mb-2">Tavus Video Interview</h3>
+            <h3 className="font-sans font-semibold text-2xl text-black mb-2">Tavus Video Interview</h3>
             <p className="text-gray-600 font-light mb-6">AI video interviewer</p>
             <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
               EXPLORE
@@ -175,7 +169,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
         {/* Previous Sessions */}
         <div>
-          <h2 className="font-serif text-3xl text-black mb-8">Previous Sessions</h2>
+          <h2 className="font-sans font-semibold text-3xl text-black mb-8">Previous Sessions</h2>
           <div className="flex flex-col gap-4">
             {conversations.length === 0 ? (
               <LiquidGlass className="p-12 text-center">
@@ -240,13 +234,12 @@ const SessionRow = ({ date, status, score, onClick }: { date: string; status: st
       onClick={isClickable ? onClick : undefined}
       className={`p-6 flex items-center gap-4 ${isClickable ? 'cursor-pointer hover:!border-gray-400' : 'opacity-70'}`}
     >
-      <div className="text-2xl">🎥</div>
       <div className="flex-1">
-        <div className="font-serif text-lg text-black">Interview Session</div>
-        <div className="text-xs text-gray-500 font-mono uppercase tracking-widest mt-1">⏱ {date}</div>
+        <div className="font-sans font-semibold text-lg text-black">Interview Session</div>
+        <div className="text-xs text-gray-500 font-mono uppercase tracking-widest mt-1">{date}</div>
       </div>
       {score !== undefined && (
-        <div className="font-serif text-2xl text-black mr-4">{score}</div>
+        <div className="font-mono text-2xl text-black mr-4">{score}</div>
       )}
       <div className="px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-widest bg-black/20 text-black">
         {getStatusLabel(status)}

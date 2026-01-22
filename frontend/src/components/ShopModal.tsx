@@ -81,7 +81,7 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
               <ShoppingBag className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="font-serif text-2xl text-black">Marketplace</h2>
+              <h2 className="font-sans font-bold text-2xl tracking-tight text-black">Marketplace</h2>
               <p className="text-sm text-gray-500 font-light">Upgrade your professional toolset</p>
             </div>
           </div>
@@ -110,7 +110,7 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
               {/* Active Subscriptions Section */}
               {subscriptions.length > 0 && (
                 <div>
-                  <h3 className="font-serif text-lg text-black mb-4">Active Plan</h3>
+                  <h3 className="font-sans font-semibold text-lg tracking-tight text-black mb-4">Active Plan</h3>
                   <div className="space-y-3">
                     {subscriptions.map((sub) => (
                       <div
@@ -118,7 +118,7 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                         className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex items-center justify-between"
                       >
                         <div>
-                          <p className="font-serif text-xl text-black">{sub.plan_name}</p>
+                          <p className="font-sans font-semibold text-xl tracking-tight text-black">{sub.plan_name}</p>
                           <div className="flex items-center gap-4 mt-2 text-xs font-mono uppercase tracking-widest text-gray-500">
                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> {sub.status}</span>
                              <span>Renews: {new Date(sub.current_period_end).toLocaleDateString()}</span>
@@ -135,7 +135,7 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
 
               {/* Available Plans Section */}
               <div>
-                <h3 className="font-serif text-lg text-black mb-6">Available Upgrades</h3>
+                <h3 className="font-sans font-semibold text-lg tracking-tight text-black mb-6">Available Upgrades</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {products.map((product) => {
                     const productAny = product as any;
@@ -168,7 +168,7 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                       >
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-4">
-                            <h4 className="font-serif text-2xl text-black">{product.name}</h4>
+                            <h4 className="font-sans font-semibold text-2xl tracking-tight text-black">{product.name}</h4>
                             {product.metadata.tier && (
                               <span className="font-mono text-[10px] uppercase tracking-widest border border-gray-200 px-2 py-1 rounded text-gray-500">
                                 {product.metadata.tier}
@@ -181,7 +181,7 @@ export default function ShopModal({ isOpen, onClose, userId }: ShopModalProps) {
                           )}
 
                           <div className="flex items-baseline gap-1 mb-8">
-                            <span className="font-serif text-4xl text-black">
+                            <span className="font-mono text-4xl text-black">
                               {formatPrice(price.unit_amount, price.currency)}
                             </span>
                             {price.recurring && (
