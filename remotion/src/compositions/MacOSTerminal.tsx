@@ -41,25 +41,25 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
   const userTypingEndFrame = typeStartFrame + typedText.length * framesPerChar;
 
   // Claude response 1: "bro is cooked"
-  const response2StartFrame = userTypingEndFrame + 30;
+  const response2StartFrame = userTypingEndFrame + 15;
   const response2Text = "bro is cooked";
   const response2Progress = Math.max(0, frame - response2StartFrame);
   const response2CharsToShow = Math.min(
-    Math.floor(response2Progress / 4), // Slower typing for emphasis
+    Math.floor(response2Progress / 1), // Quick typing
     response2Text.length
   );
   const displayedResponse2 = response2Text.slice(0, response2CharsToShow);
   const showResponse2 = frame >= response2StartFrame;
 
-  // Claude response 3: "wait just use InterviewPro" - appears 40 frames after response 2 finishes
-  const response2EndFrame = response2StartFrame + response2Text.length * 4;
-  const response3StartFrame = response2EndFrame + 40;
+  // Claude response 3: "wait just use InterviewPro" - appears 20 frames after response 2 finishes
+  const response2EndFrame = response2StartFrame + response2Text.length * 1;
+  const response3StartFrame = response2EndFrame + 20;
   const response3Prefix = "oh just use\u00A0";
   const response3Link = "InterviewPro";
   const response3Full = response3Prefix + response3Link;
   const response3Progress = Math.max(0, frame - response3StartFrame);
   const response3CharsToShow = Math.min(
-    Math.floor(response3Progress / 2), // Faster typing
+    Math.floor(response3Progress / 1), // Quick typing
     response3Full.length
   );
   const displayedResponse3 = response3Full.slice(0, response3CharsToShow);
@@ -281,9 +281,9 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
               {displayedLink && (
                 <span
                   style={{
-                    color: isLinkHovered ? "#2563eb" : "#1a1a1a",
-                    textDecoration: isLinkHovered ? "underline" : "none",
-                    fontWeight: isLinkHovered ? 600 : 400,
+                    color: isLinkClicked ? "#9333ea" : (isLinkHovered ? "#2563eb" : "#1a1a1a"),
+                    textDecoration: (isLinkHovered || isLinkClicked) ? "underline" : "none",
+                    fontWeight: (isLinkHovered || isLinkClicked) ? 600 : 400,
                     transition: "all 0.15s ease",
                     cursor: isLinkHovered ? "pointer" : "default",
                   }}

@@ -11,25 +11,51 @@ export default function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
+  // Scroll progress caps when white panel reaches top (panel at 0% translateY)
+  // translateY = 100 - scrollProgress * 100, so scrollProgress = 1 means panel at top
+  const maxScrollProgress = 1;
+
   useEffect(() => {
+    const windowHeight = window.innerHeight;
+    const scrollLength = windowHeight * 0.8; // Scroll distance to complete the animation
+
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const maxScrollForZoom = windowHeight * 0.8;
+      const maxScrollPosition = scrollLength;
+
+      // Cap at max
+      if (scrollPosition >= maxScrollPosition) {
+        window.scrollTo(0, maxScrollPosition);
+        setScrollProgress(maxScrollProgress);
+        return;
+      }
 
       // Calculate progress from 0 to 1
-      const progress = Math.min(scrollPosition / maxScrollForZoom, 1);
+      const progress = Math.min(scrollPosition / scrollLength, maxScrollProgress);
       setScrollProgress(progress);
+    };
 
-      // Prevent fast scrolling past the zoom section
-      if (progress < 1 && scrollPosition > maxScrollForZoom) {
-        window.scrollTo(0, maxScrollForZoom);
+    // Block scroll past max
+    const handleWheel = (e: WheelEvent) => {
+      if (window.scrollY >= scrollLength && e.deltaY > 0) {
+        e.preventDefault();
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleWheel);
+    };
   }, []);
+
+  // Zoom from scale 1 to 1.25 as user scrolls
+  const maxZoom = 1.25;
+  const finalScale = 1 + (scrollProgress * (maxZoom - 1));
+
+  const zoomOrigin = 'calc(56% + 280px) 40%'; // Center on philosophers
 
   const dimensions = [
     {
@@ -90,8 +116,8 @@ export default function LandingPage() {
           <div
             className="absolute inset-0 transition-transform duration-100 ease-out"
             style={{
-              transform: `scale(${1 + scrollProgress * 1.5})`,
-              transformOrigin: 'center 25%',
+              transform: `scale(${finalScale})`,
+              transformOrigin: zoomOrigin,
             }}
           >
             <img
@@ -99,73 +125,6 @@ export default function LandingPage() {
               alt="The School of Athens"
               className="w-full h-full object-cover"
             />
-          </div>
-
-          {/* Thought Bubbles - Appear when zoom is nearly complete */}
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              opacity: Math.max(0, (scrollProgress - 0.6) * 2.5),
-              pointerEvents: 'none',
-            }}
-          >
-            {/* Left philosopher (Plato) - "He's talking way too much" */}
-            <div
-              className="absolute"
-              style={{
-                left: '38%',
-                top: 'calc(38% + 280px)',
-                transform: 'translate(-50%, -100%)',
-              }}
-            >
-              <div className="relative">
-                {/* Bubble */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-3xl px-6 py-4 shadow-2xl border border-gray-200/50 max-w-xs">
-                  <p className="text-gray-800 font-light italic text-sm leading-relaxed">
-                    "He's talking way too much"
-                  </p>
-                </div>
-                {/* Bubble tail - from right side going down and right */}
-                <div className="absolute -bottom-3 right-8">
-                  <div className="w-4 h-4 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
-                </div>
-                <div className="absolute -bottom-8 right-4">
-                  <div className="w-3 h-3 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
-                </div>
-                <div className="absolute -bottom-12 right-0">
-                  <div className="w-2 h-2 bg-white/95 backdrop-blur-sm rounded-full shadow-md" />
-                </div>
-              </div>
-            </div>
-
-            {/* Right philosopher (Aristotle) - "Does he get the point I'm trying to make?" */}
-            <div
-              className="absolute"
-              style={{
-                left: 'calc(66% + 100px)',
-                top: 'calc(38% + 285px)',
-                transform: 'translate(-50%, -100%)',
-              }}
-            >
-              <div className="relative">
-                {/* Bubble */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-3xl px-6 py-4 shadow-2xl border border-gray-200/50 max-w-xs">
-                  <p className="text-gray-800 font-light italic text-sm leading-relaxed">
-                    "Does he get the point I'm trying to make?"
-                  </p>
-                </div>
-                {/* Bubble tail - from left side going down and left */}
-                <div className="absolute -bottom-3 left-8">
-                  <div className="w-4 h-4 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
-                </div>
-                <div className="absolute -bottom-8 left-4">
-                  <div className="w-3 h-3 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
-                </div>
-                <div className="absolute -bottom-12 left-0">
-                  <div className="w-2 h-2 bg-white/95 backdrop-blur-sm rounded-full shadow-md" />
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Overlay text that fades out as you scroll */}
@@ -185,12 +144,18 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Spacer to create scroll space for the zoom effect */}
-        <div className="h-[200vh] pointer-events-none" />
+      {/* Spacer to create scroll space */}
+        <div className="h-[180vh] pointer-events-none" />
       </section>
 
-      {/* White Column Container */}
-      <div className="relative z-10 w-[1200px] mx-auto bg-white">
+      {/* White content panel - Right half - Slides up from bottom, then exits */}
+      <div
+        className="fixed right-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out"
+        style={{
+          top: '95px',
+          transform: `translateY(${100 - scrollProgress * 100}%)`,
+        }}
+      >
         {/* Hero Section - Only appears after zoom complete */}
         <section ref={heroRef} className="px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
         <div className="space-y-8">

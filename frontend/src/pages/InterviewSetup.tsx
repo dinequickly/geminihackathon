@@ -400,7 +400,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
               <h3 className="font-serif text-xl text-gray-900 mt-2">
                 Ready when you are
               </h3>
-              <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <div className="mt-4 space-y-3 text-sm text-gray-600 mb-6">
                 <div className="flex items-center justify-between">
                   <span>Length</span>
                   <span className="font-semibold text-gray-900">{duration} min</span>
@@ -416,24 +416,22 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
                   <span className="font-semibold text-gray-900">{interviewLabel}</span>
                 </div>
               </div>
+
+              {/* Start Interview Button */}
+              <button
+                onClick={handleStartInterview}
+                disabled={loading || dynamicTree.length === 0}
+                className={`w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-serif text-lg transition-all duration-300 ${
+                  loading || dynamicTree.length === 0
+                    ? 'text-gray-400 cursor-not-allowed border border-gray-200'
+                    : 'text-black hover:bg-black hover:text-white border border-black'
+                }`}
+              >
+                {!loading && <Video size={20} />}
+                {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Start Interview Button - Left aligned at Bottom */}
-        <div className="flex justify-start mt-12">
-          <button
-            onClick={handleStartInterview}
-            disabled={loading || dynamicTree.length === 0}
-            className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-serif text-lg transition-all duration-300 ${
-              loading || dynamicTree.length === 0
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-black hover:bg-black hover:text-white border border-black'
-            }`}
-          >
-            {!loading && <Video size={20} />}
-            {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
-          </button>
         </div>
       </div>
     );

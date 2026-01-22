@@ -19,35 +19,30 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const NORMAL_SPEED_START = 690; // 23 seconds at 30fps
   const NORMAL_SPEED_END = 840;   // 28 seconds at 30fps
 
-  // Speed up timeline: divide frame times by 2 up to 23s
-  const terminalFrames = 12 * 30;
-  const baseBrowserOpenStart = 168;
-  const terminalOffset = terminalFrames - baseBrowserOpenStart;
-
-  const browserOpenStart = baseBrowserOpenStart + terminalOffset;
-  const dashboardStart = 173 + terminalOffset;
-  const cursorMoveToStartNew = 218 + terminalOffset;
-  const startNewClickFrame = 235 + terminalOffset;
-  const dashboardToConfigTransition = 243 + terminalOffset;
-  const configStart = 253 + terminalOffset;
+  const browserOpenStart = 170; // Start browser transition right after click finishes
+  const dashboardStart = 170; // Dashboard animates immediately when browser opens
+  const cursorMoveToStartNew = 220;
+  const startNewClickFrame = 237;
+  const dashboardToConfigTransition = 245;
+  const configStart = 245;
 
   // Config scrolling timeline (also sped up)
-  const scrollStartFrame = 308 + terminalOffset;
-  const scrollEndFrame = 328 + terminalOffset;
-  const cursorMoveToStartInterview = 333 + terminalOffset;
-  const startInterviewClickFrame = 350 + terminalOffset;
-  const configToLoadingTransition = 358 + terminalOffset;
-  const loadingStart = 360 + terminalOffset;
+  const scrollStartFrame = 280;
+  const scrollEndFrame = 300;
+  const cursorMoveToStartInterview = 305;
+  const startInterviewClickFrame = 322;
+  const configToLoadingTransition = 330;
+  const loadingStart = 332;
 
   // Interview in progress timeline (7 seconds = 210 frames)
-  const loadingToInterviewTransition = 363 + terminalOffset;
-  const interviewStart = 368 + terminalOffset;
-  const interviewToResultsTransition = 578 + terminalOffset;
+  const loadingToInterviewTransition = 335;
+  const interviewStart = 340;
+  const interviewToResultsTransition = 550;
 
   // Results timeline (after interview)
-  const resultsStart = 588 + terminalOffset;
-  const resultsScrollStart = 618 + terminalOffset;
-  const resultsScrollEnd = 618 + terminalOffset;
+  const resultsStart = 560;
+  const resultsScrollStart = 590;
+  const resultsScrollEnd = 590;
 
 
   // Scroll amount for config
@@ -106,7 +101,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   );
 
   // Cards slide off to the left with 0.2 second (6 frame) delays
-  const cardSlideStart = 835; // Start sliding at ~27.8 seconds
+  const cardSlideStart = 805; // Start sliding at ~26.8 seconds
   const cardSlideDuration = 45; // ~1.5 seconds to slide off
   const cardStaggerDelay = 6; // 0.2 seconds between each card
 
@@ -198,11 +193,10 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
               promptPath="/Users/maxwellmoroz"
               typedText="@claude help me get a job"
               typeStartFrame={30}
-              framesPerChar={3}
-              linkHoverFrame={380}
-              linkClickFrame={440}
-              cursorMoveStartFrame={350}
-              cursorClickFrame={440}
+              framesPerChar={1}
+              linkHoverFrame={155}
+              linkClickFrame={160}
+              showCursor={false}
             />
           </div>
         )}
@@ -372,15 +366,15 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
         )}
 
         {/* Cursor for clicking InterviewPro link in terminal */}
-        {frame >= 268 && frame < browserOpenStart + 20 && (
+        {frame >= 118 && frame < browserOpenStart + 20 && (
           <Cursor
             startX={800}
             startY={600}
             endX={340}
-            endY={340}
-            moveStartFrame={268}
-            moveDuration={25}
-            clickFrame={306}
+            endY={310}
+            moveStartFrame={118}
+            moveDuration={40}
+            clickFrame={160}
           />
         )}
 
@@ -402,8 +396,8 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
           <Cursor
             startX={900}
             startY={400}
-            endX={640}
-            endY={760}
+            endX={1050}
+            endY={880}
             moveStartFrame={cursorMoveToStartInterview}
             moveDuration={30}
             clickFrame={startInterviewClickFrame}

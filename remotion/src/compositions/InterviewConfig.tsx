@@ -24,8 +24,8 @@ export const InterviewConfig: React.FC<InterviewConfigProps> = ({
   const responseOpacity = interpolate(f, [65, 80], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
   const styleOpacity = interpolate(f, [75, 90], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
   const buttonOpacity = interpolate(f, [85, 100], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const autoScrollY = interpolate(f, [40, 160], [0, 320], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const pressScale = interpolate(f, [180, 186, 194], [1, 0.96, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const autoScrollY = interpolate(f, [40, 100], [0, 200], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const pressScale = interpolate(f, [115, 121, 129], [1, 0.96, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
 
   // Slider animations
   const lengthSliderValue = interpolate(f, [25, 50], [5, 8], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
