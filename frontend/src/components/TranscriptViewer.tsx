@@ -223,7 +223,6 @@ export default function TranscriptViewer({
   };
 
   const openActionModal = (highlight: TranscriptHighlight) => {
-    setActiveHighlightId(highlight.id);
     setActionHighlight(highlight);
     setActionError(null);
   };
@@ -232,7 +231,6 @@ export default function TranscriptViewer({
     setActionHighlight(null);
     setIsSubmittingAction(false);
     setActionError(null);
-    setActiveHighlightId(null);
   };
 
   const sendReviewPracticeAction = async (actionType: 'practice' | 'analyze') => {
