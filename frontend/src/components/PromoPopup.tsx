@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { X, Sparkles, Crown, Zap } from 'lucide-react';
-import { PlayfulButton } from './PlayfulUI';
 import { LiquidGlass } from './LiquidGlass';
 import { LiquidButton } from './LiquidButton';
 
