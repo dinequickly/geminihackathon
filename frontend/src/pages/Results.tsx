@@ -7,8 +7,6 @@ import {
   Heart,
   Users,
   Sparkles,
-  ChevronDown,
-  ChevronUp,
   RefreshCw,
   Mic,
   AlertCircle
@@ -59,18 +57,6 @@ export default function Results() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(section)) {
-        next.delete(section);
-      } else {
-        next.add(section);
-      }
-      return next;
-    });
   };
 
   const scrollToTranscript = () => {
@@ -252,67 +238,27 @@ export default function Results() {
           )}
         </LiquidGlass>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Top Improvements */}
-          {analysis.top_improvements && analysis.top_improvements.length > 0 && (
-            <LiquidGlass className="p-0 overflow-hidden">
-              <button
-                onClick={() => toggleSection('improvements')}
-                className="w-full p-6 flex items-center justify-between bg-white/40 border-b border-gray-100"
-              >
-                <h2 className="font-serif text-2xl text-black">Key Improvements</h2>
-                {expandedSections.has('improvements') ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
-              </button>
-
-              {expandedSections.has('improvements') && (
-                <div className="p-6 space-y-4">
-                  {analysis.top_improvements.map((imp: any, i: number) => (
-                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-amber-50/50 border border-amber-100/50">
-                      <span className="font-mono text-amber-900/40 font-bold text-xl">0{i + 1}</span>
-                      <div>
-                        <p className="font-medium text-gray-900 mb-1">{imp.area}</p>
-                        <p className="text-sm text-gray-600 font-light leading-relaxed">{imp.suggestion}</p>
-                      </div>
+        {/* Key Improvements */}
+        {analysis.top_improvements && analysis.top_improvements.length > 0 && (
+          <LiquidGlass className="p-10">
+            <h2 className="font-serif text-4xl text-black mb-8">Key Improvements</h2>
+            <div className="space-y-4">
+              {analysis.top_improvements.map((imp: any, i: number) => (
+                <div key={i} className="rounded-2xl bg-gradient-to-br from-orange-50/80 to-amber-50/60 p-6 border border-orange-100/50">
+                  <div className="flex items-start gap-4">
+                    <span className="text-orange-300/60 font-bold text-2xl font-mono flex-shrink-0">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 text-lg mb-2">{imp.area}</h3>
+                      <p className="text-gray-600 leading-relaxed">{imp.suggestion}</p>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </LiquidGlass>
-          )}
-
-          {/* Instant Rewrites */}
-          {analysis.instant_rewrites && analysis.instant_rewrites.length > 0 && (
-            <LiquidGlass className="p-0 overflow-hidden">
-              <button
-                onClick={() => toggleSection('rewrites')}
-                className="w-full p-6 flex items-center justify-between bg-white/40 border-b border-gray-100"
-              >
-                <h2 className="font-serif text-2xl text-black">AI Rewrites</h2>
-                {expandedSections.has('rewrites') ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
-              </button>
-
-              {expandedSections.has('rewrites') && (
-                <div className="p-6 space-y-6">
-                  {analysis.instant_rewrites.map((rewrite: any, i: number) => (
-                    <div key={i} className="rounded-xl overflow-hidden border border-gray-100">
-                      <div className="p-4 bg-red-50/30 border-b border-gray-100">
-                        <p className="font-mono text-[10px] text-red-400 uppercase tracking-widest mb-2">Original</p>
-                        <p className="text-sm text-gray-600 font-light">{rewrite.original}</p>
-                      </div>
-                      <div className="p-4 bg-green-50/30">
-                        <p className="font-mono text-[10px] text-green-600 uppercase tracking-widest mb-2">Optimized</p>
-                        <p className="text-sm text-gray-800">{rewrite.improved}</p>
-                        {rewrite.explanation && (
-                          <p className="text-xs text-gray-400 mt-3 italic pt-3 border-t border-green-100/50">{rewrite.explanation}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </LiquidGlass>
-          )}
-        </div>
+              ))}
+            </div>
+          </LiquidGlass>
+        )}
 
         {/* Video & Transcript - Playback & Review */}
         <div className="space-y-4">

@@ -12,8 +12,8 @@ import {
   Bot
 } from 'lucide-react';
 import { DynamicRenderer, ComponentSchema } from '../components/DynamicRenderer';
-import { InfoCard } from '../components/DynamicComponents';
 import { api } from '../lib/api';
+import { LiquidButton } from '../components/LiquidButton';
 
 interface InterviewSetupProps {
   userId: string;
@@ -129,18 +129,19 @@ const PersonalityEditor = ({
   }
 
   return (
-    <div className="group relative">
-      <InfoCard 
-        title="Interviewer Persona" 
-        message={personality} 
-        variant="tip" 
-      />
-      <button 
-        onClick={() => { setIsEditing(true); setTempText(personality); }}
-        className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-full border border-[#f1e4d6] opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-amber-50 text-amber-700 shadow-sm hover:shadow-md"
-      >
-        <Pencil className="w-4 h-4" />
-      </button>
+    <div className="group relative rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200">
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="font-serif text-lg text-gray-900">Interviewer Persona</h3>
+        <button
+          onClick={() => { setIsEditing(true); setTempText(personality); }}
+          className="p-2 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+      </div>
+      <p className="text-gray-600 leading-relaxed text-sm">
+        {personality}
+      </p>
     </div>
   );
 };
@@ -417,32 +418,20 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
                 </div>
               </div>
             </div>
-
-            <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-5">
-              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
-                Guardrails
-              </div>
-              <p className="text-sm text-gray-700 mt-2 leading-relaxed">
-                The assistant can only use components in your catalog. Every control stays predictable and safe.
-              </p>
-              <div className="mt-3 text-xs text-gray-500">
-                Streaming updates appear as the model responds.
-              </div>
-            </div>
-
-            <button
-              onClick={handleStartInterview}
-              disabled={loading || dynamicTree.length === 0}
-              className={`w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
-                loading || dynamicTree.length === 0
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-amber-500 text-white hover:bg-amber-600 shadow-[0_14px_30px_rgba(251,191,36,0.35)]'
-              }`}
-            >
-              {!loading && <Video className="w-4 h-4" />}
-              {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
-            </button>
           </div>
+        </div>
+
+        {/* Start Interview Button - Centered at Bottom */}
+        <div className="flex justify-center mt-12">
+          <LiquidButton
+            onClick={handleStartInterview}
+            disabled={loading || dynamicTree.length === 0}
+            variant="black"
+            size="lg"
+            icon={!loading && <Video size={18} />}
+          >
+            {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
+          </LiquidButton>
         </div>
       </div>
     );

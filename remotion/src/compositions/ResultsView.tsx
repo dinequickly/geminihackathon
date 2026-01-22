@@ -39,7 +39,6 @@ const pages: ResultsPage[] = [
       { icon: "🧠", label: "Technical", score: 70 },
       { icon: "φ", label: "Filler Words", score: 4 },
       { icon: "⚡", label: "Words / Min", score: 728 },
-      { icon: "❤️", label: "EQ", score: 75 },
     ],
     improvements: [
       {
@@ -99,7 +98,6 @@ const pages: ResultsPage[] = [
       { icon: "🧠", label: "Technical", score: 83 },
       { icon: "φ", label: "Filler Words", score: 7 },
       { icon: "⚡", label: "Words / Min", score: 612 },
-      { icon: "❤️", label: "EQ", score: 71 },
     ],
     improvements: [
       {
@@ -162,7 +160,6 @@ const pages: ResultsPage[] = [
       { icon: "🧠", label: "Technical", score: 87 },
       { icon: "φ", label: "Filler Words", score: 2 },
       { icon: "⚡", label: "Words / Min", score: 690 },
-      { icon: "❤️", label: "EQ", score: 82 },
     ],
     improvements: [
       {
@@ -231,6 +228,19 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   const fadeSeconds = 0.5;
   const pageFrames = pageDurationSeconds * fps;
   const fadeFrames = fadeSeconds * fps;
+  const totalFrames = pages.length * pageFrames;
+  const stackProgress = interpolate(
+    t,
+    [totalFrames - 1.6 * fps, totalFrames - 0.2 * fps],
+    [0, 1],
+    clamp
+  );
+  const stackOpacity = interpolate(
+    t,
+    [totalFrames - 1.4 * fps, totalFrames - 0.2 * fps],
+    [0, 1],
+    clamp
+  );
 
   return (
     <AbsoluteFill
@@ -310,6 +320,42 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             </div>
           );
         })}
+
+        {stackOpacity > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              opacity: stackOpacity,
+              transform: `translateX(${interpolate(
+                stackProgress,
+                [0, 1],
+                [120, 0],
+                clamp
+              )}px)`,
+            }}
+          >
+            <div style={{ position: "relative", width: 520, height: 520 }}>
+              {[2, 1, 0].map((index, offset) => (
+                <StackCard
+                  key={pages[index].sessionLabel}
+                  page={pages[index]}
+                  style={{
+                    position: "absolute",
+                    top: offset * 18,
+                    right: offset * 26,
+                    transform: `scale(${1 - offset * 0.06})`,
+                    opacity: 1 - offset * 0.2,
+                    boxShadow: "0 24px 60px rgba(15, 23, 42, 0.18)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </AbsoluteFill>
   );
@@ -603,5 +649,59 @@ const LiquidButtonSecondary: React.FC<{ children: React.ReactNode }> = ({ childr
     }}
   >
     {children}
+  </div>
+);
+
+const StackCard: React.FC<{ page: ResultsPage; style?: React.CSSProperties }> = ({
+  page,
+  style,
+}) => (
+  <div
+    style={{
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      borderRadius: 24,
+      padding: 24,
+      width: 520,
+      height: 520,
+      border: "1px solid rgba(0, 0, 0, 0.08)",
+      display: "flex",
+      flexDirection: "column",
+      gap: 20,
+      ...style,
+    }}
+  >
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+        {page.sessionLabel}
+      </div>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#b45309", letterSpacing: "0.08em", textTransform: "uppercase", backgroundColor: "rgba(251, 191, 36, 0.18)", padding: "4px 8px", borderRadius: 6 }}>
+        {page.snapshot}
+      </div>
+    </div>
+    <div>
+      <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 44, fontWeight: 400, color: "#000000", lineHeight: 1 }}>
+        {page.score}
+      </div>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 6 }}>
+        Score Index
+      </div>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+      {page.categories.slice(0, 3).map((item) => (
+        <div key={item.label} style={{ borderRadius: 12, padding: 10, backgroundColor: "rgba(0, 0, 0, 0.04)", textAlign: "center" }}>
+          <div style={{ fontSize: 18 }}>{item.icon}</div>
+          <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, color: "#000000" }}>{item.score}</div>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase" }}>{item.label}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{ borderTop: "1px solid rgba(0, 0, 0, 0.06)", paddingTop: 14 }}>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+        Transcript Highlight
+      </div>
+      <div style={{ fontSize: 13, color: "#666666", lineHeight: 1.4 }}>
+        {page.transcript[1]?.content || page.transcript[0]?.content}
+      </div>
+    </div>
   </div>
 );
