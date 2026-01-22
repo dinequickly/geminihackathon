@@ -215,8 +215,8 @@ export default function Results() {
             </p>
           )}
 
-          {/* Category Grid */}
-          {categoryScores.length > 0 && (
+          {/* Category Grid + Quick Stats */}
+          {(categoryScores.length > 0 || analysis.filler_word_count !== undefined || analysis.speaking_pace_wpm) && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-8 border-t border-gray-100">
               {categoryScores.map(({ key, label, icon: Icon, score }) => (
                 <div key={key} className="flex flex-col items-center text-center p-4 rounded-2xl hover:bg-white/40 transition-colors">
@@ -227,20 +227,28 @@ export default function Results() {
                   <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">{label}</span>
                 </div>
               ))}
+
+              {analysis.filler_word_count !== undefined && (
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl hover:bg-white/40 transition-colors">
+                  <div className="w-10 h-10 rounded-full mb-3 flex items-center justify-center border border-gray-100 bg-white">
+                    <span className="text-gray-600 font-bold text-sm">φ</span>
+                  </div>
+                  <span className="font-serif text-2xl mb-1 text-black">{analysis.filler_word_count}</span>
+                  <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Filler Words</span>
+                </div>
+              )}
+
+              {analysis.speaking_pace_wpm && (
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl hover:bg-white/40 transition-colors">
+                  <div className="w-10 h-10 rounded-full mb-3 flex items-center justify-center border border-gray-100 bg-white">
+                    <span className="text-gray-600 font-bold text-sm">⚡</span>
+                  </div>
+                  <span className="font-serif text-2xl mb-1 text-black">{analysis.speaking_pace_wpm}</span>
+                  <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Words / Min</span>
+                </div>
+              )}
             </div>
           )}
-
-          {/* Quick stats */}
-          <div className="flex gap-8 justify-center mt-8 pt-8 border-t border-gray-100">
-            <div className="text-center">
-              <p className="font-serif text-2xl text-black">{analysis.filler_word_count || 0}</p>
-              <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Filler Words</p>
-            </div>
-            <div className="text-center">
-              <p className="font-serif text-2xl text-black">{analysis.speaking_pace_wpm || '--'}</p>
-              <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Words / Min</p>
-            </div>
-          </div>
         </LiquidGlass>
 
         <div className="grid lg:grid-cols-2 gap-8">

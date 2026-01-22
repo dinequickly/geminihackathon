@@ -280,7 +280,7 @@ function ActionCard({ title, desc, onClick, icon, variant, tag }: { title: strin
         {tag && <span className="font-mono text-[10px] bg-black text-white px-2 py-0.5 rounded">{tag}</span>}
       </div>
       <div>
-        <h3 className="font-serif text-2xl text-black mb-2 flex items-center gap-2">
+        <h3 className="font-serif text-2xl font-bold text-black mb-2 flex items-center gap-2">
           {title} <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
         </h3>
         <p className="text-sm text-gray-600 font-light">{desc}</p>
@@ -305,7 +305,6 @@ function HistoryItem({ conv, onClick, formatDuration, formatDate, getStatusBadge
           <h4 className="font-serif text-xl text-black">Session Archive</h4>
           <div className="flex items-center gap-4 mt-1">
             <span className="font-mono text-[10px] text-gray-500 uppercase">{formatDate(conv.started_at)}</span>
-            <span className="font-mono text-[10px] text-gray-500 uppercase">{formatDuration(conv.duration_seconds)}</span>
           </div>
         </div>
       </div>

@@ -39,7 +39,7 @@ export function LiquidButton({
       case 'black':
         return 'text-white bg-black border-white/10 hover:bg-gray-900 transition-colors'
       case 'secondary':
-        return 'text-gray-100 bg-white/10 border-white/20 hover:bg-white/15'
+        return 'text-black bg-white/40 border-white/50 hover:bg-white/50'
       case 'ghost':
         return 'text-white bg-transparent border-white/10 hover:bg-white/5'
       case 'danger':

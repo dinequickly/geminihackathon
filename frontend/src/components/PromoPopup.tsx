@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { X, Sparkles, Crown, Zap } from 'lucide-react';
 import { PlayfulButton } from './PlayfulUI';
+import { LiquidGlass } from './LiquidGlass';
+import { LiquidButton } from './LiquidButton';
 
 interface PromoPopupProps {
   onOpenShop: () => void;
@@ -58,58 +60,65 @@ export default function PromoPopup({ onOpenShop }: PromoPopupProps) {
 
   return (
     <div className="fixed bottom-6 right-6 z-40 animate-slide-up">
-      <div className="bg-gradient-to-br from-sunshine-400 to-primary-500 rounded-3xl shadow-2xl p-5 max-w-sm border-2 border-white/50 animate-bounce-gentle">
+      <LiquidGlass className="p-6 max-w-sm animate-bounce-gentle relative">
         {/* Close button */}
         <button
           onClick={handleDismiss}
-          className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+          className="absolute -top-3 -right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform border border-gray-200"
         >
-          <X className="w-4 h-4 text-gray-600" />
+          <X className="w-4 h-4 text-gray-700" />
         </button>
 
-        {/* Content */}
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Crown className="w-7 h-7 text-white" />
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-5">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center flex-shrink-0 border border-white/30">
+            <Crown className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h3 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
+          <div className="flex-1">
+            <h3 className="font-serif text-lg font-bold text-black mb-1 flex items-center gap-2">
               Upgrade to Premium
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className="w-4 h-4 text-purple-500" />
             </h3>
-            <p className="text-white/90 text-sm leading-relaxed">
-              Unlock custom interview packs, dynamic AI behavior, and advanced progress tracking!
+            <p className="text-gray-700 text-sm leading-relaxed font-light">
+              Unlock custom packs, dynamic AI behavior, and advanced tracking.
             </p>
           </div>
         </div>
 
         {/* Features */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-white/90 text-sm">
-            <Zap className="w-4 h-4 flex-shrink-0" />
-            <span>Create unlimited custom packs</span>
+        <div className="space-y-2.5 mb-6 pb-6 border-b border-gray-200/50">
+          <div className="flex items-center gap-3 text-gray-700 text-sm">
+            <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <Zap className="w-3 h-3 text-purple-600" />
+            </div>
+            <span className="font-medium">Unlimited custom packs</span>
           </div>
-          <div className="flex items-center gap-2 text-white/90 text-sm">
-            <Sparkles className="w-4 h-4 flex-shrink-0" />
-            <span>Dynamic interviewer behavior</span>
+          <div className="flex items-center gap-3 text-gray-700 text-sm">
+            <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-3 h-3 text-blue-600" />
+            </div>
+            <span className="font-medium">Dynamic interviewer behavior</span>
           </div>
-          <div className="flex items-center gap-2 text-white/90 text-sm">
-            <Crown className="w-4 h-4 flex-shrink-0" />
-            <span>Premium question packs</span>
+          <div className="flex items-center gap-3 text-gray-700 text-sm">
+            <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <Crown className="w-3 h-3 text-purple-600" />
+            </div>
+            <span className="font-medium">Premium question packs</span>
           </div>
         </div>
 
         {/* CTA Button */}
-        <PlayfulButton
+        <LiquidButton
           onClick={handleOpenShop}
-          variant="secondary"
-          size="sm"
+          variant="black"
+          size="md"
           className="w-full"
+          icon={<Sparkles size={16} />}
+          iconPosition="left"
         >
-          <Sparkles className="w-4 h-4" />
           View Plans
-        </PlayfulButton>
-      </div>
+        </LiquidButton>
+      </LiquidGlass>
     </div>
   );
 }
