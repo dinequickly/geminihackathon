@@ -12,22 +12,27 @@ export default function LandingPage() {
   const [scrollProgress, setScrollProgress] = useState(0); // Phase 1: 0 to 1
   const [phase2Progress, setPhase2Progress] = useState(0); // Phase 2: 0 to 1
   const [phase3Progress, setPhase3Progress] = useState(0); // Phase 3: 0 to 1
+  const [phase4Progress, setPhase4Progress] = useState(0); // Phase 4: 0 to 1
   
   const canPhase2Ref = useRef(false);
   const isLock1Ref = useRef(false);
   const canPhase3Ref = useRef(false);
   const isLock2Ref = useRef(false);
+  const canPhase4Ref = useRef(false);
+  const isLock3Ref = useRef(false);
 
   // Constants
   const PHASE_1_ZOOM = 1.8;
   const PHASE_2_ZOOM = 2.2;
-  const PHASE_3_ZOOM = 2.4; // Deepest zoom
+  const PHASE_3_ZOOM = 2.4;
+  const PHASE_4_ZOOM = 2.8;
 
   useEffect(() => {
     const windowHeight = window.innerHeight;
     const p1Len = windowHeight * 0.8;
     const p2Len = windowHeight * 0.8;
     const p3Len = windowHeight * 0.8;
+    const p4Len = windowHeight * 0.8;
 
     const handleScroll = () => {
       const y = window.scrollY;
@@ -36,6 +41,7 @@ export default function LandingPage() {
       if (y <= p1Len) {
         setPhase2Progress(0);
         setPhase3Progress(0);
+        setPhase4Progress(0);
         
         if (y >= p1Len - 5 && !canPhase2Ref.current && !isLock1Ref.current) {
           isLock1Ref.current = true;
@@ -53,6 +59,7 @@ export default function LandingPage() {
       else if (y <= p1Len + p2Len) {
         setScrollProgress(1);
         setPhase3Progress(0);
+        setPhase4Progress(0);
 
         if (!canPhase2Ref.current) {
           window.scrollTo(0, p1Len);
@@ -73,21 +80,46 @@ export default function LandingPage() {
         setPhase2Progress(Math.min(p2Rel / p2Len, 1));
       }
       // --- Phase 3 ---
-      else {
+      else if (y <= p1Len + p2Len + p3Len) {
         setScrollProgress(1);
         setPhase2Progress(1);
+        setPhase4Progress(0);
 
         if (!canPhase3Ref.current) {
           window.scrollTo(0, p1Len + p2Len);
           return;
         }
 
-        setPhase3Progress(Math.min((y - p1Len - p2Len) / p3Len, 1));
+        const p3Rel = y - p1Len - p2Len;
+        if (p3Rel >= p3Len - 5 && !canPhase4Ref.current && !isLock3Ref.current) {
+          isLock3Ref.current = true;
+          window.scrollTo(0, p1Len + p2Len + p3Len);
+          setPhase3Progress(1);
+          setTimeout(() => {
+            canPhase4Ref.current = true;
+            isLock3Ref.current = false;
+          }, 500);
+          return;
+        }
+        setPhase3Progress(Math.min(p3Rel / p3Len, 1));
+      }
+      // --- Phase 4 ---
+      else {
+        setScrollProgress(1);
+        setPhase2Progress(1);
+        setPhase3Progress(1);
+
+        if (!canPhase4Ref.current) {
+          window.scrollTo(0, p1Len + p2Len + p3Len);
+          return;
+        }
+
+        setPhase4Progress(Math.min((y - p1Len - p2Len - p3Len) / p4Len, 1));
       }
     };
 
     const handleWheel = (e: WheelEvent) => {
-      if (isLock1Ref.current || isLock2Ref.current) {
+      if (isLock1Ref.current || isLock2Ref.current || isLock3Ref.current) {
         e.preventDefault();
       }
     };
@@ -113,13 +145,22 @@ export default function LandingPage() {
   const o2X = winW * 0.85;
   const o2Y = winH * 0.85;
 
-  // Phase 3 Target (Requested: 650, 820)
+  // Phase 3 Target (Right)
   const o3X = 900;
   const o3Y = 820;
 
+  // Phase 4 Target (Requested: 550, 550)
+  const o4X = 350;
+  const o4Y = 550;
+
   let currentScale, currentOriginX, currentOriginY;
 
-  if (phase3Progress > 0) {
+  if (phase4Progress > 0) {
+    // Interpolate Phase 3 -> Phase 4
+    currentScale = PHASE_3_ZOOM + (phase4Progress * (PHASE_4_ZOOM - PHASE_3_ZOOM));
+    currentOriginX = o3X + (phase4Progress * (o4X - o3X));
+    currentOriginY = o3Y + (phase4Progress * (o4Y - o3Y));
+  } else if (phase3Progress > 0) {
     // Interpolate Phase 2 -> Phase 3
     currentScale = PHASE_2_ZOOM + (phase3Progress * (PHASE_3_ZOOM - PHASE_2_ZOOM));
     currentOriginX = o2X + (phase3Progress * (o3X - o2X));
@@ -226,10 +267,10 @@ export default function LandingPage() {
         </div>
 
       {/* Spacer to create scroll space. 
-          Total Height = 100vh (view) + Phase 1 Scroll + Phase 2 Scroll + Phase 3 Scroll
+          Total Height = 100vh (view) + Phase 1-4 Scrolls
           Each phase is 0.8vh -> Total spacer needs to cover this.
       */}
-        <div className="h-[380vh] pointer-events-none" />
+        <div className="h-[480vh] pointer-events-none" />
       </section>
 
       {/* White content panel 1 - Right half - Slides up (P1), Flies out Up (P2) */}
@@ -242,9 +283,10 @@ export default function LandingPage() {
             : `translateY(${100 - scrollProgress * 100}%)`,
         }}
       >
-        {/* Hero Section - Only appears after zoom complete */}
+        {/* Hero Section ... (rest of P1 content) */}
         <section ref={heroRef} className="px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
         <div className="space-y-8">
+          {/* Badge ... */}
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/30 backdrop-blur-sm border border-white/40 text-xs font-mono tracking-wider uppercase text-gray-700">
              <Zap className="w-3 h-3 text-black" fill="currentColor" />
@@ -441,13 +483,16 @@ export default function LandingPage() {
         </section>
       </div>
 
-      {/* Third White Panel - Right half - Slides in from Right during Phase 3 */}
+      {/* Third White Panel - Right half - Slides in from Right (P3), Flies out Right (P4) */}
       <div
         className="fixed right-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out"
         style={{
           top: '95px',
           // Phase 3: Slide in from right ( 100% -> 0% )
-          transform: `translateX(${100 - (phase3Progress * 100)}%)`
+          // Phase 4: Fly out right ( 0% -> 200% )
+          transform: phase4Progress > 0
+            ? `translateX(${phase4Progress * 200}%)`
+            : `translateX(${100 - (phase3Progress * 100)}%)`
         }}
       >
         <section className="px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
@@ -482,6 +527,51 @@ export default function LandingPage() {
 
           <div className="absolute bottom-20 left-10 opacity-40 pointer-events-none">
             <IridescentSphere size={180} color="blue" delay={0.2} />
+          </div>
+        </section>
+      </div>
+
+      {/* Fourth White Panel - Left half - Slides in from Left during Phase 4 */}
+      <div
+        className="fixed left-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out flex flex-col justify-center"
+        style={{
+          top: 0,
+          // Phase 4: Slide in from left ( -100% -> 0% )
+          transform: `translateX(${-100 + (phase4Progress * 100)}%)`
+        }}
+      >
+        <section className="px-12 py-32 max-w-7xl mx-auto text-left">
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-xs font-mono tracking-wider uppercase text-emerald-700">
+               <MessageCircle className="w-3 h-3" />
+               Join the Agora
+            </div>
+
+            <h2 className="font-serif text-6xl md:text-7xl font-medium text-black leading-tight">
+              The Future of <br />
+              <span className="italic text-gray-700">Communication.</span>
+            </h2>
+
+            <p className="text-xl text-gray-600 font-light max-w-xl leading-relaxed">
+              Preparation is the beginning of success. Step into the arena with
+              the intelligence of Tavus at your side. Your journey to mastery begins now.
+            </p>
+
+            <div className="pt-10">
+               <LiquidButton
+                onClick={() => navigate('/onboarding')}
+                variant="primary"
+                size="xl"
+                icon={<ArrowRight size={20} />}
+                iconPosition="right"
+              >
+                Enter Platform
+              </LiquidButton>
+            </div>
+          </div>
+
+          <div className="absolute top-1/4 right-0 opacity-20 pointer-events-none">
+            <IridescentSphere size={300} color="pink" delay={0.1} />
           </div>
         </section>
       </div>
