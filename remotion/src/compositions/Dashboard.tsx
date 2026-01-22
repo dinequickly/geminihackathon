@@ -30,17 +30,49 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: "#fef9f3",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        backgroundColor: "#ffffff",
+        fontFamily: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         padding: 32,
         overflow: "hidden",
       }}
     >
-      {/* Background decorations */}
-      <div style={{ position: "absolute", top: 60, right: 100, width: 300, height: 300, borderRadius: "50%", background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)", opacity: 0.3 }} />
-      <div style={{ position: "absolute", top: 200, right: 200, width: 200, height: 200, borderRadius: "50%", background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)", opacity: 0.3 }} />
+      {/* LightLeakBackground - animated orbs */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", backgroundColor: "#ffffff" }}>
+        {/* Base gradient */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom right, rgba(219, 234, 254, 0.5), #ffffff, rgba(253, 232, 208, 0.5))" }} />
 
-      <div style={{ position: "relative", zIndex: 1 }}>
+        {/* Blue Orb */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-10%",
+            left: "-10%",
+            width: "60vw",
+            height: "60vw",
+            borderRadius: "50%",
+            background: "rgba(147, 197, 253, 0.2)",
+            filter: "blur(100px)",
+            animation: "pulse-slow 10s ease-in-out infinite",
+          }}
+        />
+
+        {/* Pink Orb */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-10%",
+            right: "-10%",
+            width: "60vw",
+            height: "60vw",
+            borderRadius: "50%",
+            background: "rgba(251, 191, 36, 0.15)",
+            filter: "blur(100px)",
+            animation: "pulse-slow 12s ease-in-out infinite 1s",
+          }}
+        />
+      </div>
+
+      <div style={{ position: "relative", zIndex: 10 }}>
         {/* Header */}
         <div
           style={{
@@ -48,20 +80,52 @@ export const Dashboard: React.FC<DashboardProps> = ({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
-            marginBottom: 32,
+            marginBottom: 48,
+            paddingTop: 32,
           }}
         >
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111827", margin: 0 }}>InterviewPro</h1>
-            <p style={{ fontSize: 14, color: "#6b7280", margin: "4px 0 0 0" }}>Welcome back, Maxwell Moroz</p>
+            <h1 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 24, fontWeight: 700, color: "#000000", margin: 0, letterSpacing: "-0.02em" }}>TAVUS</h1>
+            <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: "#999999", margin: "4px 0 0 0", letterSpacing: "0.05em", textTransform: "uppercase" }}>Dashboard</p>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
-            <button style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 8, border: "2px solid #fbbf24", backgroundColor: "transparent", color: "#fbbf24", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-              <span>🛒</span> Shop
-            </button>
-            <button style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 8, border: "none", backgroundColor: "transparent", color: "#6b7280", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>
-              <span>→</span> Sign out
-            </button>
+            {/* Shop Button */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "10px 16px",
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              backgroundColor: "rgba(255, 255, 255, 0.4)",
+              backdropFilter: "blur(12px)",
+              color: "#000000",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: '"Plus Jakarta Sans", sans-serif',
+            }}>
+              Shop
+            </div>
+
+            {/* Sign Out Button */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "10px 16px",
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              backgroundColor: "rgba(255, 255, 255, 0.4)",
+              backdropFilter: "blur(12px)",
+              color: "#000000",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: '"Plus Jakarta Sans", sans-serif',
+            }}>
+              Sign out
+            </div>
           </div>
         </div>
 
@@ -71,13 +135,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
             opacity: statsOpacity,
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 20,
-            marginBottom: 24,
+            gap: 24,
+            marginBottom: 32,
           }}
         >
-          <StatCard icon="📹" iconBg="#fee2e2" label="Total Sessions" value="8" />
-          <StatCard icon="📈" iconBg="#d1fae5" label="Average Score" value="78" />
-          <StatCard icon="🏆" iconBg="#fef3c7" label="Best Score" value="83" />
+          <LiquidGlassCard icon="📹" label="Total Sessions" value="8" />
+          <LiquidGlassCard icon="📈" label="Average Score" value="78" />
+          <LiquidGlassCard icon="🏆" label="Best Score" value="83" />
         </div>
 
         {/* Action Cards */}
@@ -86,88 +150,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
             opacity: cardsOpacity,
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 20,
-            marginBottom: 32,
+            gap: 24,
+            marginBottom: 48,
           }}
         >
           {/* Start New Interview - with pulse */}
-          <div
-            style={{
-              background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-              borderRadius: 16,
-              padding: 24,
-              color: "#fff",
-              position: "relative",
-              overflow: "hidden",
-              transform: `scale(${pulseScale})`,
-              boxShadow: pulseGlow > 0 ? `0 0 ${30 * pulseGlow}px rgba(249, 115, 22, ${pulseGlow})` : "none",
-              transition: "box-shadow 0.1s",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 24 }}>▶</span>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>Start New Interview</div>
-                <div style={{ fontSize: 13, opacity: 0.9 }}>Practice with AI interviewer</div>
-              </div>
-              <span style={{ fontSize: 20, opacity: 0.8 }}>›</span>
-            </div>
-          </div>
+          <ActionCard
+            emoji="▶"
+            title="Start New Interview"
+            subtitle="Practice with AI interviewer"
+            scale={pulseScale}
+            glow={pulseGlow}
+          />
 
           {/* Practice with Packs */}
-          <div
-            style={{
-              background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-              borderRadius: 16,
-              padding: 24,
-              color: "#1f2937",
-              position: "relative",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 24 }}>📦</span>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>Practice with Packs</div>
-                <div style={{ fontSize: 13, opacity: 0.8 }}>Use curated question sets</div>
-              </div>
-              <span style={{ fontSize: 20, opacity: 0.6 }}>›</span>
-            </div>
-          </div>
+          <ActionCard
+            emoji="📦"
+            title="Practice with Packs"
+            subtitle="Use curated question sets"
+            scale={1}
+            glow={0}
+          />
 
           {/* Tavus Video Interview */}
-          <div
-            style={{
-              background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)",
-              borderRadius: 16,
-              padding: 24,
-              color: "#fff",
-              position: "relative",
-            }}
-          >
-            <div style={{ position: "absolute", top: 12, right: 12, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 12, padding: "4px 10px", fontSize: 10, fontWeight: 700 }}>
-              PREMIUM
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 24 }}>🎥</span>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>Tavus Video Interview</div>
-                <div style={{ fontSize: 13, opacity: 0.9 }}>AI video interviewer powered by Tavus</div>
-              </div>
-              <span style={{ fontSize: 20, opacity: 0.8 }}>›</span>
-            </div>
-          </div>
+          <ActionCard
+            emoji="🎥"
+            title="Tavus Video Interview"
+            subtitle="AI video interviewer"
+            badge="Premium"
+            scale={1}
+            glow={0}
+          />
         </div>
 
         {/* Previous Sessions */}
         <div style={{ opacity: sessionsOpacity }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111827", margin: "0 0 16px 0" }}>Previous Sessions</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 28, fontWeight: 700, color: "#000000", margin: "0 0 32px 0", letterSpacing: "-0.02em" }}>Previous Sessions</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <SessionRow date="Jan 20, 10:46 PM" status="Processing" />
             <SessionRow date="Jan 20, 10:45 PM" status="In Progress" />
             <SessionRow date="Jan 20, 10:21 PM" status="Processing" />
@@ -180,70 +199,119 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-const StatCard: React.FC<{ icon: string; iconBg: string; label: string; value: string }> = ({ icon, iconBg, label, value }) => (
+// Liquid Glass Card Component
+const LiquidGlassCard: React.FC<{ icon: string; label: string; value: string }> = ({ icon, label, value }) => (
   <div
     style={{
-      backgroundColor: "#fff",
-      borderRadius: 12,
-      padding: 20,
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.2)",
+      borderRadius: 24,
+      padding: 24,
       display: "flex",
       alignItems: "center",
       gap: 16,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+      boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
     }}
   >
-    <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
-      {icon}
-    </div>
+    <div style={{ fontSize: 32 }}>{icon}</div>
     <div>
-      <div style={{ fontSize: 13, color: "#6b7280" }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>{value}</div>
+      <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: "#999999", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 28, fontWeight: 700, color: "#000000", letterSpacing: "-0.02em" }}>{value}</div>
     </div>
   </div>
 );
 
+// Action Card Component
+const ActionCard: React.FC<{ emoji: string; title: string; subtitle: string; badge?: string; scale: number; glow: number }> = ({ emoji, title, subtitle, badge, scale, glow }) => (
+  <div
+    style={{
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.2)",
+      borderRadius: 24,
+      padding: 32,
+      position: "relative",
+      overflow: "hidden",
+      transform: `scale(${scale})`,
+      boxShadow: glow > 0 ? `0 0 ${30 * glow}px rgba(0, 0, 0, ${glow * 0.2}), 0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4)` : "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
+      transition: "all 0.1s",
+    }}
+  >
+    {badge && (
+      <div style={{ position: "absolute", top: 16, right: 16, backgroundColor: "rgba(0, 0, 0, 0.2)", borderRadius: 8, padding: "4px 10px", fontSize: 10, fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', letterSpacing: "0.05em", textTransform: "uppercase", color: "#000000" }}>
+        {badge}
+      </div>
+    )}
+
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+      <div style={{ fontSize: 40, marginTop: 4 }}>{emoji}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 22, fontWeight: 700, color: "#000000", marginBottom: 6, letterSpacing: "-0.02em" }}>
+          {title}
+        </div>
+        <div style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: 14, color: "#666666", fontWeight: 400 }}>
+          {subtitle}
+        </div>
+      </div>
+      <div style={{ fontSize: 24, color: "#999999", marginTop: 4 }}>›</div>
+    </div>
+  </div>
+);
+
+// Session Row Component
 const SessionRow: React.FC<{ date: string; status: "Processing" | "In Progress" | "Complete"; score?: number }> = ({ date, status, score }) => {
-  const statusColors = {
-    Processing: { bg: "#fef3c7", text: "#d97706" },
-    "In Progress": { bg: "#dbeafe", text: "#3b82f6" },
-    Complete: { bg: "#d1fae5", text: "#059669" },
+  const statusStyles = {
+    Processing: { bg: "rgba(217, 119, 6, 0.1)", text: "#d97706" },
+    "In Progress": { bg: "rgba(59, 130, 246, 0.1)", text: "#3b82f6" },
+    Complete: { bg: "rgba(5, 150, 105, 0.1)", text: "#059669" },
   };
+
+  const style = statusStyles[status];
 
   return (
     <div
       style={{
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        borderRadius: 24,
+        padding: 20,
         display: "flex",
         alignItems: "center",
         gap: 16,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
       }}
     >
-      <div style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: 18, color: "#9ca3af" }}>🎥</span>
-      </div>
+      <div style={{ fontSize: 24 }}>🎥</div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>Interview Session</div>
-        <div style={{ fontSize: 13, color: "#9ca3af", display: "flex", alignItems: "center", gap: 8 }}>
-          <span>⏱</span> --:-- <span style={{ marginLeft: 8 }}>{date}</span>
-        </div>
+        <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 16, fontWeight: 700, color: "#000000", marginBottom: 4, letterSpacing: "-0.02em" }}>Interview Session</div>
+        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: "#999999", letterSpacing: "0.05em", textTransform: "uppercase" }}>⏱ {date}</div>
       </div>
-      {score && <div style={{ fontSize: 24, fontWeight: 700, color: "#059669", marginRight: 8 }}>{score}</div>}
+      {score && (
+        <div style={{ fontFamily: '"DM Serif Display", serif', fontSize: 22, fontWeight: 700, color: "#000000", marginRight: 8 }}>
+          {score}
+        </div>
+      )}
       <div
         style={{
-          backgroundColor: statusColors[status].bg,
-          color: statusColors[status].text,
+          backgroundColor: style.bg,
+          color: style.text,
           padding: "6px 12px",
           borderRadius: 8,
-          fontSize: 12,
+          fontSize: 11,
+          fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 600,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
         }}
       >
         {status}
       </div>
-      <span style={{ color: "#d1d5db", fontSize: 18 }}>›</span>
+      <span style={{ color: "#cccccc", fontSize: 18 }}>›</span>
     </div>
   );
 };

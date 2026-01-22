@@ -136,14 +136,47 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: "#e5e5e5",
+        backgroundColor: "#ffffff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         perspective: 2000,
       }}
     >
-      <div style={{ width: "100%", height: "100%", padding: 30, position: "relative" }}>
+      {/* LightLeakBackground effect */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", backgroundColor: "#ffffff" }}>
+        {/* Base gradient */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom right, rgba(219, 234, 254, 0.3), #ffffff, rgba(253, 232, 208, 0.3))" }} />
+
+        {/* Blue Orb */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-10%",
+            left: "-10%",
+            width: "60%",
+            height: "60%",
+            borderRadius: "50%",
+            background: "rgba(147, 197, 253, 0.15)",
+            filter: "blur(100px)",
+          }}
+        />
+
+        {/* Pink Orb */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-10%",
+            right: "-10%",
+            width: "60%",
+            height: "60%",
+            borderRadius: "50%",
+            background: "rgba(251, 191, 36, 0.1)",
+            filter: "blur(100px)",
+          }}
+        />
+      </div>
+      <div style={{ width: "100%", height: "100%", padding: 30, position: "relative", zIndex: 10 }}>
         {/* Terminal Scene */}
         {showTerminal && (
           <div
@@ -278,17 +311,20 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
                       position: "absolute",
                       inset: 30,
                       borderRadius: 16,
-                      backgroundColor: "#fff",
-                      boxShadow: "0 15px 40px rgba(0, 0, 0, 0.15)",
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
+                      backdropFilter: "blur(12px)",
+                      WebkitBackdropFilter: "blur(12px)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
                       transform: `translateX(${stackCardTranslateX}px) scale(${cardScaleVal})`,
                       opacity: stackCardOpacity,
                       zIndex: -i,
                     }}
                   >
                     {/* Placeholder content hint */}
-                    <div style={{ padding: 40, opacity: 0.3 }}>
-                      <div style={{ height: 24, width: "60%", backgroundColor: "#e5e7eb", borderRadius: 8, marginBottom: 16 }} />
-                      <div style={{ height: 16, width: "40%", backgroundColor: "#e5e7eb", borderRadius: 6 }} />
+                    <div style={{ padding: 40, opacity: 0.2 }}>
+                      <div style={{ height: 24, width: "60%", backgroundColor: "#000000", borderRadius: 8, marginBottom: 16 }} />
+                      <div style={{ height: 16, width: "40%", backgroundColor: "#000000", borderRadius: 6 }} />
                     </div>
                   </div>
                 );
@@ -300,16 +336,19 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
                   position: "absolute",
                   inset: 30,
                   borderRadius: 16,
-                  backgroundColor: "#fff",
-                  boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
                   transform: `translateX(${lastCardTranslateX}px) scale(${lastCardScale})`,
                   zIndex: -3,
                 }}
               >
                 {/* Placeholder content hint */}
-                <div style={{ padding: 40, opacity: 0.3 }}>
-                  <div style={{ height: 24, width: "60%", backgroundColor: "#e5e7eb", borderRadius: 8, marginBottom: 16 }} />
-                  <div style={{ height: 16, width: "40%", backgroundColor: "#e5e7eb", borderRadius: 6 }} />
+                <div style={{ padding: 40, opacity: 0.2 }}>
+                  <div style={{ height: 24, width: "60%", backgroundColor: "#000000", borderRadius: 8, marginBottom: 16 }} />
+                  <div style={{ height: 16, width: "40%", backgroundColor: "#000000", borderRadius: 6 }} />
                 </div>
               </div>
 
@@ -320,8 +359,9 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
                   inset: 30,
                   borderRadius: 16,
                   overflow: "hidden",
-                  boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)",
-                  backgroundColor: "#fff",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
                   zIndex: 1,
                   transform: `translateX(${frontCardTranslateX}px)`,
                   opacity: frontCardOpacity,
