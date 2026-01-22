@@ -145,13 +145,13 @@ export default function LandingPage() {
   const o2X = winW * 0.85;
   const o2Y = winH * 0.85;
 
-  // Phase 3 Target (Right)
-  const o3X = 900;
-  const o3Y = 820;
+  // Phase 3 Target (Pythagoras)
+  const o3X = 200;
+  const o3Y = 850;
 
-  // Phase 4 Target (Requested: 550, 550)
-  const o4X = 350;
-  const o4Y = 550;
+  // Phase 4 Target (Socrates)
+  const o4X = 280;
+  const o4Y = 420;
 
   let currentScale, currentOriginX, currentOriginY;
 
@@ -275,7 +275,7 @@ export default function LandingPage() {
 
       {/* White content panel 1 - Right half - Slides up (P1), Flies out Up (P2) */}
       <div
-        className={`fixed right-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out`}
+        className={`fixed right-0 z-20 w-1/2 h-screen bg-white/90 backdrop-blur-md overflow-hidden transition-transform duration-100 ease-out`}
         style={{
           top: '95px',
           transform: phase2Progress > 0 
@@ -283,26 +283,25 @@ export default function LandingPage() {
             : `translateY(${100 - scrollProgress * 100}%)`,
         }}
       >
-        {/* Hero Section ... (rest of P1 content) */}
+        {/* Hero Section - Only appears after zoom complete */}
         <section ref={heroRef} className="px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
         <div className="space-y-8">
-          {/* Badge ... */}
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/30 backdrop-blur-sm border border-white/40 text-xs font-mono tracking-wider uppercase text-gray-700">
-             <Zap className="w-3 h-3 text-black" fill="currentColor" />
-             AI-Powered Preparation
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-mono tracking-wider uppercase text-gray-500">
+             ARISTOTLE
           </div>
 
           {/* Main Heading */}
-          <h1 className="font-serif text-6xl md:text-8xl font-medium text-black mb-8 leading-[0.9] tracking-tight">
-            Interviews are <br />
-            <span className="italic text-gray-800">Complicated.</span>
+          <h1 className="font-serif text-6xl md:text-8xl font-medium text-black mb-8 leading-[0.9] tracking-tight text-center">
+            Ideas only matter if they <br />
+            <span className="italic text-gray-800 text-center">land clearly in the moment.</span>
           </h1>
 
           {/* Subheading */}
-          <p className="text-xl text-gray-800 font-light max-w-2xl mx-auto leading-relaxed">
-            But your preparation doesn't have to be. Master technical skills, emotional intelligence,
-            communication, and executive presence.
+          <p className="text-xl text-gray-800 font-light max-w-2xl mx-auto leading-relaxed text-center">
+            Aristotle grounds abstract concepts in observable reality. 
+            Hand gestures toward earth. Makes the complex accessible. 
+            The crowd follows his logic.
           </p>
 
           {/* CTA Buttons */}
@@ -314,108 +313,10 @@ export default function LandingPage() {
               icon={<ArrowRight size={20} />}
               iconPosition="right"
             >
-              Start Practicing Free
-            </LiquidButton>
-
-            <LiquidButton
-              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-              variant="secondary"
-              size="xl"
-            >
-              See How It Works
+              Start Practicing
             </LiquidButton>
           </div>
-
-          {/* Stats */}
-          <div className="flex flex-wrap items-center justify-center gap-6 pt-16">
-            {stats.map((stat) => (
-              <LiquidGlass
-                key={stat.label}
-                className="px-8 py-4 flex flex-col items-center min-w-[200px]"
-              >
-                <div className="font-serif text-3xl text-black">
-                  {stat.value}
-                </div>
-                <div className="font-mono text-xs text-gray-600 uppercase tracking-widest mt-1">{stat.label}</div>
-              </LiquidGlass>
-            ))}
-          </div>
         </div>
-
-        {/* Decorative Spheres */}
-        <div className="absolute top-20 right-[10%] opacity-50 pointer-events-none">
-          <IridescentSphere size={150} color="blue" delay={0} />
-        </div>
-        <div className="absolute bottom-32 left-[10%] opacity-50 pointer-events-none">
-          <IridescentSphere size={100} color="pink" delay={1} />
-        </div>
-      </section>
-
-        {/* Features Section */}
-        <section id="features" className="px-6 py-32 max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <h2 className="font-serif text-5xl text-black mb-6">
-            Practice What <span className="italic text-gray-800">Matters</span>
-          </h2>
-          <p className="text-xl text-gray-800 font-light max-w-2xl mx-auto">
-            Four key dimensions that separate good candidates from great ones.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          {dimensions.map((dimension) => {
-            const Icon = dimension.icon;
-            return (
-              <LiquidGlass
-                key={dimension.title}
-                className="p-10 flex flex-col h-full group cursor-pointer hover:!border-gray-400 transition-all"
-              >
-                <div className="flex justify-between items-start mb-8">
-                  <div className="w-12 h-12 rounded-full border border-gray-900/10 flex items-center justify-center text-black">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                </div>
-
-                <h3 className="font-serif text-3xl text-black mb-4">
-                  {dimension.title}
-                </h3>
-
-                <p className="text-gray-600 font-light leading-relaxed mb-8 flex-1">
-                  {dimension.description}
-                </p>
-
-                <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
-                  EXPLORE
-                  <ArrowRight className="w-4 h-4" />
-                </div>
-              </LiquidGlass>
-            );
-          })}
-        </div>
-      </section>
-
-        {/* How It Works / CTA */}
-        <section className="px-6 py-32 max-w-5xl mx-auto text-center">
-        <LiquidGlass className="p-16 md:p-24">
-          <h2 className="font-serif text-5xl md:text-6xl text-black mb-8">
-            Ready When <span className="italic text-gray-800">You Are</span>
-          </h2>
-
-          <p className="text-xl text-gray-800 font-light max-w-3xl mx-auto leading-relaxed mb-12">
-            Jump into a practice interview in seconds. Get instant feedback on your performance.
-            Track your growth across all dimensions.
-          </p>
-
-          <LiquidButton
-            onClick={() => navigate('/onboarding')}
-            variant="secondary"
-            size="xl"
-            icon={<ArrowRight size={20} />}
-            iconPosition="right"
-          >
-            Get Started Now
-          </LiquidButton>
-        </LiquidGlass>
       </section>
 
         {/* Footer */}
@@ -435,7 +336,7 @@ export default function LandingPage() {
 
       {/* Second White Panel - Left half - Slides down (P2), Flies out Down (P3) */}
       <div
-        className="fixed left-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out flex flex-col justify-end"
+        className="fixed left-0 z-20 w-1/2 h-screen bg-white/90 backdrop-blur-md overflow-hidden transition-transform duration-100 ease-out flex flex-col justify-end"
         style={{
           top: 0,
           // Phase 2: Slide down ( -100% -> 0% )
@@ -446,11 +347,9 @@ export default function LandingPage() {
         }}
       >
         <section className="px-6 pb-32 pt-20 max-w-7xl mx-auto text-left">
-          {/* ... existing P2 content ... */}
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-mono tracking-wider uppercase text-blue-700">
-               <Brain className="w-3 h-3" />
-               Structured Learning
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-mono tracking-wider uppercase text-gray-500">
+               EUCLID
             </div>
             
             <h2 className="font-serif text-5xl md:text-6xl font-medium text-black leading-tight">
@@ -464,28 +363,23 @@ export default function LandingPage() {
             </p>
 
             <div className="pt-8">
-               <LiquidButton
+              <LiquidButton
                 onClick={() => navigate('/onboarding')}
-                variant="primary"
-                size="lg"
-                icon={<ArrowRight size={18} />}
+                variant="secondary"
+                size="xl"
+                icon={<ArrowRight size={20} />}
                 iconPosition="right"
               >
                 Start Analysis
               </LiquidButton>
             </div>
           </div>
-          
-           {/* Decorative Sphere for this panel */}
-          <div className="absolute top-1/4 right-10 opacity-30 pointer-events-none">
-            <IridescentSphere size={200} color="purple" delay={0.5} />
-          </div>
         </section>
       </div>
 
       {/* Third White Panel - Right half - Slides in from Right (P3), Flies out Right (P4) */}
       <div
-        className="fixed right-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out"
+        className="fixed right-0 z-20 w-1/2 h-screen bg-white/90 backdrop-blur-md overflow-hidden transition-transform duration-100 ease-out"
         style={{
           top: '95px',
           // Phase 3: Slide in from right ( 100% -> 0% )
@@ -497,19 +391,19 @@ export default function LandingPage() {
       >
         <section className="px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-xs font-mono tracking-wider uppercase text-orange-700">
-               <Sparkles className="w-3 h-3" />
-               Expert Mastery
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-mono tracking-wider uppercase text-gray-500">
+               PYTHAGORAS
             </div>
 
             <h2 className="font-serif text-6xl md:text-8xl font-medium text-black mb-8 leading-[0.9] tracking-tight">
-              Refine Your <br />
-              <span className="italic text-gray-800">Presence.</span>
+              Self-awareness under pressure is what separates <br />
+              <span className="italic text-gray-800">candidates who connect from those who perform.</span>
             </h2>
 
             <p className="text-xl text-gray-800 font-light max-w-2xl mx-auto leading-relaxed">
-              Achieve total clarity and confidence. Our advanced simulations push you
-              to find your authentic voice and command every room you enter.
+              Pythagoras sits apart. Observing. Reflecting. 
+              The only figure who sees himself clearly while 
+              the chaos of debate swirls around him.
             </p>
 
             <div className="flex items-center justify-center pt-8">
@@ -520,20 +414,16 @@ export default function LandingPage() {
                 icon={<ArrowRight size={20} />}
                 iconPosition="right"
               >
-                Complete Your Training
+                Analyze Yourself
               </LiquidButton>
             </div>
-          </div>
-
-          <div className="absolute bottom-20 left-10 opacity-40 pointer-events-none">
-            <IridescentSphere size={180} color="blue" delay={0.2} />
           </div>
         </section>
       </div>
 
       {/* Fourth White Panel - Left half - Slides in from Left during Phase 4 */}
       <div
-        className="fixed left-0 z-20 w-1/2 h-screen bg-white overflow-hidden transition-transform duration-100 ease-out flex flex-col justify-center"
+        className="fixed left-0 z-20 w-1/2 h-screen bg-white/90 backdrop-blur-md overflow-hidden transition-transform duration-100 ease-out flex flex-col justify-center"
         style={{
           top: 0,
           // Phase 4: Slide in from left ( -100% -> 0% )
@@ -542,36 +432,32 @@ export default function LandingPage() {
       >
         <section className="px-12 py-32 max-w-7xl mx-auto text-left">
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-xs font-mono tracking-wider uppercase text-emerald-700">
-               <MessageCircle className="w-3 h-3" />
-               Join the Agora
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-mono tracking-wider uppercase text-gray-500">
+               SOCRATES
             </div>
 
             <h2 className="font-serif text-6xl md:text-7xl font-medium text-black leading-tight">
-              The Future of <br />
-              <span className="italic text-gray-700">Communication.</span>
+              Socrates commanded Athens through questions. <br />
+              <span className="italic text-gray-700">Authority through intellectual honesty.</span>
             </h2>
 
             <p className="text-xl text-gray-600 font-light max-w-xl leading-relaxed">
-              Preparation is the beginning of success. Step into the arena with
-              the intelligence of Tavus at your side. Your journey to mastery begins now.
+              Made senators question their assumptions. 
+              Real presence isn't about performance—it's about the depth 
+              of your engagement and the clarity of your truth.
             </p>
 
             <div className="pt-10">
                <LiquidButton
                 onClick={() => navigate('/onboarding')}
-                variant="primary"
+                variant="secondary"
                 size="xl"
                 icon={<ArrowRight size={20} />}
                 iconPosition="right"
               >
-                Enter Platform
+                Find Your Voice
               </LiquidButton>
             </div>
-          </div>
-
-          <div className="absolute top-1/4 right-0 opacity-20 pointer-events-none">
-            <IridescentSphere size={300} color="pink" delay={0.1} />
           </div>
         </section>
       </div>
