@@ -109,7 +109,7 @@ export default function PromoPopup({ onOpenShop }: PromoPopupProps) {
         {/* CTA Button */}
         <LiquidButton
           onClick={handleOpenShop}
-          variant="black"
+          variant="secondary"
           size="md"
           className="w-full"
           icon={<Sparkles size={16} />}

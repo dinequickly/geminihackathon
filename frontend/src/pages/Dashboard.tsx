@@ -92,7 +92,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
             </LiquidButton>
             <LiquidButton
               onClick={onLogout}
-              variant="ghost"
+              variant="secondary"
               size="sm"
             >
               Sign out

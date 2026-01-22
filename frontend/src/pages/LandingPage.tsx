@@ -56,7 +56,7 @@ export default function LandingPage() {
 
         <LiquidButton
           onClick={() => navigate('/onboarding')}
-          variant="black"
+          variant="secondary"
           size="sm"
         >
           Sign In
@@ -88,7 +88,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
             <LiquidButton
               onClick={() => navigate('/onboarding')}
-              variant="black"
+              variant="secondary"
               size="xl"
               icon={<ArrowRight size={20} />}
               iconPosition="right"
@@ -187,7 +187,7 @@ export default function LandingPage() {
 
           <LiquidButton
             onClick={() => navigate('/onboarding')}
-            variant="black"
+            variant="secondary"
             size="xl"
             icon={<ArrowRight size={20} />}
             iconPosition="right"

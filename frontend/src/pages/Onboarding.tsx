@@ -224,7 +224,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                       setError('Please fill in your name');
                     }
                   }}
-                  variant="black"
+                  variant="secondary"
                   size="lg"
                   icon={<ArrowRight size={16} />}
                   iconPosition="right"
@@ -274,7 +274,7 @@ Include:
                   onClick={handleSubmit}
                   disabled={isLoading}
                   loading={isLoading}
-                  variant="black"
+                  variant="secondary"
                   size="lg"
                   icon={!isLoading && <ArrowRight size={16} />}
                   iconPosition="right"

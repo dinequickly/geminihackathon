@@ -319,31 +319,29 @@ export default function Results() {
         {/* Video & Transcript - Playback & Review */}
         <div className="space-y-4">
           {/* Mode Toggle Header */}
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif text-2xl text-black">Playback & Review</h2>
-            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-serif text-3xl text-black">Playback & Review</h2>
+            <div className="flex items-center gap-8">
               <button
                 onClick={() => setDisplayMode('review')}
-                className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                className={`font-serif text-lg transition-all ${
                   displayMode === 'review'
-                    ? 'bg-white text-primary-600 shadow-soft'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'text-black'
+                    : 'text-gray-400 hover:text-gray-600'
                 }`}
                 title="Review mode: transcript only"
               >
-                <Rows size={16} />
                 Review
               </button>
               <button
                 onClick={() => setDisplayMode('watch')}
-                className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                className={`font-serif text-lg transition-all ${
                   displayMode === 'watch'
-                    ? 'bg-white text-primary-600 shadow-soft'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'text-black'
+                    : 'text-gray-400 hover:text-gray-600'
                 }`}
                 title="Watch mode: video and transcript side-by-side"
               >
-                <Columns size={16} />
                 Watch
               </button>
             </div>
@@ -367,10 +365,10 @@ export default function Results() {
 
           {/* Watch Mode: Video (left) + Transcript (right) */}
           {displayMode === 'watch' && (
-            <div className="flex gap-[50px] h-[600px]">
-              {/* Video - Left side with 50px buffer (inside container) */}
+            <div className="flex gap-[50px] h-[600px] -mx-6">
+              {/* Video - Left side */}
               {conversationId && conversation?.video_url && (
-                <div className="flex-1 rounded-3xl overflow-hidden shadow-soft border border-gray-100 bg-white">
+                <div className="flex-1 rounded-3xl overflow-hidden shadow-soft border border-gray-100 bg-white ml-6">
                   <VideoEmotionPlayer
                     ref={videoPlayerRef}
                     conversationId={conversationId}
@@ -383,9 +381,9 @@ export default function Results() {
                 </div>
               )}
 
-              {/* Transcript - Right side with 50px buffer (inside container) */}
+              {/* Transcript - Right side */}
               {conversationId && (
-                <div ref={transcriptRef} className="flex-1 rounded-3xl overflow-hidden shadow-soft border border-gray-100 bg-white">
+                <div ref={transcriptRef} className="flex-1 rounded-3xl overflow-hidden shadow-soft border border-gray-100 bg-white mr-6">
                   <TranscriptViewer
                     conversationId={conversationId}
                     currentTimeMs={currentVideoTimeMs}
@@ -406,7 +404,7 @@ export default function Results() {
         <div className="flex justify-center gap-6 pt-12">
           <LiquidButton
             onClick={() => navigate('/interview')}
-            variant="black"
+            variant="secondary"
             size="lg"
             icon={<RefreshCw size={18} />}
           >

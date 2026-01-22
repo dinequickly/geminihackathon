@@ -15,350 +15,321 @@ export const InterviewConfig: React.FC<InterviewConfigProps> = ({
 
   // Staggered animations
   const headerOpacity = interpolate(f, [0, 15], [0, 1], { extrapolateRight: "clamp" });
-  const lengthCardOpacity = interpolate(f, [10, 25], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const personaCardOpacity = interpolate(f, [20, 35], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const multiChoiceOpacity = interpolate(f, [30, 45], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const sliderOpacity = interpolate(f, [40, 55], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const tagOpacity = interpolate(f, [50, 65], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const textInputOpacity = interpolate(f, [60, 75], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const buttonOpacity = interpolate(f, [70, 85], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const stepOpacity = interpolate(f, [5, 20], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const durationOpacity = interpolate(f, [15, 30], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const personaOpacity = interpolate(f, [25, 40], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const behavioralOpacity = interpolate(f, [35, 50], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const dialOpacity = interpolate(f, [45, 60], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const focusOpacity = interpolate(f, [55, 70], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const responseOpacity = interpolate(f, [65, 80], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const styleOpacity = interpolate(f, [75, 90], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const buttonOpacity = interpolate(f, [85, 100], [0, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const autoScrollY = interpolate(f, [40, 160], [0, 320], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const pressScale = interpolate(f, [180, 186, 194], [1, 0.96, 1], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
 
   // Slider animations
   const lengthSliderValue = interpolate(f, [25, 50], [5, 8], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const techSliderValue = interpolate(f, [45, 70], [1, 5], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
+  const emphasisSliderValue = interpolate(f, [50, 75], [2, 5], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
 
-  // Persona typing
-  const personaText = `I'll adopt a collaborative, curiosity-driven peer persona—supportive yet probing, focused on helping you showcase your product thinking and leadership. I'll ask insightful, scenario-based questions, provide constructive feedback, and keep the tone friendly and professional.`;
-  const personaChars = interpolate(f, [35, 100], [0, personaText.length], { extrapolateRight: "clamp", extrapolateLeft: "clamp" });
-  const displayedPersona = personaText.slice(0, Math.floor(personaChars));
-
-  // Selection animations
-  const styleSelected = f > 55;
-  const tag1Selected = f > 70;
-  const tag2Selected = f > 80;
+  const tag1Selected = f > 65;
+  const tag2Selected = f > 75;
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: "#fef7f0",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        backgroundColor: "#ffffff",
+        fontFamily: 'Plus Jakarta Sans, sans-serif',
         overflow: "hidden",
       }}
     >
+      {/* LightLeakBackground */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", backgroundColor: "#ffffff" }}>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom right, rgba(219, 234, 254, 0.3), #ffffff, rgba(253, 232, 208, 0.3))" }} />
+        <div
+          style={{
+            position: "absolute",
+            top: "-10%",
+            left: "-10%",
+            width: "60%",
+            height: "60%",
+            borderRadius: "50%",
+            background: "rgba(147, 197, 253, 0.15)",
+            filter: "blur(100px)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-10%",
+            right: "-10%",
+            width: "60%",
+            height: "60%",
+            borderRadius: "50%",
+            background: "rgba(251, 191, 36, 0.1)",
+            filter: "blur(100px)",
+          }}
+        />
+      </div>
+
       <div
         style={{
-          transform: `translateY(${-scrollY}px)`,
-          padding: "24px 32px",
+          transform: `translateY(${-scrollY - autoScrollY}px)`,
+          padding: "48px 32px",
+          position: "relative",
+          zIndex: 10,
         }}
       >
-        {/* Back button and progress */}
-        <div
-          style={{
-            opacity: headerOpacity,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 20,
-          }}
-        >
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 16px",
-              borderRadius: 16,
-              border: "none",
-              backgroundColor: "#0ea5e9",
-              color: "#fff",
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            ← Back
-          </button>
-          <div style={{ display: "flex", gap: 6 }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#f97316" }} />
-            <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#f97316" }} />
-          </div>
-        </div>
-
-        {/* Main card */}
-        <div
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 20,
-            padding: 28,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          }}
-        >
+        <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
           {/* Header */}
-          <div style={{ opacity: headerOpacity, marginBottom: 28 }}>
-            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#111827", margin: 0 }}>
-              Configure Your Interview
+          <div style={{ opacity: headerOpacity, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h1 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 36, fontWeight: 400, color: "#000000", margin: 0, letterSpacing: "-0.02em" }}>
+              Interview setup
             </h1>
-            <p style={{ fontSize: 15, color: "#6b7280", margin: "8px 0 0 0" }}>
-              We've tailored these settings based on your goal. Customize them as needed.
-            </p>
+            <button style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 13, fontWeight: 600, color: "#666666", backgroundColor: "transparent", border: "none", cursor: "pointer" }}>
+              ← Back
+            </button>
           </div>
 
-          {/* Interview Length Card - Primary/Sky gradient */}
-          <div
-            style={{
-              opacity: lengthCardOpacity,
-              background: "linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%)",
-              border: "2px solid #bfdbfe",
-              borderRadius: 16,
-              padding: 24,
-              marginBottom: 20,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 18, color: "#fff" }}>⏱</span>
-                </div>
-                <span style={{ fontSize: 17, fontWeight: 700, color: "#111827" }}>Interview Length</span>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 32, fontWeight: 900, color: "#3b82f6" }}>{Math.round(lengthSliderValue)}</span>
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#93c5fd", marginLeft: 4 }}>min</span>
-              </div>
-            </div>
-            <div style={{ position: "relative", height: 12, background: "linear-gradient(to right, #bfdbfe, #e0f2fe)", borderRadius: 6, marginBottom: 12 }}>
-              <div
-                style={{
-                  position: "absolute",
-                  left: `${((lengthSliderValue - 5) / 10) * 100}%`,
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: 28,
-                  height: 28,
-                  background: "linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%)",
-                  borderRadius: "50%",
-                  border: "4px solid #fff",
-                  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.4)",
-                }}
-              />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              <span>Quick (5 min)</span>
-              <span>Standard (10 min)</span>
-              <span>Deep (15 min)</span>
-            </div>
+          {/* Step Indicator */}
+          <div style={{ opacity: stepOpacity, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400 }}>Step 2</span>
+            <div style={{ width: 40, height: 2, backgroundColor: "#fbbf24" }} />
           </div>
 
-          {/* Interviewer Persona - InfoCard Tip variant (Mint) */}
-          <div
-            style={{
-              opacity: personaCardOpacity,
-              backgroundColor: "#ecfdf5",
-              border: "2px solid #a7f3d0",
-              borderRadius: 16,
-              padding: 24,
-              marginBottom: 20,
-              display: "flex",
-              gap: 16,
-            }}
-          >
-            <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "#a7f3d0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <span style={{ fontSize: 24, color: "#059669" }}>💡</span>
-            </div>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#111827", marginBottom: 8 }}>Interviewer Persona</div>
-              <div style={{ fontSize: 14, color: "#374151", lineHeight: 1.6 }}>
-                {displayedPersona}
-                <span style={{ opacity: f % 30 < 15 ? 1 : 0, color: "#10b981" }}>|</span>
+          {/* Main Content Grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 32 }}>
+            {/* Left Column */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* Title */}
+              <div style={{ opacity: stepOpacity }}>
+                <h2 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 32, fontWeight: 400, color: "#000000", margin: "0 0 8px 0", letterSpacing: "-0.02em" }}>
+                  Shape the session flow
+                </h2>
+                <p style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: 14, color: "#666666", margin: 0, fontWeight: 400 }}>
+                  Adjust the length and preferences below. Everything stays within your guardrails.
+                </p>
               </div>
-            </div>
-          </div>
 
-          {/* Two column layout */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
-            {/* MultiChoiceCard - Sky variant */}
-            <div
-              style={{
-                opacity: multiChoiceOpacity,
-                backgroundColor: "#f0f9ff",
-                border: "2px solid #7dd3fc",
-                borderRadius: 16,
-                padding: 20,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #e0f2fe, #bae6fd)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#0284c7" }}>M</div>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>What is your preferred interview style?</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {["Conversational", "Formal", "Technical deep-dive", "Case-study focused"].map((style, i) => (
-                  <div
-                    key={style}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "12px 16px",
-                      borderRadius: 12,
-                      border: styleSelected && i === 0 ? "2px solid #0ea5e9" : "2px solid #e2e8f0",
-                      backgroundColor: styleSelected && i === 0 ? "#e0f2fe" : "#fff",
-                      fontSize: 14,
-                      fontWeight: 500,
-                      color: "#374151",
-                    }}
-                  >
+              {/* Duration Section */}
+              <div style={{ opacity: durationOpacity }}>
+                <LiquidGlassCard>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 16 }}>
+                    Duration
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                    <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, fontWeight: 400, color: "#000000", margin: 0, letterSpacing: "-0.02em" }}>
+                      Interview length
+                    </h3>
+                    <div style={{ backgroundColor: "#fef3c7", padding: "8px 16px", borderRadius: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#d97706" }}>
+                        {Math.round(lengthSliderValue)}
+                      </span>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: "#d97706", fontWeight: 600 }}>min</span>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 13, color: "#666666", marginBottom: 16, fontWeight: 400 }}>
+                    Tune the pacing for quick checks or deeper dives.
+                  </p>
+                  <div style={{ position: "relative", height: 8, background: "linear-gradient(to right, #ddd, #bbb)", borderRadius: 999, marginBottom: 12 }}>
                     <div
                       style={{
-                        width: 20,
-                        height: 20,
+                        position: "absolute",
+                        left: `${((lengthSliderValue - 5) / 10) * 100}%`,
+                        top: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: 24,
+                        height: 24,
+                        background: "#f97316",
                         borderRadius: "50%",
-                        border: styleSelected && i === 0 ? "6px solid #0ea5e9" : "2px solid #cbd5e1",
-                        backgroundColor: "#fff",
+                        border: "3px solid #fff",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
                       }}
                     />
-                    {style}
                   </div>
-                ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, fontFamily: 'JetBrains Mono, monospace', color: "#888888", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600 }}>
+                    <span>Quick (5)</span>
+                    <span>Standard (10)</span>
+                    <span>Deep (15)</span>
+                  </div>
+                </LiquidGlassCard>
               </div>
-            </div>
 
-            {/* SliderCard - Mint variant */}
-            <div
-              style={{
-                opacity: sliderOpacity,
-                backgroundColor: "#ecfdf5",
-                border: "2px solid #6ee7b7",
-                borderRadius: 16,
-                padding: 20,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #d1fae5, #a7f3d0)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#059669" }}>S</div>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>How technical should we go?</span>
+              {/* Interviewer Persona */}
+              <div style={{ opacity: personaOpacity }}>
+                <LiquidGlassCard>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 12 }}>
+                    Interviewer Persona
+                  </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <div style={{ width: 32, height: 32, backgroundColor: "#e8f5e9", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>
+                      💡
+                    </div>
+                    <p style={{ fontSize: 13, color: "#555555", fontWeight: 400, lineHeight: 1.6, margin: 0 }}>
+                      Warm and encouraging. The interviewer actively listens and asks thoughtful follow-up questions to draw out deeper insights, while maintaining a supportive and approachable tone.
+                    </p>
+                  </div>
+                </LiquidGlassCard>
               </div>
-              <div style={{ textAlign: "center", marginBottom: 20 }}>
-                <span style={{ fontSize: 48, fontWeight: 900, color: "#10b981" }}>{Math.round(techSliderValue)}</span>
-              </div>
-              <div style={{ position: "relative", height: 12, backgroundColor: "#d1fae5", borderRadius: 6, marginBottom: 12 }}>
-                <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${(techSliderValue / 10) * 100}%`, backgroundColor: "#10b981", borderRadius: 6 }} />
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `${(techSliderValue / 10) * 100}%`,
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: 28,
-                    height: 28,
-                    backgroundColor: "#10b981",
-                    borderRadius: "50%",
-                    border: "4px solid #fff",
-                    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.4)",
-                  }}
-                />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>
-                <span>High-level<br/>overview</span>
-                <span style={{ textAlign: "right" }}>In-depth<br/>technical</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Two column layout continued */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
-            {/* TagSelector - Primary variant */}
-            <div
-              style={{
-                opacity: tagOpacity,
-                backgroundColor: "#fef3ff",
-                border: "2px solid #e879f9",
-                borderRadius: 16,
-                padding: 20,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #fae8ff, #f5d0fe)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#a855f7" }}>#</div>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Which topics to focus on?</span>
+              {/* Behavioral Questions */}
+              <div style={{ opacity: behavioralOpacity }}>
+                <LiquidGlassCard>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 16 }}>
+                    Single Pick
+                  </div>
+                  <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#000000", margin: "0 0 16px 0", letterSpacing: "-0.02em" }}>
+                    What type of behavioral questions would you like to focus on?
+                  </h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <RadioOption label="Team management" selected={false} />
+                    <RadioOption label="Client communication" selected={false} />
+                    <RadioOption label="Problem-solving" selected={false} />
+                    <RadioOption label="Leadership" selected={false} />
+                    <RadioOption label="Time management" selected={false} />
+                  </div>
+                </LiquidGlassCard>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {[
-                  { name: "Product Development", selected: tag1Selected },
-                  { name: "Market Analysis", selected: tag2Selected },
-                  { name: "Team Management", selected: false },
-                  { name: "Data-Driven Decisions", selected: false },
-                ].map((tag) => (
-                  <div
-                    key={tag.name}
+
+              {/* Dial It In */}
+              <div style={{ opacity: dialOpacity }}>
+                <LiquidGlassCard>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 16 }}>
+                    Dial It In
+                  </div>
+                  <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#000000", margin: "0 0 16px 0", letterSpacing: "-0.02em" }}>
+                    How much emphasis on past experiences?
+                  </h3>
+                  <div style={{ position: "relative", height: 8, background: "linear-gradient(to right, #ddd, #bbb)", borderRadius: 999, marginBottom: 12 }}>
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: `${((emphasisSliderValue - 1) / 9) * 100}%`,
+                        top: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: 24,
+                        height: 24,
+                        background: "#f97316",
+                        borderRadius: "50%",
+                        border: "3px solid #fff",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, fontFamily: 'JetBrains Mono, monospace', color: "#888888", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600 }}>
+                    <span>Theoretical</span>
+                    <span>Practical</span>
+                  </div>
+                </LiquidGlassCard>
+              </div>
+
+              {/* Pick Focus */}
+              <div style={{ opacity: focusOpacity }}>
+                <LiquidGlassCard>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 16 }}>
+                    Pick Focus
+                  </div>
+                  <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#000000", margin: "0 0 16px 0", letterSpacing: "-0.02em" }}>
+                    Select relevant consulting areas
+                  </h3>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <TagButton label="Strategy" selected={tag1Selected} />
+                    <TagButton label="Operations" selected={false} />
+                    <TagButton label="Finance" selected={tag2Selected} />
+                    <TagButton label="HR" selected={false} />
+                    <TagButton label="Marketing" selected={false} />
+                  </div>
+                  <p style={{ fontSize: 11, color: "#888888", marginTop: 12, margin: "12px 0 0 0", fontWeight: 400 }}>
+                    Selected: 2 / 5
+                  </p>
+                </LiquidGlassCard>
+              </div>
+
+              {/* Free Response */}
+              <div style={{ opacity: responseOpacity }}>
+                <LiquidGlassCard>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 16 }}>
+                    Free Response
+                  </div>
+                  <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#000000", margin: "0 0 16px 0", letterSpacing: "-0.02em" }}>
+                    Any specific industries or sectors to focus on?
+                  </h3>
+                  <input
+                    type="text"
+                    placeholder="e.g. Healthcare, Finance, Technology"
                     style={{
-                      padding: "8px 16px",
-                      borderRadius: 20,
+                      width: "100%",
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: "1px solid #ddd",
+                      backgroundColor: "#f9f9f9",
+                      fontFamily: 'Plus Jakarta Sans, sans-serif',
                       fontSize: 13,
-                      fontWeight: 700,
-                      backgroundColor: tag.selected ? "#f472b6" : "#fff",
-                      color: tag.selected ? "#fff" : "#374151",
-                      border: tag.selected ? "2px solid #f472b6" : "2px solid #e5e7eb",
-                      transform: tag.selected ? "translateY(-2px)" : "none",
-                      boxShadow: tag.selected ? "0 4px 12px rgba(244, 114, 182, 0.3)" : "none",
+                      color: "#666666",
+                      boxSizing: "border-box",
                     }}
-                  >
-                    {tag.name}
-                  </div>
-                ))}
+                  />
+                  <p style={{ fontSize: 11, color: "#888888", marginTop: 8, fontWeight: 400 }}>
+                    0 / 100 characters
+                  </p>
+                </LiquidGlassCard>
               </div>
-              <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 12, fontWeight: 600, textAlign: "right" }}>
-                Selected: {(tag1Selected ? 1 : 0) + (tag2Selected ? 1 : 0)} / 4
+
+              {/* Interview Style */}
+              <div style={{ opacity: styleOpacity }}>
+                <LiquidGlassCard>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 16 }}>
+                    Single Pick
+                  </div>
+                  <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#000000", margin: "0 0 16px 0", letterSpacing: "-0.02em" }}>
+                    What is your preferred interview style for behavioral questions?
+                  </h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <RadioOption label="Conversational" selected={false} />
+                    <RadioOption label="Formal" selected={false} />
+                    <RadioOption label="Case study" selected={false} />
+                  </div>
+                </LiquidGlassCard>
               </div>
             </div>
 
-            {/* TextInputCard - Sunshine variant */}
-            <div
-              style={{
-                opacity: textInputOpacity,
-                backgroundColor: "#fefce8",
-                border: "2px solid #fde047",
-                borderRadius: 16,
-                padding: 20,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #fef9c3, #fde047)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#ca8a04" }}>T</div>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Any areas to avoid or specific interests?</span>
-              </div>
-              <div
-                style={{
-                  backgroundColor: "#fff",
-                  border: "2px solid #e5e7eb",
-                  borderRadius: 12,
-                  padding: 14,
-                  fontSize: 14,
-                  color: "#9ca3af",
-                  minHeight: 60,
-                }}
-              >
-                Enter your preferences or interests...
-              </div>
-              <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 8, fontWeight: 600, textAlign: "right" }}>0 / 100 characters</div>
+            {/* Right Column - Session Snapshot */}
+            <div style={{ opacity: durationOpacity }}>
+              <LiquidGlassCard>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, marginBottom: 16 }}>
+                  Session Snapshot
+                </div>
+                <h3 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, fontWeight: 400, color: "#000000", margin: "0 0 20px 0", letterSpacing: "-0.02em" }}>
+                  Ready when you are
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <SnapshotItem label="Length" value={`${Math.round(lengthSliderValue)} min`} />
+                  <SnapshotItem label="Modules" value="5" />
+                  <SnapshotItem label="Experience" value="Video avatar" />
+                </div>
+              </LiquidGlassCard>
             </div>
           </div>
 
-          {/* Start Button - Sunshine style */}
-          <div style={{ opacity: buttonOpacity, borderTop: "2px solid #f3f4f6", paddingTop: 24 }}>
+          {/* Start Interview Button */}
+          <div style={{ opacity: buttonOpacity, display: "flex", justifyContent: "flex-end" }}>
             <button
               style={{
-                width: "100%",
-                background: "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
+                backgroundColor: "#f97316",
                 color: "#fff",
                 border: "none",
-                borderRadius: 16,
-                padding: "18px 24px",
-                fontSize: 17,
-                fontWeight: 700,
+                borderRadius: 20,
+                padding: "12px 32px",
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                boxShadow: "0 8px 24px rgba(249, 115, 22, 0.35)",
+                gap: 8,
+                transform: `scale(${pressScale})`,
               }}
             >
-              <span style={{ fontSize: 20 }}>🎥</span> Start Interview
+              ▶ Start Interview
             </button>
           </div>
         </div>
@@ -366,3 +337,66 @@ export const InterviewConfig: React.FC<InterviewConfigProps> = ({
     </AbsoluteFill>
   );
 };
+
+// Liquid Glass Card Component
+const LiquidGlassCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div
+    style={{
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.2)",
+      borderRadius: 20,
+      padding: 24,
+      boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
+    }}
+  >
+    {children}
+  </div>
+);
+
+// Radio Option Component
+const RadioOption: React.FC<{ label: string; selected: boolean }> = ({ label, selected }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 10 }}>
+    <div
+      style={{
+        width: 20,
+        height: 20,
+        borderRadius: "50%",
+        border: `2px solid ${selected ? "#f97316" : "#ddd"}`,
+        backgroundColor: selected ? "#f97316" : "transparent",
+      }}
+    />
+    <span style={{ fontSize: 13, color: "#333333", fontWeight: 400 }}>{label}</span>
+  </div>
+);
+
+// Tag Button Component
+const TagButton: React.FC<{ label: string; selected: boolean }> = ({ label, selected }) => (
+  <div
+    style={{
+      padding: "8px 14px",
+      borderRadius: 12,
+      backgroundColor: selected ? "#f97316" : "#f0f0f0",
+      color: selected ? "#fff" : "#666666",
+      fontFamily: 'Plus Jakarta Sans, sans-serif',
+      fontSize: 12,
+      fontWeight: 500,
+      cursor: "pointer",
+    }}
+  >
+    {label}
+  </div>
+);
+
+// Snapshot Item Component
+const SnapshotItem: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 12, borderBottom: "1px solid rgba(0, 0, 0, 0.1)" }}>
+    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: "#888888", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600 }}>
+      {label}
+    </span>
+    <span style={{ fontFamily: 'DM Serif Display, serif', fontSize: 16, fontWeight: 400, color: "#000000" }}>
+      {value}
+    </span>
+  </div>
+);

@@ -385,7 +385,7 @@ export default function TranscriptViewer({
 
   // Render transcript with emotions
   const renderTranscriptWithEmotions = () => (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {transcriptJson.map((item, index) => {
         const isUser = item.role === 'user';
         const isActive = index === activeIndex;
@@ -405,146 +405,71 @@ export default function TranscriptViewer({
           <div
             key={index}
             ref={isActive ? activeSegmentRef : null}
-            className={`transition-all duration-200 ${isActive ? 'scale-[1.01]' : ''}`}
+            className="transition-all duration-200"
           >
             <div
-              className={`rounded-3xl border-2 transition-all duration-300 shadow-soft group relative ${
-                highlightColors
-                  ? `${highlightColors.border} ${highlightColors.light} border-l-4 cursor-pointer hover:shadow-soft-lg`
-                  : isActive
-                  ? 'border-primary-400 bg-primary-50/50 shadow-soft-lg'
-                  : isUser
-                  ? 'border-sky-100 bg-white hover:border-sky-300 hover:shadow-sky'
-                  : 'border-coral-100 bg-white hover:border-coral-300 hover:shadow-soft-lg'
+              className={`flex gap-4 group relative ${
+                highlightColors ? 'cursor-pointer' : ''
               }`}
               onClick={() => highlight && openActionModal(highlight)}
             >
-              {highlight && (
-                <>
-                  <div className={`absolute -left-1 top-0 bottom-0 w-1 rounded-l-2xl ${highlightColors?.bg}`} />
-                  <HighlightTooltip highlight={highlight} colors={highlightColors} />
-                </>
-              )}
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b-2 border-gray-100 bg-cream-50/50">
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shadow-soft ${
-                    isUser ? 'bg-sky-400' : 'bg-coral-400'
-                  }`}>
-                    {isUser ? (
-                      <User className="w-4.5 h-4.5 text-white" />
-                    ) : (
-                      <Bot className="w-4.5 h-4.5 text-white" />
-                    )}
-                  </div>
-                  <span className={`text-sm font-bold ${isUser ? 'text-sky-700' : 'text-coral-700'}`}>
-                    {isUser ? 'You' : 'Interviewer'}
-                  </span>
-                  {item.time_in_call_secs !== undefined && (
-                    <span
-                      className="text-xs text-gray-400 font-mono cursor-pointer hover:text-primary-600"
-                      onClick={() => handleSegmentClick(item.time_in_call_secs || 0)}
-                    >
-                      {formatTimestamp(item.time_in_call_secs)}
-                    </span>
-                  )}
-                  {highlight && (
-                    <span className={`text-xs px-2 py-0.5 rounded ${highlightColors?.bg} ${highlightColors?.text}`}>
-                      Highlighted
-                    </span>
-                  )}
+              {/* Left side - role label and timestamp */}
+              <div className="flex-shrink-0 w-24 pt-1">
+                <div className={`text-xs uppercase tracking-wide font-medium ${
+                  isUser ? 'text-gray-900' : 'text-gray-500'
+                }`}>
+                  {isUser ? 'You' : 'Interviewer'}
                 </div>
-
-                {isUser && (emotions.face || emotions.prosody) && (
-                  <div className="flex items-center gap-2">
-                    {emotions.face && <EmotionBadge emotion={emotions.face} type="face" />}
-                    {emotions.prosody && <EmotionBadge emotion={emotions.prosody} type="prosody" />}
+                {item.time_in_call_secs !== undefined && (
+                  <div
+                    className="text-xs text-gray-400 mt-1 cursor-pointer hover:text-gray-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSegmentClick(item.time_in_call_secs || 0);
+                    }}
+                  >
+                    {formatTimestamp(item.time_in_call_secs)}
                   </div>
                 )}
               </div>
 
-              {/* Message content */}
-              {hasMessage && (
-                <div className="px-4 py-3">
-                  <p className="text-gray-800 leading-relaxed text-sm">{item.message}</p>
-                </div>
-              )}
+              {/* Right side - message content */}
+              <div className="flex-1">
+                <div
+                  className={`rounded-xl p-6 transition-all duration-200 ${
+                    highlightColors
+                      ? `${highlightColors.light} border-l-4 ${highlightColors.border}`
+                      : isActive
+                      ? 'bg-gray-50 border-l-4 border-gray-300'
+                      : 'bg-gray-50/50 border-l-4 border-transparent hover:bg-gray-50'
+                  }`}
+                >
+                  {highlight && <HighlightTooltip highlight={highlight} colors={highlightColors} />}
 
-              {/* Tool calls/results */}
-              {hasTools && (
-                <div className="px-4 pb-3 space-y-2">
-                  {item.tool_calls?.map((tool, tIdx) => (
-                    <div key={`call-${tIdx}`} className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-md px-3 py-2">
-                      <Terminal className="w-3.5 h-3.5" />
-                      <span className="font-mono">Action: {tool.tool_name}</span>
-                    </div>
-                  ))}
-                  {item.tool_results?.map((result, rIdx) => (
-                    <div key={`res-${rIdx}`} className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-md px-3 py-2">
-                      <Database className="w-3.5 h-3.5" />
-                      <span className="font-mono">Result: {result.tool_name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                  {/* Message content */}
+                  {hasMessage && (
+                    <p className="text-gray-900 leading-relaxed">{item.message}</p>
+                  )}
 
-              {/* Emotion breakdown */}
-              {isUser && (emotions.face || emotions.prosody) && (
-                <div className="px-4 py-2 bg-gray-50/50 border-t border-gray-100">
-                  <div className="grid grid-cols-2 gap-4">
-                    {emotions.face && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Smile className="w-3 h-3 text-gray-400" />
-                          <span className="text-xs font-medium text-gray-500">Face</span>
+                  {/* Emotion indicators (subtle, inline) */}
+                  {isUser && (emotions.face || emotions.prosody) && (
+                    <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200/50">
+                      {emotions.face && (
+                        <div className="text-xs text-gray-500">
+                          <span className="font-medium capitalize">{emotions.face.top_emotion_name}</span>
+                          <span className="text-gray-400 ml-1">{(emotions.face.top_emotion_score * 100).toFixed(0)}%</span>
                         </div>
-                        <div className="space-y-1">
-                          {emotions.face.emotions.slice(0, 3).map((e, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{
-                                    width: `${e.score * 100}%`,
-                                    backgroundColor: getEmotionColor(e.name)
-                                  }}
-                                />
-                              </div>
-                              <span className="text-xs text-gray-600 w-16 capitalize truncate">{e.name}</span>
-                              <span className="text-xs text-gray-400 w-6">{(e.score * 100).toFixed(0)}%</span>
-                            </div>
-                          ))}
+                      )}
+                      {emotions.prosody && (
+                        <div className="text-xs text-gray-500">
+                          <span className="font-medium capitalize">{emotions.prosody.top_emotion_name}</span>
+                          <span className="text-gray-400 ml-1">{(emotions.prosody.top_emotion_score * 100).toFixed(0)}%</span>
                         </div>
-                      </div>
-                    )}
-                    {emotions.prosody && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Mic className="w-3 h-3 text-gray-400" />
-                          <span className="text-xs font-medium text-gray-500">Voice</span>
-                        </div>
-                        <div className="space-y-1">
-                          {emotions.prosody.emotions.slice(0, 3).map((e, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{
-                                    width: `${e.score * 100}%`,
-                                    backgroundColor: getEmotionColor(e.name)
-                                  }}
-                                />
-                              </div>
-                              <span className="text-xs text-gray-600 w-16 capitalize truncate">{e.name}</span>
-                              <span className="text-xs text-gray-400 w-6">{(e.score * 100).toFixed(0)}%</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         );
@@ -554,101 +479,37 @@ export default function TranscriptViewer({
 
   // Highlight tooltip component
   const HighlightTooltip = ({ highlight, colors }: { highlight: TranscriptHighlight; colors: any }) => (
-    <div className={`absolute bottom-full left-0 mb-2 p-3 rounded-xl bg-white border-2 ${colors.border} shadow-soft-lg z-10 whitespace-normal w-max max-w-xs opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-300`}>
+    <div className={`absolute -top-2 -translate-y-full left-0 mb-2 p-3 rounded-xl bg-white border ${colors.border} shadow-lg z-10 whitespace-normal w-max max-w-sm opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-300`}>
       {highlight.comment && (
-        <p className={`text-xs ${colors.text} font-semibold leading-relaxed`}>
+        <p className="text-sm text-gray-700 leading-relaxed">
           {highlight.comment}
         </p>
       )}
       {!highlight.comment && (
-        <p className="text-xs text-gray-600 font-medium">Highlighted</p>
+        <p className="text-sm text-gray-600">Highlighted</p>
       )}
     </div>
   );
 
   return (
-    <PlayfulCard variant="white" className="overflow-hidden h-full flex flex-col animate-fade-in">
-      {/* Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-5 flex items-center justify-between hover:bg-cream-50 transition-all duration-300 rounded-t-3xl"
+    <div className="overflow-hidden h-full flex flex-col bg-white">
+      {/* Single-column Transcript with Inline Highlights */}
+      <div
+        ref={containerRef}
+        className="flex-1 min-h-0 overflow-y-auto p-8"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary-100 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-primary-600" />
+        {transcriptJson.length > 0 ? (
+          renderTranscriptWithEmotions()
+        ) : rawTranscript ? (
+          <div className="prose prose-sm max-w-none">
+            <p className="text-gray-700 whitespace-pre-wrap">{rawTranscript}</p>
           </div>
-          <h2 className="text-xl font-bold text-gray-900">
-            Conversation Transcript
-          </h2>
-          {emotionData.face.length > 0 && (
-            <Badge variant="primary" icon={Sparkles}>
-              with emotions
-            </Badge>
-          )}
-          {highlights.length > 0 && (
-            <Badge variant="sunshine" icon={Highlighter}>
-              {highlights.length} highlights
-            </Badge>
-          )}
-        </div>
-        <div className={`p-2 rounded-xl transition-all duration-300 ${isExpanded ? 'bg-primary-100' : 'bg-gray-100'}`}>
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-primary-600" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-600" />
-          )}
-        </div>
-      </button>
-
-      {isExpanded && (
-        <div className="border-t-2 border-gray-100 flex-1 min-h-0 flex flex-col">
-          {/* Controls */}
-          <div className="px-5 py-3 bg-cream-50/50 border-b-2 border-gray-100 flex items-center justify-between flex-wrap gap-4">
-            <div className="text-sm text-gray-700 font-medium">
-              <span className="text-primary-600 font-bold">{transcriptJson.length}</span> messages
-              {emotionData.face.length > 0 && (
-                <>
-                  {' • '}
-                  <span className="text-sky-600 font-bold">{emotionData.face.length}</span> emotion readings
-                </>
-              )}
-              {highlights.length > 0 && (
-                <>
-                  {' • '}
-                  <span className="text-sunshine-600 font-bold">{highlights.length}</span> highlights
-                </>
-              )}
-            </div>
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-primary-600 transition-colors">
-              <input
-                type="checkbox"
-                checked={autoScroll}
-                onChange={(e) => setAutoScroll(e.target.checked)}
-                className="rounded-lg border-2 border-gray-300 text-primary-600 focus:ring-2 focus:ring-primary-500 w-5 h-5"
-              />
-              <span className="font-semibold">Auto-scroll</span>
-            </label>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            No transcript available
           </div>
-
-          {/* Single-column Transcript with Inline Highlights */}
-          <div
-            ref={containerRef}
-            className="flex-1 min-h-0 overflow-y-auto p-4"
-          >
-            {transcriptJson.length > 0 ? (
-              renderTranscriptWithEmotions()
-            ) : rawTranscript ? (
-              <div className="prose prose-sm max-w-none">
-                <p className="text-gray-700 whitespace-pre-wrap">{rawTranscript}</p>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                No transcript available
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {actionHighlight && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onClick={closeActionModal}>
@@ -699,6 +560,6 @@ export default function TranscriptViewer({
           </div>
         </div>
       )}
-    </PlayfulCard>
+    </div>
   );
 }
