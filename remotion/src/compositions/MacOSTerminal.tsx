@@ -40,20 +40,9 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
   // Calculate when user typing finishes
   const userTypingEndFrame = typeStartFrame + typedText.length * framesPerChar;
 
-  // Claude response 1: appears 20 frames after user finishes
-  const response1StartFrame = userTypingEndFrame + 20;
-  const response1Text = "💀💀🤣";
-  const response1Progress = Math.max(0, frame - response1StartFrame);
-  const response1CharsToShow = Math.min(
-    Math.floor(response1Progress / 6), // Slower for emojis
-    response1Text.length
-  );
-  const displayedResponse1 = response1Text.slice(0, response1CharsToShow);
-  const showResponse1 = frame >= response1StartFrame;
-
-  // Claude response 2: "bro is cooked" - appears 30 frames after response 1 finishes
-  const response2StartFrame = response1StartFrame + response1Text.length * 6 + 30;
-  const response2Text = "bro is cooked 💀🤣";
+  // Claude response 1: "bro is cooked"
+  const response2StartFrame = userTypingEndFrame + 30;
+  const response2Text = "bro is cooked";
   const response2Progress = Math.max(0, frame - response2StartFrame);
   const response2CharsToShow = Math.min(
     Math.floor(response2Progress / 4), // Slower typing for emphasis
@@ -90,8 +79,7 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
   const cursorVisible = Math.floor(frame / 15) % 2 === 0;
 
   // Determine which line cursor is on
-  const cursorOnUser = !showResponse1;
-  const cursorOnResponse1 = showResponse1 && !showResponse2;
+  const cursorOnUser = !showResponse2;
   const cursorOnResponse2 = showResponse2 && !showResponse3;
   const cursorOnResponse3 = showResponse3;
 
@@ -99,7 +87,7 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
     <AbsoluteFill
       style={{
         backgroundColor: "#f5f5f5",
-        padding: 40,
+        padding: 24,
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
@@ -181,7 +169,7 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
           style={{
             flex: 1,
             backgroundColor: "#ffffff",
-            padding: "32px 40px",
+            padding: "24px 32px",
             fontFamily:
               '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Menlo, monospace',
             fontSize: 15,
@@ -264,27 +252,7 @@ export const MacOSTerminal: React.FC<MacOSTerminalProps> = ({
             )}
           </div>
 
-          {/* Claude Response 1 */}
-          {showResponse1 && (
-            <div style={{ display: "flex", alignItems: "center", marginTop: 16 }}>
-              <span style={{ color: "#9ca3af", marginRight: 8 }}>&gt;</span>
-              <span style={{ color: "#e65100", fontWeight: 600 }}>@claude:</span>
-              <span style={{ marginLeft: 8 }}>{displayedResponse1}</span>
-              {cursorOnResponse1 && (
-                <span
-                  style={{
-                    width: 2,
-                    height: 18,
-                    backgroundColor: "#1a1a1a",
-                    opacity: cursorVisible ? 1 : 0,
-                    marginLeft: 1,
-                  }}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Claude Response 2 - "bro is cooked" */}
+          {/* Claude Response 1 - "bro is cooked" */}
           {showResponse2 && (
             <div style={{ display: "flex", alignItems: "center", marginTop: 16 }}>
               <span style={{ color: "#9ca3af", marginRight: 8 }}>&gt;</span>
