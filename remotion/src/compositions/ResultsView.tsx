@@ -10,6 +10,8 @@ import {
 export type ResultsViewProps = {
   animationStartFrame?: number;
   scrollY?: number;
+  pageIndex?: number; // Show specific page (0-2)
+  static?: boolean; // Show static content without animation
 };
 
 type TranscriptLine = {
@@ -218,6 +220,8 @@ const pages: ResultsPage[] = [
 export const ResultsView: React.FC<ResultsViewProps> = ({
   animationStartFrame = 0,
   scrollY = 0,
+  pageIndex,
+  static: isStatic = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -241,6 +245,63 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
     [0, 1],
     clamp
   );
+
+  // If static mode with specific page, show only that page fully rendered
+  if (isStatic && pageIndex !== undefined) {
+    const page = pages[pageIndex];
+    if (!page) return null;
+
+    return (
+      <AbsoluteFill
+        style={{
+          backgroundColor: "#ffffff",
+          fontFamily: 'Plus Jakarta Sans, sans-serif',
+          color: "#000000",
+          overflow: "hidden",
+        }}
+      >
+        {/* LightLeakBackground */}
+        <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", backgroundColor: "#ffffff" }}>
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom right, rgba(219, 234, 254, 0.3), #ffffff, rgba(253, 232, 208, 0.3))" }} />
+          <div
+            style={{
+              position: "absolute",
+              top: "-10%",
+              left: "-10%",
+              width: "60%",
+              height: "60%",
+              borderRadius: "50%",
+              background: "rgba(147, 197, 253, 0.15)",
+              filter: "blur(100px)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: "-10%",
+              right: "-10%",
+              width: "60%",
+              height: "60%",
+              borderRadius: "50%",
+              background: "rgba(251, 191, 36, 0.1)",
+              filter: "blur(100px)",
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            transform: `translateY(${-scrollY}px)`,
+            padding: 48,
+            position: "relative",
+            zIndex: 10,
+          }}
+        >
+          <ResultsPageView page={page} frame={999} fps={fps} isStatic />
+        </div>
+      </AbsoluteFill>
+    );
+  }
 
   return (
     <AbsoluteFill
@@ -361,10 +422,11 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   );
 };
 
-const ResultsPageView: React.FC<{ page: ResultsPage; frame: number; fps: number }> = ({
+const ResultsPageView: React.FC<{ page: ResultsPage; frame: number; fps: number; isStatic?: boolean }> = ({
   page,
   frame,
   fps,
+  isStatic = false,
 }) => {
   const f = Math.max(0, frame);
   const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" };
@@ -380,18 +442,18 @@ const ResultsPageView: React.FC<{ page: ResultsPage; frame: number; fps: number 
       easing: easeOut,
     });
 
-  const headerOpacity = fade(0, 0.4);
-  const headerLift = lift(0, 0.4, 14);
-  const summaryOpacity = fade(0.2, 0.7);
-  const summaryLift = lift(0.2, 0.7, 18);
-  const improvementsOpacity = fade(0.3, 0.8);
-  const improvementsLift = lift(0.3, 0.8, 18);
-  const playbackOpacity = fade(0.65, 1.1);
-  const playbackLift = lift(0.65, 1.1, 16);
-  const footerOpacity = fade(1.4, 1.8);
-  const footerLift = lift(1.4, 1.8, 12);
+  const headerOpacity = isStatic ? 1 : fade(0, 0.4);
+  const headerLift = isStatic ? 0 : lift(0, 0.4, 14);
+  const summaryOpacity = isStatic ? 1 : fade(0.2, 0.7);
+  const summaryLift = isStatic ? 0 : lift(0.2, 0.7, 18);
+  const improvementsOpacity = isStatic ? 1 : fade(0.3, 0.8);
+  const improvementsLift = isStatic ? 0 : lift(0.3, 0.8, 18);
+  const playbackOpacity = isStatic ? 1 : fade(0.65, 1.1);
+  const playbackLift = isStatic ? 0 : lift(0.65, 1.1, 16);
+  const footerOpacity = isStatic ? 1 : fade(1.4, 1.8);
+  const footerLift = isStatic ? 0 : lift(1.4, 1.8, 12);
 
-  const scoreValue = interpolate(f, [0.35 * fps, 1.1 * fps], [0, page.score], {
+  const scoreValue = isStatic ? page.score : interpolate(f, [0.35 * fps, 1.1 * fps], [0, page.score], {
     ...clamp,
     easing: Easing.out(Easing.quad),
   });

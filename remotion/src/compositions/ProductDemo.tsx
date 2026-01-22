@@ -6,6 +6,7 @@ import { InterviewConfig } from "./InterviewConfig";
 import { LoadingScreen } from "./LoadingScreen";
 import { InterviewInProgress } from "./InterviewInProgress";
 import { ResultsView } from "./ResultsView";
+import { FeaturesHighlight } from "./FeaturesHighlight";
 import { Cursor } from "../components/Cursor";
 
 export type ProductDemoProps = {};
@@ -53,7 +54,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   const configScrollY = interpolate(
     frame,
     [scrollStartFrame, scrollEndFrame],
-    [0, 350],
+    [0, 520],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.4, 0, 0.2, 1) }
   );
 
@@ -105,8 +106,8 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
   );
 
   // Cards slide off to the left with 0.2 second (6 frame) delays
-  const cardSlideStart = 692 + terminalOffset;
-  const cardSlideDuration = 58; // ~2 seconds to slide off
+  const cardSlideStart = 835; // Start sliding at ~27.8 seconds
+  const cardSlideDuration = 45; // ~1.5 seconds to slide off
   const cardStaggerDelay = 6; // 0.2 seconds between each card
 
   // Helper function to get slide progress for each card
@@ -308,6 +309,9 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
                 const stackCardTranslateX = interpolate(stackCardProgress, [0, 1], [cardOffset, -1500]);
                 const stackCardOpacity = interpolate(stackCardProgress, [0, 1], [1, 0.7]);
 
+                // Different page index for each card: card 2 shows page 2, card 1 shows page 1
+                const pageIndex = i;
+
                 return (
                   <div
                     key={`stack-${i}`}
@@ -315,9 +319,8 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
                       position: "absolute",
                       inset: 30,
                       borderRadius: 16,
-                      backgroundColor: "rgba(255, 255, 255, 0.1)",
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
+                      backgroundColor: "#ffffff",
+                      overflow: "hidden",
                       border: "1px solid rgba(255, 255, 255, 0.2)",
                       boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
                       transform: `translateX(${stackCardTranslateX}px) scale(${cardScaleVal})`,
@@ -325,35 +328,26 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
                       zIndex: -i,
                     }}
                   >
-                    {/* Placeholder content hint */}
-                    <div style={{ padding: 40, opacity: 0.2 }}>
-                      <div style={{ height: 24, width: "60%", backgroundColor: "#000000", borderRadius: 8, marginBottom: 16 }} />
-                      <div style={{ height: 16, width: "40%", backgroundColor: "#000000", borderRadius: 6 }} />
-                    </div>
+                    <ResultsView animationStartFrame={resultsStart} scrollY={resultsScrollY} pageIndex={pageIndex} static />
                   </div>
                 );
               })}
 
-              {/* Last card (card 3) - grows to fill screen */}
+              {/* Last card (card 3) - Features Highlight - grows to fill screen */}
               <div
                 style={{
                   position: "absolute",
                   inset: 30,
                   borderRadius: 16,
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
+                  backgroundColor: "#ffffff",
+                  overflow: "hidden",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
                   boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.1)",
                   transform: `translateX(${lastCardTranslateX}px) scale(${lastCardScale})`,
                   zIndex: -3,
                 }}
               >
-                {/* Placeholder content hint */}
-                <div style={{ padding: 40, opacity: 0.2 }}>
-                  <div style={{ height: 24, width: "60%", backgroundColor: "#000000", borderRadius: 8, marginBottom: 16 }} />
-                  <div style={{ height: 16, width: "40%", backgroundColor: "#000000", borderRadius: 6 }} />
-                </div>
+                <FeaturesHighlight animationStartFrame={lastCardGrowStart} />
               </div>
 
               {/* Main results card (front) - slides off to the right */}
@@ -409,7 +403,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = () => {
             startX={900}
             startY={400}
             endX={640}
-            endY={820}
+            endY={760}
             moveStartFrame={cursorMoveToStartInterview}
             moveDuration={30}
             clickFrame={startInterviewClickFrame}

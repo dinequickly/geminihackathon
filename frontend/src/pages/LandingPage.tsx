@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Brain, Heart, MessageCircle, Sparkles, Zap } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { LiquidGlass } from '../components/LiquidGlass';
 import { LiquidButton } from '../components/LiquidButton';
 import { LightLeakBackground } from '../components/LightLeakBackground';
@@ -9,6 +9,27 @@ import { IridescentSphere } from '../components/IridescentSphere';
 export default function LandingPage() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const maxScrollForZoom = windowHeight * 0.8;
+
+      // Calculate progress from 0 to 1
+      const progress = Math.min(scrollPosition / maxScrollForZoom, 1);
+      setScrollProgress(progress);
+
+      // Prevent fast scrolling past the zoom section
+      if (progress < 1 && scrollPosition > maxScrollForZoom) {
+        window.scrollTo(0, maxScrollForZoom);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const dimensions = [
     {
@@ -63,8 +84,115 @@ export default function LandingPage() {
         </LiquidButton>
       </nav>
 
-      {/* Hero Section */}
-      <section ref={heroRef} className="relative z-10 px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
+      {/* School of Athens Zoom Section - Full Page Experience */}
+      <section className="relative min-h-screen">
+        <div className="fixed inset-0 w-full h-screen overflow-hidden flex items-center justify-center bg-[#fef9f3]">
+          <div
+            className="absolute inset-0 transition-transform duration-100 ease-out"
+            style={{
+              transform: `scale(${1 + scrollProgress * 1.5})`,
+              transformOrigin: 'center 25%',
+            }}
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/%22The_School_of_Athens%22_by_Raffaello_Sanzio_da_Urbino.jpg/2880px-%22The_School_of_Athens%22_by_Raffaello_Sanzio_da_Urbino.jpg"
+              alt="The School of Athens"
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Thought Bubbles - Appear when zoom is nearly complete */}
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              opacity: Math.max(0, (scrollProgress - 0.6) * 2.5),
+              pointerEvents: 'none',
+            }}
+          >
+            {/* Left philosopher (Plato) - "He's talking way too much" */}
+            <div
+              className="absolute"
+              style={{
+                left: '38%',
+                top: 'calc(38% + 280px)',
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              <div className="relative">
+                {/* Bubble */}
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl px-6 py-4 shadow-2xl border border-gray-200/50 max-w-xs">
+                  <p className="text-gray-800 font-light italic text-sm leading-relaxed">
+                    "He's talking way too much"
+                  </p>
+                </div>
+                {/* Bubble tail - from right side going down and right */}
+                <div className="absolute -bottom-3 right-8">
+                  <div className="w-4 h-4 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
+                </div>
+                <div className="absolute -bottom-8 right-4">
+                  <div className="w-3 h-3 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
+                </div>
+                <div className="absolute -bottom-12 right-0">
+                  <div className="w-2 h-2 bg-white/95 backdrop-blur-sm rounded-full shadow-md" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right philosopher (Aristotle) - "Does he get the point I'm trying to make?" */}
+            <div
+              className="absolute"
+              style={{
+                left: 'calc(66% + 100px)',
+                top: 'calc(38% + 285px)',
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              <div className="relative">
+                {/* Bubble */}
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl px-6 py-4 shadow-2xl border border-gray-200/50 max-w-xs">
+                  <p className="text-gray-800 font-light italic text-sm leading-relaxed">
+                    "Does he get the point I'm trying to make?"
+                  </p>
+                </div>
+                {/* Bubble tail - from left side going down and left */}
+                <div className="absolute -bottom-3 left-8">
+                  <div className="w-4 h-4 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
+                </div>
+                <div className="absolute -bottom-8 left-4">
+                  <div className="w-3 h-3 bg-white/95 backdrop-blur-sm rounded-full shadow-lg" />
+                </div>
+                <div className="absolute -bottom-12 left-0">
+                  <div className="w-2 h-2 bg-white/95 backdrop-blur-sm rounded-full shadow-md" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Overlay text that fades out as you scroll */}
+          <div
+            className="relative z-10 text-center px-6 transition-opacity duration-500"
+            style={{
+              opacity: Math.max(0, 1 - scrollProgress * 2.5)
+            }}
+          >
+            <h1 className="font-serif text-6xl md:text-8xl font-medium text-white mb-6 drop-shadow-2xl">
+              Master the Art of<br />
+              <span className="italic">Conversation</span>
+            </h1>
+            <p className="text-xl text-white/90 font-light max-w-2xl mx-auto leading-relaxed drop-shadow-lg">
+              Like the great philosophers, prepare to engage in meaningful dialogue
+            </p>
+          </div>
+        </div>
+
+        {/* Spacer to create scroll space for the zoom effect */}
+        <div className="h-[200vh] pointer-events-none" />
+      </section>
+
+      {/* White Column Container */}
+      <div className="relative z-10 w-[1200px] mx-auto bg-white">
+        {/* Hero Section - Only appears after zoom complete */}
+        <section ref={heroRef} className="px-6 pt-40 pb-32 max-w-7xl mx-auto text-center">
         <div className="space-y-8">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/30 backdrop-blur-sm border border-white/40 text-xs font-mono tracking-wider uppercase text-gray-700">
@@ -130,8 +258,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="relative z-10 px-6 py-32 max-w-7xl mx-auto">
+        {/* Features Section */}
+        <section id="features" className="px-6 py-32 max-w-7xl mx-auto">
         <div className="text-center mb-20">
           <h2 className="font-serif text-5xl text-black mb-6">
             Practice What <span className="italic text-gray-800">Matters</span>
@@ -173,8 +301,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works / CTA */}
-      <section className="relative z-10 px-6 py-32 max-w-5xl mx-auto text-center">
+        {/* How It Works / CTA */}
+        <section className="px-6 py-32 max-w-5xl mx-auto text-center">
         <LiquidGlass className="p-16 md:p-24">
           <h2 className="font-serif text-5xl md:text-6xl text-black mb-8">
             Ready When <span className="italic text-gray-800">You Are</span>
@@ -197,19 +325,20 @@ export default function LandingPage() {
         </LiquidGlass>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 px-6 py-12 border-t border-gray-200/50 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col">
-            <span className="font-serif text-lg font-bold tracking-tight text-black">TAVUS</span>
-            <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Intelligence</span>
-          </div>
+        {/* Footer */}
+        <footer className="px-6 py-12 border-t border-gray-200/50 max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col">
+              <span className="font-serif text-lg font-bold tracking-tight text-black">TAVUS</span>
+              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Intelligence</span>
+            </div>
 
-          <div className="text-sm text-gray-500 font-light">
-            © 2024 Tavus. All rights reserved.
+            <div className="text-sm text-gray-500 font-light">
+              © 2024 Tavus. All rights reserved.
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }
