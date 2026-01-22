@@ -101,7 +101,6 @@ export default function TranscriptViewer({
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [autoScroll, setAutoScroll] = useState(true);
-  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [actionHighlight, setActionHighlight] = useState<TranscriptHighlight | null>(null);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
