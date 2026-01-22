@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
 import { api, Conversation } from '../lib/api';
 import { PackSelectionModal, ShopModal, PromoPopup } from '../components';
+import { LiquidGlass } from '../components/LiquidGlass';
+import { LiquidButton } from '../components/LiquidButton';
+import { LightLeakBackground } from '../components/LightLeakBackground';
 
 interface DashboardProps {
   userId: string;
@@ -13,7 +16,6 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState('');
   const [showPackModal, setShowPackModal] = useState(false);
   const [showShopModal, setShowShopModal] = useState(false);
 
@@ -23,11 +25,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
   const loadData = async () => {
     try {
-      const [user, convs] = await Promise.all([
-        api.getUser(userId),
-        api.getUserConversations(userId)
-      ]);
-      setUserName(user.name);
+      const convs = await api.getUserConversations(userId);
       setConversations(convs);
     } catch (err) {
       console.error('Failed to load data:', err);
@@ -64,116 +62,128 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fef9f3]">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
+      <div className="min-h-screen relative flex items-center justify-center bg-white overflow-hidden">
+        <LightLeakBackground />
+        <LiquidGlass className="flex items-center justify-center p-12">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
+        </LiquidGlass>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#fef9f3] font-sans text-gray-900 p-8">
-      {/* Background decorations */}
-      <div className="absolute top-[60px] right-[100px] w-[300px] h-[300px] rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] opacity-30 pointer-events-none" />
-      <div className="absolute top-[200px] right-[200px] w-[200px] h-[200px] rounded-full bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] opacity-30 pointer-events-none" />
+    <div className="min-h-screen relative overflow-hidden font-sans text-gray-900">
+      <LightLeakBackground />
 
-      <div className="relative z-10 max-w-6xl mx-auto">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-24">
         {/* Header */}
-        <div className="flex justify-between items-start mb-8 animate-slide-down">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">InterviewPro</h1>
-            <p className="text-sm text-gray-500 mt-1">Welcome back, {userName}</p>
+        <div className="flex justify-between items-start mb-12">
+          <div className="flex flex-col">
+            <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+            <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Dashboard</span>
           </div>
           <div className="flex gap-3">
-            <button 
+            <LiquidButton
               onClick={() => setShowShopModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg border-2 border-amber-400 text-amber-500 text-sm font-semibold hover:bg-amber-50 transition-colors"
+              variant="secondary"
+              size="sm"
             >
-              <span>🛒</span> Shop
-            </button>
-            <button 
+              Shop
+            </LiquidButton>
+            <LiquidButton
               onClick={onLogout}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-gray-500 text-sm font-medium hover:bg-gray-100 transition-colors"
+              variant="ghost"
+              size="sm"
             >
-              <span>→</span> Sign out
-            </button>
+              Sign out
+            </LiquidButton>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6 animate-slide-up delay-100">
-          <StatCard icon="📹" iconBg="bg-red-100" label="Total Sessions" value={conversations.length.toString()} />
-          <StatCard icon="📈" iconBg="bg-emerald-100" label="Average Score" value={avgScore.toString()} />
-          <StatCard icon="🏆" iconBg="bg-amber-100" label="Best Score" value={bestScore.toString()} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <LiquidGlass className="p-6 flex items-center gap-4">
+            <div className="text-3xl">📹</div>
+            <div>
+              <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">Total Sessions</div>
+              <div className="font-serif text-3xl text-black">{conversations.length}</div>
+            </div>
+          </LiquidGlass>
+          <LiquidGlass className="p-6 flex items-center gap-4">
+            <div className="text-3xl">📈</div>
+            <div>
+              <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">Average Score</div>
+              <div className="font-serif text-3xl text-black">{avgScore}</div>
+            </div>
+          </LiquidGlass>
+          <LiquidGlass className="p-6 flex items-center gap-4">
+            <div className="text-3xl">🏆</div>
+            <div>
+              <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">Best Score</div>
+              <div className="font-serif text-3xl text-black">{bestScore}</div>
+            </div>
+          </LiquidGlass>
         </div>
 
         {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8 animate-slide-up delay-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {/* Start New Interview */}
-          <div 
+          <LiquidGlass
             onClick={() => navigate('/interview/setup')}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 p-6 text-white cursor-pointer shadow-lg hover:shadow-orange-200 hover:scale-[1.02] transition-all duration-200"
+            className="p-8 group cursor-pointer hover:!border-gray-400 transition-all"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">
-                ▶
-              </div>
-              <div className="flex-1">
-                <div className="text-lg font-bold">Start New Interview</div>
-                <div className="text-sm opacity-90">Practice with AI interviewer</div>
-              </div>
-              <span className="text-xl opacity-80 group-hover:translate-x-1 transition-transform">›</span>
+            <div className="text-4xl mb-4">▶</div>
+            <h3 className="font-serif text-2xl text-black mb-2">Start New Interview</h3>
+            <p className="text-gray-600 font-light mb-6">Practice with AI interviewer</p>
+            <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
+              EXPLORE
+              <ArrowRight className="w-4 h-4" />
             </div>
-          </div>
+          </LiquidGlass>
 
           {/* Practice with Packs */}
-          <div 
+          <LiquidGlass
             onClick={() => setShowPackModal(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 p-6 text-gray-900 cursor-pointer shadow-lg hover:shadow-amber-100 hover:scale-[1.02] transition-all duration-200"
+            className="p-8 group cursor-pointer hover:!border-gray-400 transition-all"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/40 flex items-center justify-center text-2xl">
-                📦
-              </div>
-              <div className="flex-1">
-                <div className="text-lg font-bold">Practice with Packs</div>
-                <div className="text-sm opacity-80">Use curated question sets</div>
-              </div>
-              <span className="text-xl opacity-60 group-hover:translate-x-1 transition-transform">›</span>
+            <div className="text-4xl mb-4">📦</div>
+            <h3 className="font-serif text-2xl text-black mb-2">Practice with Packs</h3>
+            <p className="text-gray-600 font-light mb-6">Use curated question sets</p>
+            <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
+              EXPLORE
+              <ArrowRight className="w-4 h-4" />
             </div>
-          </div>
+          </LiquidGlass>
 
           {/* Tavus Video Interview */}
-          <div 
+          <LiquidGlass
             onClick={() => navigate('/interview/setup?type=tavus')}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 p-6 text-white cursor-pointer shadow-lg hover:shadow-teal-100 hover:scale-[1.02] transition-all duration-200"
+            className="p-8 group cursor-pointer hover:!border-gray-400 transition-all relative"
           >
-            <div className="absolute top-3 right-3 bg-white/20 rounded-lg px-2.5 py-1 text-[10px] font-bold">
-              PREMIUM
+            <div className="absolute top-4 right-4 bg-black/50 rounded-lg px-2.5 py-1 text-[10px] font-mono text-white uppercase tracking-widest">
+              Premium
             </div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">
-                🎥
-              </div>
-              <div className="flex-1">
-                <div className="text-lg font-bold">Tavus Video Interview</div>
-                <div className="text-sm opacity-90">AI video interviewer</div>
-              </div>
-              <span className="text-xl opacity-80 group-hover:translate-x-1 transition-transform">›</span>
+            <div className="text-4xl mb-4">🎥</div>
+            <h3 className="font-serif text-2xl text-black mb-2">Tavus Video Interview</h3>
+            <p className="text-gray-600 font-light mb-6">AI video interviewer</p>
+            <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
+              EXPLORE
+              <ArrowRight className="w-4 h-4" />
             </div>
-          </div>
+          </LiquidGlass>
         </div>
 
         {/* Previous Sessions */}
-        <div className="animate-slide-up delay-300">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Previous Sessions</h2>
-          <div className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-serif text-3xl text-black mb-8">Previous Sessions</h2>
+          <div className="flex flex-col gap-4">
             {conversations.length === 0 ? (
-              <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm">
-                No sessions yet. Start a new interview to get feedback!
-              </div>
+              <LiquidGlass className="p-12 text-center">
+                <p className="text-gray-600 font-light">No sessions yet. Start a new interview to get feedback!</p>
+              </LiquidGlass>
             ) : (
               conversations.map((conv) => (
-                <SessionRow 
+                <SessionRow
                   key={conv.id}
                   date={formatDate(conv.started_at)}
                   status={conv.status}
@@ -208,58 +218,40 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   );
 }
 
-const StatCard = ({ icon, iconBg, label, value }: { icon: string; iconBg: string; label: string; value: string }) => (
-  <div className="bg-white rounded-xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-    <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center text-2xl`}>
-      {icon}
-    </div>
-    <div>
-      <div className="text-xs text-gray-500 font-medium">{label}</div>
-      <div className="text-2xl font-bold text-gray-900">{value}</div>
-    </div>
-  </div>
-);
-
 const SessionRow = ({ date, status, score, onClick }: { date: string; status: string; score?: number, onClick: () => void }) => {
   const isClickable = ['completed', 'analyzing', 'analyzed'].includes(status);
-  
-  const getStatusStyle = (s: string) => {
+
+  const getStatusLabel = (s: string) => {
     switch (s) {
-      case 'analyzed': // Complete
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Complete' };
+      case 'analyzed':
+        return 'Complete';
       case 'in_progress':
-        return { bg: 'bg-blue-100', text: 'text-blue-600', label: 'In Progress' };
-      case 'completed': // Processing
+        return 'In Progress';
+      case 'completed':
       case 'analyzing':
-        return { bg: 'bg-amber-100', text: 'text-amber-600', label: 'Processing' };
+        return 'Processing';
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-600', label: s };
+        return s;
     }
   };
 
-  const style = getStatusStyle(status);
-
   return (
-    <div 
+    <LiquidGlass
       onClick={isClickable ? onClick : undefined}
-      className={`bg-white rounded-xl p-4 flex items-center gap-4 shadow-sm transition-all ${isClickable ? 'cursor-pointer hover:shadow-md hover:scale-[1.01]' : 'opacity-70'}`}
+      className={`p-6 flex items-center gap-4 ${isClickable ? 'cursor-pointer hover:!border-gray-400' : 'opacity-70'}`}
     >
-      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-        <span className="text-lg text-gray-400">🎥</span>
-      </div>
+      <div className="text-2xl">🎥</div>
       <div className="flex-1">
-        <div className="text-[15px] font-semibold text-gray-900">Interview Session</div>
-        <div className="text-xs text-gray-500 flex items-center gap-2">
-          <span>⏱ {date}</span>
-        </div>
+        <div className="font-serif text-lg text-black">Interview Session</div>
+        <div className="text-xs text-gray-500 font-mono uppercase tracking-widest mt-1">⏱ {date}</div>
       </div>
       {score !== undefined && (
-        <div className="text-xl font-bold text-emerald-600 mr-2">{score}</div>
+        <div className="font-serif text-2xl text-black mr-4">{score}</div>
       )}
-      <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${style.bg} ${style.text}`}>
-        {style.label}
+      <div className="px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-widest bg-black/20 text-black">
+        {getStatusLabel(status)}
       </div>
-      {isClickable && <span className="text-gray-300 text-lg">›</span>}
-    </div>
+      {isClickable && <ArrowRight className="w-4 h-4 text-gray-400" />}
+    </LiquidGlass>
   );
 };
