@@ -130,7 +130,7 @@ export async function analyzeCommunication(
     },
     patterns,
     feedback,
-    instant_rewrites
+    instant_rewrites: instantRewrites
   };
 }
 

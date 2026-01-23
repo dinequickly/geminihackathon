@@ -203,7 +203,7 @@ function detectMicroExpressions(
         expression: 'thinking',
         intensity: 65,
         context: sentence.substring(0, 60),
-        interpretation: 'Thoughtful pause. Good if brief, but don't overdo it.'
+        interpretation: 'Thoughtful pause. Good if brief, but do not overdo it.'
       });
     }
   });
