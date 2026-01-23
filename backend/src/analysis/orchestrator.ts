@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { analyzeCommunication, CommunicationAnalysis } from './communicationAgent';
-import { analyzeEmotionalIntelligence, EmotionalAnalysis } from './emotionalAgent';
-import { analyzeExecutivePresence, PresenceAnalysis } from './presenceAgent';
-import { analyzeStrategicThinking, StrategicAnalysis } from './strategicAgent';
+import { analyzeCommunication, CommunicationAnalysis } from './communicationAgent.js';
+import { analyzeEmotionalIntelligence, EmotionalAnalysis } from './emotionalAgent.js';
+import { analyzeExecutivePresence, PresenceAnalysis } from './presenceAgent.js';
+import { analyzeStrategicThinking, StrategicAnalysis } from './strategicAgent.js';
 
 dotenv.config();
 
