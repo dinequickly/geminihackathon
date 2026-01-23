@@ -90,7 +90,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           }}
         >
           <div>
-            <h1 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, fontWeight: 400, color: "#000000", margin: 0, letterSpacing: "-0.02em", textTransform: "uppercase" }}>TAVUS</h1>
+            <h1 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, fontWeight: 400, color: "#000000", margin: 0, letterSpacing: "-0.02em", textTransform: "uppercase" }}>VERITAS</h1>
             <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#888888", margin: "2px 0 0 0", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400 }}>Dashboard</p>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
@@ -177,10 +177,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             glow={0}
           />
 
-          {/* Tavus Video Interview */}
+          {/* Veritas Video Interview */}
           <ActionCard
             emoji="🎥"
-            title="Tavus Video Interview"
+            title="Veritas Video Interview"
             subtitle="AI video interviewer"
             badge="Premium"
             scale={1}

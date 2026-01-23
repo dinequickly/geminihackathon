@@ -12,7 +12,7 @@ export default function DesignSystem() {
       {/* Navigation / Header Area */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between pointer-events-none">
         <div className="pointer-events-auto">
-          <span className="font-sans font-bold text-xl tracking-tight text-gray-800">TAVUS</span>
+          <span className="font-sans font-bold text-xl tracking-tight text-gray-800">VERITAS</span>
         </div>
       </nav>
 

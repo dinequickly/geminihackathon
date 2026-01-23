@@ -202,7 +202,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_KEY || 'placeholder'
 );
 
-const DEFAULT_TAVUS_CONVERSATION_PLAN = [
+const DEFAULT_VERITAS_CONVERSATION_PLAN = [
   '1. Warm introduction and confirm the target role.',
   '2. Resume walkthrough focusing on impact and outcomes.',
   '3. Role-specific questions based on the job description.',
@@ -259,7 +259,7 @@ const buildConversationPlan = async (userId: string, requestedPlan?: string) => 
   }
 
   if (planParts.length === 0) {
-    return DEFAULT_TAVUS_CONVERSATION_PLAN;
+    return DEFAULT_VERITAS_CONVERSATION_PLAN;
   }
 
   return planParts.join('\n\n');

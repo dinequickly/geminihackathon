@@ -228,7 +228,8 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
       );
 
       // Navigate to the appropriate interview page based on type
-      if (interviewType === 'tavus') {
+      // 'veritas' is the frontend branding for the 'tavus' backend implementation
+      if (interviewType === 'veritas' || interviewType === 'tavus') {
         navigate('/live-avatar-interview');
       } else {
         navigate('/interview');
@@ -318,7 +319,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
   const renderStep2 = () => {
     const duration = dynamicValues.duration || 8;
     const componentCount = dynamicTree.length;
-    const interviewLabel = interviewType === 'tavus' ? 'Video avatar' : 'Voice AI';
+    const interviewLabel = (interviewType === 'veritas' || interviewType === 'tavus') ? 'Video avatar' : 'Voice AI';
 
     return (
       <div className="space-y-8">
@@ -431,7 +432,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
               : 'text-black hover:bg-black hover:text-white border border-black'
           }`}
         >
-          {!loading && (interviewType === 'tavus' ? <Video size={20} /> : <Sparkles size={20} />)}
+          {!loading && ((interviewType === 'veritas' || interviewType === 'tavus') ? <Video size={20} /> : <Sparkles size={20} />)}
           {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
         </button>
       </div>

@@ -234,7 +234,7 @@ export default function LandingPage() {
         }`}
       >
         <div className="flex flex-col">
-          <span className="font-serif text-xl font-bold tracking-tight text-black">TAVUS</span>
+          <span className="font-serif text-xl font-bold tracking-tight text-black">VERITAS</span>
           <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Intelligence</span>
         </div>
 
@@ -338,12 +338,12 @@ export default function LandingPage() {
         <footer className="px-6 py-12 border-t border-gray-200/50 max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col">
-              <span className="font-serif text-lg font-bold tracking-tight text-black">TAVUS</span>
+              <span className="font-serif text-lg font-bold tracking-tight text-black">VERITAS</span>
               <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Intelligence</span>
             </div>
 
             <div className="text-sm text-gray-500 font-light">
-              © 2024 Tavus. All rights reserved.
+              © 2024 Veritas. All rights reserved.
             </div>
           </div>
         </footer>

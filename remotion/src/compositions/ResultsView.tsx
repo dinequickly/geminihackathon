@@ -471,7 +471,7 @@ const ResultsPageView: React.FC<{ page: ResultsPage; frame: number; fps: number;
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, fontWeight: 400, color: "#000000", letterSpacing: "-0.02em" }}>TAVUS</span>
+          <span style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, fontWeight: 400, color: "#000000", letterSpacing: "-0.02em" }}>VERITAS</span>
           <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: "#888888", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400 }}>Analysis Report</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

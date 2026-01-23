@@ -106,7 +106,7 @@ export default function PackDetails({ userId: _userId }: PackDetailsProps) {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between border-b border-gray-200/50 bg-white/30 backdrop-blur-md">
         <div className="flex flex-col">
-          <span className="font-sans font-bold text-xl tracking-tight text-black">TAVUS</span>
+          <span className="font-sans font-bold text-xl tracking-tight text-black">VERITAS</span>
           <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Pack Details</span>
         </div>
         <LiquidButton

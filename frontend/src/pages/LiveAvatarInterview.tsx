@@ -74,19 +74,19 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
       setStarting(true);
       setError(null);
 
-      console.log('Creating Tavus conversation for user:', userId);
+      console.log('Creating Veritas conversation for user:', userId);
 
       const sessionData = await api.createTavusConversation(userId, conversationPlan.trim());
 
       if (!sessionData.conversation_url) {
-        throw new Error('Tavus conversation URL missing');
+        throw new Error('Veritas conversation URL missing');
       }
 
       setConversationId(sessionData.conversation_id);
       setConversationUrl(sessionData.conversation_url);
     } catch (err: any) {
       console.error('Failed to start session:', err);
-      setError(err.message || 'Failed to start Tavus session');
+      setError(err.message || 'Failed to start Veritas session');
     } finally {
       setStarting(false);
     }
@@ -103,7 +103,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
       setError(null);
 
       await api.endTavusConversation(conversationId);
-      console.log('Tavus session ended');
+      console.log('Veritas session ended');
       setConversationId(null);
       setConversationUrl(null);
     } catch (err: any) {
@@ -141,7 +141,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
             Premium Subscription Required
           </h2>
           <p className="text-gray-600 mb-6">
-            Tavus video interviews are available exclusively for premium members. Upgrade your plan to unlock this feature!
+            Veritas video interviews are available exclusively for premium members. Upgrade your plan to unlock this feature!
           </p>
         </PlayfulCard>
       </div>
@@ -156,7 +156,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Video className="w-5 h-5 text-sky-400" />
-            <h1 className="text-lg font-semibold text-white">Tavus Video Interview</h1>
+            <h1 className="text-lg font-semibold text-white">Veritas Video Interview</h1>
             <Badge variant="sunshine" icon={Sparkles}>
               Premium
             </Badge>
@@ -206,7 +206,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
         {sessionActive && conversationUrl ? (
           <iframe
             src={conversationUrl}
-            title="Tavus Interview"
+            title="Veritas Interview"
             allow="camera; microphone; autoplay; fullscreen; display-capture"
             allowFullScreen
             className="w-full h-full border-0"
@@ -214,7 +214,7 @@ export default function LiveAvatarInterview({ userId }: LiveAvatarInterviewProps
         ) : starting ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
             <LoadingSpinner size="lg" color="primary" />
-            <p className="text-xl mt-4">Starting Tavus session...</p>
+            <p className="text-xl mt-4">Starting Veritas session...</p>
             <p className="text-sm mt-2 text-gray-500">Preparing your AI interviewer</p>
           </div>
         ) : (

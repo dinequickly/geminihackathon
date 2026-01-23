@@ -110,7 +110,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {/* Header */}
           <div className="text-center mb-12">
             <div className="flex flex-col items-center justify-center">
-              <span className="font-sans font-bold text-2xl tracking-tight text-black mb-2">TAVUS</span>
+              <span className="font-sans font-bold text-2xl tracking-tight text-black mb-2">VERITAS</span>
               <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Interview Onboarding</span>
             </div>
           </div>
