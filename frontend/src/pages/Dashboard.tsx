@@ -150,15 +150,19 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
           </LiquidGlass>
 
           {/* Tavus Video Interview */}
-          <LiquidGlass
-            onClick={() => navigate('/interview/setup?type=tavus')}
-            className="p-8 group cursor-pointer hover:!border-gray-400 transition-all relative"
-          >
+            <button 
+              onClick={() => navigate('/interview/setup?type=veritas')}
+              className="w-full py-4 rounded-xl bg-black text-white font-sans font-semibold text-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-2 group"
+            >
             <div className="absolute bottom-4 right-4 bg-black text-white rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-widest shadow-md">
               Premium
             </div>
-            <h3 className="font-sans font-semibold text-2xl text-black mb-2">Tavus Video Interview</h3>
-            <p className="text-gray-600 font-light mb-6">AI video interviewer</p>
+          <div className="flex-1 p-6 flex flex-col justify-between relative z-10">
+            <div>
+              <h3 className="font-sans font-semibold text-2xl text-black mb-2">Veritas Video Interview</h3>
+              <p className="font-sans text-gray-700 leading-relaxed mb-4">
+                Practice with a lifelike AI interviewer. Ideal for behavioral questions and communication skills.
+              </p>
             <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
               EXPLORE
               <ArrowRight className="w-4 h-4" />

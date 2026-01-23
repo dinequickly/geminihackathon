@@ -2,13 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Award,
-  Brain,
   Heart,
-  Users,
-  Sparkles,
   RefreshCw,
-  Mic,
   AlertCircle,
   MessageSquare,
   Eye,
@@ -171,7 +166,6 @@ export default function Results() {
   const communicationAnalysis = fullAnalysis?.communication_analysis;
   const emotionalAnalysis = fullAnalysis?.emotional_analysis;
   const presenceAnalysis = fullAnalysis?.presence_analysis;
-  const strategicAnalysis = fullAnalysis?.strategic_analysis;
 
   return (
     <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
