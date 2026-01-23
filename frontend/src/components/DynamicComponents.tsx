@@ -19,7 +19,7 @@ const panelBase =
   'rounded-2xl border border-[#f1e4d6] bg-white/90 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
 const kicker =
   'text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono';
-const title = 'font-serif text-xl text-gray-900';
+const title = 'font-sans font-semibold text-xl tracking-tight text-gray-900';
 
 // --- 1. QuestionCard ---
 export const QuestionCard: React.FC<
@@ -370,7 +370,7 @@ export const ScenarioCard: React.FC<
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
           <div className={kicker}>Scenario</div>
-          <h3 className="font-serif text-lg text-gray-900 mt-2">
+          <h3 className="font-sans font-semibold text-lg tracking-tight text-gray-900 mt-2">
             {cardTitle}
           </h3>
         </div>

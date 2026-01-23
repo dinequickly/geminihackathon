@@ -417,22 +417,23 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
                 </div>
               </div>
 
-              {/* Start Interview Button */}
-              <button
-                onClick={handleStartInterview}
-                disabled={loading || dynamicTree.length === 0}
-                className={`w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-sans font-semibold text-lg transition-all duration-300 ${
-                  loading || dynamicTree.length === 0
-                    ? 'text-gray-400 cursor-not-allowed border border-gray-200'
-                    : 'text-black hover:bg-black hover:text-white border border-black'
-                }`}
-              >
-                {!loading && <Video size={20} />}
-                {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
-              </button>
+              {/* Start Interview Button moved to bottom */}
             </div>
           </div>
         </div>
+
+        <button
+          onClick={handleStartInterview}
+          disabled={loading || dynamicTree.length === 0}
+          className={`w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-sans font-semibold text-lg transition-all duration-300 ${
+            loading || dynamicTree.length === 0
+              ? 'text-gray-400 cursor-not-allowed border border-gray-200'
+              : 'text-black hover:bg-black hover:text-white border border-black'
+          }`}
+        >
+          {!loading && (interviewType === 'tavus' ? <Video size={20} /> : <Sparkles size={20} />)}
+          {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
+        </button>
       </div>
     );
   };

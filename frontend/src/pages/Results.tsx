@@ -9,7 +9,10 @@ import {
   Sparkles,
   RefreshCw,
   Mic,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  Eye,
+  Lightbulb
 } from 'lucide-react';
 import { api, Analysis, Conversation } from '../lib/api';
 import { VideoEmotionPlayer, TranscriptViewer, VideoEmotionPlayerRef } from '../components';
@@ -17,6 +20,12 @@ import { LiquidButton } from '../components/LiquidButton';
 import { LiquidGlass } from '../components/LiquidGlass';
 import { LightLeakBackground } from '../components/LightLeakBackground';
 import { LoadingSpinner } from '../components/PlayfulUI';
+import {
+  KeyInsights,
+  EmotionalArcTimeline,
+  PatternRecognition,
+  ComparisonMode
+} from '../components/analysis';
 
 export default function Results() {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -148,14 +157,21 @@ export default function Results() {
     );
   }
 
+  // New 4-agent scores
   const categoryScores = [
-    { key: 'communication', label: 'Communication', icon: Mic, score: analysis.communication_score },
-    { key: 'presence', label: 'Presence', icon: Sparkles, score: analysis.presence_score },
-    { key: 'technical', label: 'Technical', icon: Brain, score: analysis.technical_score },
-    { key: 'eq', label: 'Emotional IQ', icon: Heart, score: analysis.eq_score },
-    { key: 'culture', label: 'Culture', icon: Users, score: analysis.culture_fit_score },
-    { key: 'authenticity', label: 'Authenticity', icon: Award, score: analysis.authenticity_score },
+    { key: 'communication', label: 'Communication', icon: MessageSquare, score: analysis.communication_score },
+    { key: 'emotional', label: 'Emotional IQ', icon: Heart, score: analysis.eq_score },
+    { key: 'presence', label: 'Executive Presence', icon: Eye, score: analysis.presence_score },
+    { key: 'strategic', label: 'Strategic Thinking', icon: Lightbulb, score: analysis.technical_score }, // Using technical_score as strategic for now
   ].filter(c => c.score !== undefined && c.score !== null);
+
+  // Extract full analysis data from full_analysis_json if available
+  const fullAnalysis = (analysis as any).full_analysis_json;
+  const keyInsights = fullAnalysis?.key_insights || [];
+  const communicationAnalysis = fullAnalysis?.communication_analysis;
+  const emotionalAnalysis = fullAnalysis?.emotional_analysis;
+  const presenceAnalysis = fullAnalysis?.presence_analysis;
+  const strategicAnalysis = fullAnalysis?.strategic_analysis;
 
   return (
     <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
@@ -237,6 +253,57 @@ export default function Results() {
             </div>
           )}
         </LiquidGlass>
+
+        {/* Key Insights Section (NEW) */}
+        {keyInsights && keyInsights.length > 0 && (
+          <LiquidGlass className="p-10">
+            <h2 className="font-sans font-semibold text-4xl tracking-tight text-black mb-6">Key Insights</h2>
+            <p className="text-sm text-gray-600 mb-8">
+              The most important findings from your 4-agent analysis
+            </p>
+            <KeyInsights insights={keyInsights} />
+          </LiquidGlass>
+        )}
+
+        {/* Emotional Arc Timeline (NEW) */}
+        {emotionalAnalysis && emotionalAnalysis.emotional_arc && emotionalAnalysis.emotional_arc.length > 0 && (
+          <LiquidGlass className="p-10">
+            <h2 className="font-sans font-semibold text-4xl tracking-tight text-black mb-6">
+              Emotional State Over Time
+            </h2>
+            <p className="text-sm text-gray-600 mb-8">
+              Track how your emotions shifted throughout the interview
+            </p>
+            <EmotionalArcTimeline
+              emotionalArc={emotionalAnalysis.emotional_arc}
+              duration={conversation?.duration_seconds || 120}
+              onTimeClick={(timestamp) => {
+                setCurrentVideoTimeMs(timestamp * 1000);
+                videoPlayerRef.current?.seekTo(timestamp);
+                if (displayMode === 'review') {
+                  setDisplayMode('watch');
+                }
+              }}
+            />
+          </LiquidGlass>
+        )}
+
+        {/* Pattern Recognition (NEW) */}
+        {(communicationAnalysis || emotionalAnalysis || presenceAnalysis) && (
+          <PatternRecognition
+            communicationPatterns={communicationAnalysis?.patterns}
+            emotionalPatterns={emotionalAnalysis?.patterns}
+            bodyLanguagePatterns={presenceAnalysis?.body_language_patterns}
+          />
+        )}
+
+        {/* Comparison to Top Performers (NEW) */}
+        {presenceAnalysis && presenceAnalysis.comparison_to_top_performers && (
+          <ComparisonMode
+            comparisons={presenceAnalysis.comparison_to_top_performers.specific_gaps || []}
+            overallDelta={presenceAnalysis.comparison_to_top_performers.overall_delta || 0}
+          />
+        )}
 
         {/* Key Improvements */}
         {analysis.top_improvements && analysis.top_improvements.length > 0 && (

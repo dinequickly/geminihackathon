@@ -76,7 +76,7 @@ export default function PackSelectionModal({
               <Package className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="font-serif text-2xl text-black">
+              <h2 className="font-sans font-bold text-2xl tracking-tight text-black">
                 {mode === 'choose' && 'Select Context'}
                 {mode === 'existing' && 'Available Packs'}
                 {mode === 'custom' && 'Initialize Custom Pack'}
@@ -122,7 +122,7 @@ export default function PackSelectionModal({
                   <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center mb-6">
                     <BookOpen className="w-6 h-6" />
                   </div>
-                  <h3 className="font-serif text-xl text-black mb-2">Standard Packs</h3>
+                  <h3 className="font-sans font-semibold text-xl tracking-tight text-black mb-2">Standard Packs</h3>
                   <p className="text-sm text-gray-500 font-light mb-6">
                     Access {packs.length} curated question sets designed by experts.
                   </p>
@@ -140,7 +140,7 @@ export default function PackSelectionModal({
                 <div className="w-12 h-12 rounded-full bg-white border border-gray-100 text-black flex items-center justify-center mb-6">
                   <Sparkles className="w-6 h-6" />
                 </div>
-                <h3 className="font-serif text-xl text-black mb-2">Custom Scenario</h3>
+                <h3 className="font-sans font-semibold text-xl tracking-tight text-black mb-2">Custom Scenario</h3>
                 <p className="text-sm text-gray-500 font-light mb-6">
                    Generate a tailored interview pack based on specific job descriptions.
                 </p>
@@ -176,7 +176,7 @@ export default function PackSelectionModal({
                   >
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h3 className="font-serif text-lg text-black">{pack.name}</h3>
+                        <h3 className="font-sans font-semibold text-lg tracking-tight text-black">{pack.name}</h3>
                         {pack.is_custom && (
                           <span className="text-[10px] font-mono uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded text-gray-600">Custom</span>
                         )}

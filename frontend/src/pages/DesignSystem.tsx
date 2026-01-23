@@ -12,7 +12,7 @@ export default function DesignSystem() {
       {/* Navigation / Header Area */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between pointer-events-none">
         <div className="pointer-events-auto">
-          <span className="font-serif text-xl font-bold tracking-tight text-gray-800">TAVUS</span>
+          <span className="font-sans font-bold text-xl tracking-tight text-gray-800">TAVUS</span>
         </div>
       </nav>
 
@@ -25,7 +25,7 @@ export default function DesignSystem() {
             Design System 2.0
           </div>
           
-          <h1 className="font-serif text-6xl md:text-8xl font-medium text-black mb-8 leading-[0.9] tracking-tight">
+          <h1 className="font-sans font-bold text-6xl md:text-8xl text-black mb-8 leading-[0.9] tracking-tight">
             Clarity in <br />
             <span className="italic text-gray-900">Motion.</span>
           </h1>
@@ -39,7 +39,7 @@ export default function DesignSystem() {
         {/* AI Agents Section */}
         <section className="mb-32">
           <div className="flex items-end justify-between mb-12 border-b border-gray-200/50 pb-4">
-            <h2 className="font-serif text-4xl text-black">Core Intelligence</h2>
+            <h2 className="font-sans font-semibold text-4xl tracking-tight text-black">Core Intelligence</h2>
             <span className="font-mono text-xs text-gray-600 uppercase tracking-widest">Active Agents • 04</span>
           </div>
           
@@ -81,7 +81,7 @@ export default function DesignSystem() {
           {/* Interactive Elements */}
           <div>
             <div className="flex items-end justify-between mb-8 border-b border-gray-200/50 pb-4">
-              <h2 className="font-serif text-3xl text-black">Interactive</h2>
+              <h2 className="font-sans font-semibold text-3xl tracking-tight text-black">Interactive</h2>
               <span className="font-mono text-xs text-gray-600 uppercase tracking-widest">Touchpoints</span>
             </div>
 
@@ -107,7 +107,7 @@ export default function DesignSystem() {
                 <h3 className="font-mono text-sm text-gray-700 uppercase mb-6">Analysis Result</h3>
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-5xl font-serif text-black mb-1">94%</div>
+                    <div className="text-5xl font-mono text-black mb-1">94%</div>
                     <div className="text-sm text-gray-700 font-medium">Communication Score</div>
                   </div>
                   <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-600">
@@ -126,14 +126,14 @@ export default function DesignSystem() {
           {/* Typography & Glass Typography */}
           <div>
             <div className="flex items-end justify-between mb-8 border-b border-gray-200/50 pb-4">
-              <h2 className="font-serif text-3xl text-black">Typography</h2>
+              <h2 className="font-sans font-semibold text-3xl tracking-tight text-black">Typography</h2>
               <span className="font-mono text-xs text-gray-600 uppercase tracking-widest">Editorial</span>
             </div>
 
             <LiquidGlass variant="panel" className="space-y-8 min-h-[400px] flex flex-col justify-center">
               <div>
-                <h1 className="font-serif text-5xl mb-4 text-black">The quick brown fox jumps over the lazy dog.</h1>
-                <p className="font-mono text-xs text-gray-600">Playfair Display — Headers</p>
+                <h1 className="font-sans font-bold text-5xl mb-4 text-black tracking-tight">The quick brown fox jumps over the lazy dog.</h1>
+                <p className="font-mono text-xs text-gray-600">Jakarta Sans — Headers</p>
               </div>
               <div className="h-px w-full bg-gray-200/50" />
               <div>
@@ -170,7 +170,7 @@ function AgentCard({ name, role, color, icon, delay }: { name: string, role: str
           {icon}
         </div>
       </div>
-      <h3 className="font-serif text-2xl text-gray-900 mb-1">{name}</h3>
+      <h3 className="font-sans font-semibold text-2xl tracking-tight text-gray-900 mb-1">{name}</h3>
       <p className="font-mono text-xs text-gray-500 uppercase tracking-wider">{role}</p>
     </LiquidGlass>
   )

@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { analyzeCommunication, CommunicationAnalysis } from './communicationAgent';
+import { analyzeEmotionalIntelligence, EmotionalAnalysis } from './emotionalAgent';
+import { analyzeExecutivePresence, PresenceAnalysis } from './presenceAgent';
+import { analyzeStrategicThinking, StrategicAnalysis } from './strategicAgent';
 
 dotenv.config();
 
@@ -8,17 +12,40 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABA
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 interface AnalysisResult {
-  communication_score: number;
-  presence_score: number;
+  // Overall scores
   overall_score: number;
   overall_level: string;
+
+  // Individual agent scores
+  communication_score: number;
+  emotional_score: number;
+  presence_score: number;
+  strategic_score: number;
+
+  // Legacy fields for backwards compatibility
   speaking_pace_wpm: number;
   filler_word_count: number;
+
+  // Detailed analysis from each agent
+  communication_analysis: CommunicationAnalysis;
+  emotional_analysis: EmotionalAnalysis;
+  presence_analysis: PresenceAnalysis;
+  strategic_analysis: StrategicAnalysis;
+
+  // Aggregated insights
+  key_insights: Array<{
+    type: 'pattern' | 'strength' | 'focus_area';
+    title: string;
+    description: string;
+    action: string;
+    priority: 'high' | 'medium' | 'low';
+  }>;
+
   feedback: any;
 }
 
 export async function runFullAnalysis(conversationId: string): Promise<AnalysisResult> {
-  console.log(`[${conversationId}] Starting full analysis...`);
+  console.log(`[${conversationId}] Starting 4-agent analysis orchestration...`);
 
   try {
     // 1. Fetch conversation data (transcript, video path)
@@ -33,57 +60,75 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
       throw new Error(`Conversation not found: ${error?.message}`);
     }
 
-    console.log(`[${conversationId}] Found conversation, transcript length: ${conversation.transcript?.length || 0}`);
+    console.log(`[${conversationId}] Found conversation, starting parallel agent analysis...`);
 
-    // 2. Analyze Transcript (Simulated or via simple regex)
-    // In a real python module, this would use NLP libraries.
     const transcript = conversation.transcript || '';
-    const words = transcript.split(/\s+/);
-    const wordCount = words.length;
-    const durationMinutes = (conversation.duration_seconds || 60) / 60;
-    const wpm = Math.round(wordCount / durationMinutes) || 0;
+    const transcriptJson = conversation.transcript_json;
+    const durationSeconds = conversation.duration_seconds || 60;
+    const videoUrl = conversation.video_url;
 
-    // Simple filler word detection
-    const fillerWords = ['um', 'uh', 'like', 'you know', 'sort of'];
-    const fillerCount = words.filter((w: string) => fillerWords.includes(w.toLowerCase().replace(/[^a-z]/g, ''))).length;
+    // 2. Run all 4 agents in parallel for maximum efficiency
+    console.log(`[${conversationId}] Launching 4 specialized agents...`);
 
-    // Communication Score Calculation
-    // Optimal pace: 120-150 wpm
-    let paceScore = 100;
-    if (wpm < 100) paceScore = 70;
-    if (wpm < 80) paceScore = 50;
-    if (wpm > 160) paceScore = 80;
-    if (wpm > 180) paceScore = 60;
+    const [
+      communicationAnalysis,
+      emotionalAnalysis,
+      presenceAnalysis,
+      strategicAnalysis
+    ] = await Promise.all([
+      analyzeCommunication(transcript, transcriptJson, durationSeconds),
+      analyzeEmotionalIntelligence(transcript, transcriptJson),
+      analyzeExecutivePresence(transcript, transcriptJson, videoUrl),
+      analyzeStrategicThinking(transcript, transcriptJson)
+    ]);
 
-    const fillerScore = Math.max(0, 100 - (fillerCount * 5)); // Deduct 5 points per filler
-    const communicationScore = Math.round((paceScore + fillerScore) / 2);
+    console.log(`[${conversationId}] All agents completed. Aggregating results...`);
 
-    // 3. Analyze Video (Simulated)
-    // This would use the face-api.js logic or Python OpenCV.
-    // For this orchestrator, we will simulate a "Presence Score" based on assumptions
-    // or placeholders since we can't run heavy ML here easily without the python env.
-    const presenceScore = Math.floor(Math.random() * (95 - 70) + 70); // Random score between 70-95 for prototype
-
-    // 4. Composite Scoring
-    // "Overall score (0-100): Weighted average of communication (40%) and presence (60%)"
-    const overallScore = Math.round((communicationScore * 0.4) + (presenceScore * 0.6));
+    // 3. Calculate overall score (weighted average of all 4 agents)
+    const overallScore = Math.round(
+      communicationAnalysis.score * 0.25 +  // Communication: 25%
+      emotionalAnalysis.score * 0.25 +      // Emotional IQ: 25%
+      presenceAnalysis.score * 0.25 +       // Executive Presence: 25%
+      strategicAnalysis.score * 0.25        // Strategic Thinking: 25%
+    );
 
     let overallLevel = 'competent';
     if (overallScore >= 90) overallLevel = 'exceptional';
     else if (overallScore >= 80) overallLevel = 'strong';
-    else if (overallScore < 60) overallLevel = 'needs_work';
-    else if (overallScore < 70) overallLevel = 'developing';
+    else if (overallScore >= 70) overallLevel = 'competent';
+    else if (overallScore >= 60) overallLevel = 'developing';
+    else overallLevel = 'needs_work';
+
+    // 4. Generate key insights (aggregated from all agents)
+    const keyInsights = generateKeyInsights(
+      communicationAnalysis,
+      emotionalAnalysis,
+      presenceAnalysis,
+      strategicAnalysis
+    );
 
     const analysisResult: AnalysisResult = {
-      communication_score: communicationScore,
-      presence_score: presenceScore,
       overall_score: overallScore,
       overall_level: overallLevel,
-      speaking_pace_wpm: wpm,
-      filler_word_count: fillerCount,
+
+      communication_score: communicationAnalysis.score,
+      emotional_score: emotionalAnalysis.score,
+      presence_score: presenceAnalysis.score,
+      strategic_score: strategicAnalysis.score,
+
+      speaking_pace_wpm: communicationAnalysis.metrics.speaking_pace_wpm,
+      filler_word_count: communicationAnalysis.metrics.filler_word_count,
+
+      communication_analysis: communicationAnalysis,
+      emotional_analysis: emotionalAnalysis,
+      presence_analysis: presenceAnalysis,
+      strategic_analysis: strategicAnalysis,
+
+      key_insights: keyInsights,
+
       feedback: {
-        summary: `You spoke at ${wpm} WPM with ${fillerCount} detected filler words.`,
-        top_improvements: wpm < 120 ? [{ area: "Pace", suggestion: "Try to speak a bit faster." }] : []
+        summary: generateOverallSummary(overallScore, communicationAnalysis, emotionalAnalysis, presenceAnalysis, strategicAnalysis),
+        top_improvements: generateTopImprovements(communicationAnalysis, emotionalAnalysis, presenceAnalysis, strategicAnalysis)
       }
     };
 
@@ -103,10 +148,12 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
         .update({
           overall_score: overallScore,
           overall_level: overallLevel,
-          speaking_pace_wpm: wpm,
-          filler_word_count: fillerCount,
-          technical_score: communicationScore,
-          presence_score: presenceScore,
+          speaking_pace_wpm: analysisResult.speaking_pace_wpm,
+          filler_word_count: analysisResult.filler_word_count,
+          technical_score: communicationAnalysis.score,
+          eq_score: emotionalAnalysis.score,
+          presence_score: presenceAnalysis.score,
+          // Store all agent results in full_analysis_json
           full_analysis_json: analysisResult
         })
         .eq('conversation_id', conversationId);
@@ -119,10 +166,12 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
           conversation_id: conversationId,
           overall_score: overallScore,
           overall_level: overallLevel,
-          speaking_pace_wpm: wpm,
-          filler_word_count: fillerCount,
-          technical_score: communicationScore,
-          presence_score: presenceScore,
+          speaking_pace_wpm: analysisResult.speaking_pace_wpm,
+          filler_word_count: analysisResult.filler_word_count,
+          technical_score: communicationAnalysis.score,
+          eq_score: emotionalAnalysis.score,
+          presence_score: presenceAnalysis.score,
+          // Store all agent results in full_analysis_json
           full_analysis_json: analysisResult
         });
       analysisError = error;
@@ -140,7 +189,7 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
       .update({ status: 'analyzed' })
       .eq('id', conversationId);
 
-    console.log(`[${conversationId}] Full analysis completed successfully`);
+    console.log(`[${conversationId}] 4-agent analysis completed successfully`);
     return analysisResult;
   } catch (error: any) {
     console.error(`[${conversationId}] Analysis failed:`, error.message);
@@ -153,4 +202,205 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
 
     throw error;
   }
+}
+
+/**
+ * Generate key insights by aggregating the most important findings from all agents
+ */
+function generateKeyInsights(
+  communication: CommunicationAnalysis,
+  emotional: EmotionalAnalysis,
+  presence: PresenceAnalysis,
+  strategic: StrategicAnalysis
+): AnalysisResult['key_insights'] {
+  const insights: AnalysisResult['key_insights'] = [];
+
+  // PATTERN DETECTED: Communication patterns
+  if (communication.patterns.hesitation_triggers.length > 0) {
+    insights.push({
+      type: 'pattern',
+      title: 'Communication Pattern Detected',
+      description: `You use filler words when ${communication.patterns.hesitation_triggers[0].toLowerCase()}`,
+      action: 'Record yourself explaining the same concept 3 times back-to-back to build fluency',
+      priority: 'high'
+    });
+  }
+
+  // STRENGTH: Emotional regulation
+  if (emotional.regulation_metrics.stress_recovery_time_avg < 20 && emotional.regulation_metrics.stress_recovery_time_avg > 0) {
+    insights.push({
+      type: 'strength',
+      title: 'Excellent Stress Recovery',
+      description: `You recover from confusion in ~${emotional.regulation_metrics.stress_recovery_time_avg}s - shows strong emotional regulation`,
+      action: 'This is a key strength. Study these moments to understand your recovery process',
+      priority: 'medium'
+    });
+  }
+
+  // FOCUS AREA: Executive presence
+  if (presence.comparison_to_top_performers.specific_gaps.length > 0) {
+    const topGap = presence.comparison_to_top_performers.specific_gaps[0];
+    insights.push({
+      type: 'focus_area',
+      title: `${topGap.area} Needs Work`,
+      description: `Your score: ${topGap.your_score} | Top 10%: ${topGap.top_10_avg}`,
+      action: topGap.improvement,
+      priority: 'high'
+    });
+  }
+
+  // FOCUS AREA: Strategic thinking
+  if (strategic.thinking_patterns.depth_score < 70) {
+    insights.push({
+      type: 'focus_area',
+      title: 'Increase Answer Depth',
+      description: 'Your answers explain what you did but not why it mattered',
+      action: 'Use the "So What?" framework: After every statement, ask yourself why it matters to the business',
+      priority: 'high'
+    });
+  }
+
+  // PATTERN: Metric usage
+  if (strategic.response_framework_analysis.metric_usage < 60) {
+    insights.push({
+      type: 'pattern',
+      title: 'Missing Quantifiable Results',
+      description: 'You describe actions but rarely quantify outcomes',
+      action: 'Prepare 3-5 key metrics for each project. Numbers make claims credible.',
+      priority: 'high'
+    });
+  }
+
+  // STRENGTH: Authenticity
+  if (emotional.regulation_metrics.authenticity_score > 75) {
+    insights.push({
+      type: 'strength',
+      title: 'Authentic Communication',
+      description: 'Your emotional expression feels genuine - not over-rehearsed',
+      action: 'Maintain this authenticity. It builds trust with interviewers.',
+      priority: 'low'
+    });
+  }
+
+  // FOCUS AREA: Questions
+  if (strategic.question_analysis.questions_asked.length === 0) {
+    insights.push({
+      type: 'focus_area',
+      title: 'Ask More Questions',
+      description: 'You didn\'t ask any questions during the interview',
+      action: 'Every complex question deserves 1 clarifying question. It shows engagement and precision.',
+      priority: 'high'
+    });
+  }
+
+  // Return top 5-6 insights, prioritized
+  return insights
+    .sort((a, b) => {
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    })
+    .slice(0, 6);
+}
+
+/**
+ * Generate overall summary incorporating all agent findings
+ */
+function generateOverallSummary(
+  overallScore: number,
+  communication: CommunicationAnalysis,
+  emotional: EmotionalAnalysis,
+  presence: PresenceAnalysis,
+  strategic: StrategicAnalysis
+): string {
+  const parts: string[] = [];
+
+  // Overall performance
+  if (overallScore >= 80) {
+    parts.push('Strong performance overall.');
+  } else if (overallScore >= 70) {
+    parts.push('Solid performance with clear areas for improvement.');
+  } else {
+    parts.push('Several key areas need focused practice.');
+  }
+
+  // Highlight top strength
+  const scores = [
+    { name: 'communication', score: communication.score },
+    { name: 'emotional intelligence', score: emotional.score },
+    { name: 'executive presence', score: presence.score },
+    { name: 'strategic thinking', score: strategic.score }
+  ].sort((a, b) => b.score - a.score);
+
+  parts.push(`Your strongest area is ${scores[0].name} (${scores[0].score}/100).`);
+
+  // Highlight area needing most work
+  parts.push(`Focus on improving ${scores[3].name} (${scores[3].score}/100).`);
+
+  // Communication specifics
+  parts.push(`You spoke at ${communication.metrics.speaking_pace_wpm} WPM with ${communication.metrics.filler_word_count} filler words.`);
+
+  return parts.join(' ');
+}
+
+/**
+ * Generate top 3-5 improvements across all agents
+ */
+function generateTopImprovements(
+  communication: CommunicationAnalysis,
+  emotional: EmotionalAnalysis,
+  presence: PresenceAnalysis,
+  strategic: StrategicAnalysis
+): Array<{ area: string; suggestion: string }> {
+  const improvements: Array<{ area: string; suggestion: string; priority: number }> = [];
+
+  // Communication improvements
+  if (communication.feedback.areas_for_improvement.length > 0) {
+    improvements.push({
+      area: 'Communication',
+      suggestion: communication.feedback.areas_for_improvement[0],
+      priority: communication.score
+    });
+  }
+
+  // Emotional improvements
+  if (emotional.feedback.growth_areas.length > 0) {
+    improvements.push({
+      area: 'Emotional Intelligence',
+      suggestion: emotional.feedback.growth_areas[0],
+      priority: emotional.score
+    });
+  }
+
+  // Presence improvements
+  if (presence.feedback.what_needs_work.length > 0) {
+    improvements.push({
+      area: 'Executive Presence',
+      suggestion: presence.feedback.what_needs_work[0],
+      priority: presence.score
+    });
+  }
+
+  // Strategic improvements
+  if (strategic.feedback.thinking_blindspots.length > 0) {
+    improvements.push({
+      area: 'Strategic Thinking',
+      suggestion: strategic.feedback.thinking_blindspots[0],
+      priority: strategic.score
+    });
+  }
+
+  // Add quick wins from presence agent
+  if (presence.feedback.quick_wins.length > 0) {
+    improvements.push({
+      area: 'Quick Win',
+      suggestion: presence.feedback.quick_wins[0],
+      priority: 1000 // Always include quick wins
+    });
+  }
+
+  // Sort by priority (lower score = higher priority for improvement)
+  return improvements
+    .sort((a, b) => a.priority - b.priority)
+    .slice(0, 5)
+    .map(({ area, suggestion }) => ({ area, suggestion }));
 }

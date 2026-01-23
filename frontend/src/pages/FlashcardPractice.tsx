@@ -150,7 +150,7 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
       <div className="min-h-screen flex items-center justify-center p-4 bg-white relative">
         <LightLeakBackground />
         <LiquidGlass className="max-w-md text-center p-8">
-          <h2 className="font-serif text-3xl font-bold text-black mb-4">Error</h2>
+          <h2 className="font-sans font-bold text-3xl tracking-tight text-black mb-4">Error</h2>
           <p className="text-gray-600 mb-8 font-light">{error || 'No questions found'}</p>
           <LiquidButton onClick={() => navigate(`/pack/${packId}`)} icon={<ArrowLeft size={16} />} variant="black">
             Back to Pack
@@ -174,7 +174,7 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
               <CheckCircle2 size={32} />
             </div>
 
-            <h1 className="font-serif text-5xl text-black mb-4">
+            <h1 className="font-sans font-bold text-5xl tracking-tight text-black mb-4">
               Session Complete
             </h1>
             <p className="text-xl text-gray-600 font-light mb-12">
@@ -183,17 +183,17 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
 
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               <div className="p-6 border border-gray-100 rounded-2xl bg-white/50">
-                <div className="font-serif text-4xl text-black mb-1">{questions.length}</div>
+                <div className="font-mono text-4xl text-black mb-1">{questions.length}</div>
                 <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Total Cards</div>
               </div>
 
               <div className="p-6 border border-gray-100 rounded-2xl bg-white/50">
-                <div className="font-serif text-4xl text-black mb-1">{completed.size}</div>
+                <div className="font-mono text-4xl text-black mb-1">{completed.size}</div>
                 <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Flipped</div>
               </div>
 
               <div className="p-6 border border-gray-100 rounded-2xl bg-white/50">
-                <div className="font-serif text-4xl text-black mb-1">{difficultQuestions.length}</div>
+                <div className="font-mono text-4xl text-black mb-1">{difficultQuestions.length}</div>
                 <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Marked Difficult</div>
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
            </LiquidButton>
            
            <div className="flex flex-col items-end">
-             <span className="font-serif text-lg text-black">{pack.name}</span>
+             <span className="font-sans font-semibold text-lg tracking-tight text-black">{pack.name}</span>
              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">
                Card {currentIndex + 1} / {questions.length}
              </span>
@@ -264,7 +264,7 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
                   Question
                 </span>
                 
-                <h2 className="font-serif text-4xl text-black leading-tight mb-8">
+                <h2 className="font-sans font-semibold text-4xl tracking-tight text-black leading-tight mb-8">
                   {currentQuestion?.question_text}
                 </h2>
 
@@ -303,11 +303,11 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
 
                 <div className="flex-1 space-y-6 text-gray-800 text-lg font-light leading-relaxed">
                    <p>
-                     <strong className="font-serif text-black font-medium block mb-2">Structure</strong>
+                     <strong className="font-sans font-semibold text-black block mb-2">Structure</strong>
                      Use the STAR method (Situation, Task, Action, Result) to keep your answer focused.
                    </p>
                    <p>
-                     <strong className="font-serif text-black font-medium block mb-2">Key Focus</strong>
+                     <strong className="font-sans font-semibold text-black block mb-2">Key Focus</strong>
                      Highlight your specific contribution and the impact on the business or team.
                    </p>
                 </div>

@@ -78,11 +78,10 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
       <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-24">
         {/* Header */}
         <div className="flex justify-between items-start mb-12">
-          <div className="flex flex-col">
-            <span className="font-sans font-bold text-xl tracking-tight text-black">TAVUS</span>
-            <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Dashboard</span>
+          <div className="flex items-center gap-3">
+            <span className="font-sans font-bold text-xl tracking-tight text-black">VERITAS</span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex items-center gap-4">
             <LiquidButton
               onClick={() => setShowShopModal(true)}
               variant="secondary"
