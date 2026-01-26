@@ -11,6 +11,7 @@ import PackDetails from './pages/PackDetails';
 import FlashcardPractice from './pages/FlashcardPractice';
 import LiveAvatarInterview from './pages/LiveAvatarInterview';
 import DesignSystem from './pages/DesignSystem';
+import MonitorTables from './pages/MonitorTables';
 import { initPostHog, posthog } from './lib/posthog';
 
 import InterviewSetup from './pages/InterviewSetup';
@@ -47,6 +48,8 @@ function App() {
     UserContext.userId = userId;
     UserContext.setUserId = setUserId;
   }, [userId]);
+
+  const allowMonitor = userId === '21557fe2-d7c9-492c-b99c-6e4b0d3c2044';
 
   return (
     <BrowserRouter>
@@ -124,6 +127,12 @@ function App() {
             path="/live-avatar-interview"
             element={
               userId ? <LiveAvatarInterview userId={userId} /> : <Navigate to="/" replace />
+            }
+          />
+          <Route
+            path="/monitor/:conversationId"
+            element={
+              allowMonitor ? <MonitorTables userId={userId} /> : <Navigate to="/dashboard" replace />
             }
           />
         </Routes>

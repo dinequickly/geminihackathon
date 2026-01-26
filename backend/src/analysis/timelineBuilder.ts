@@ -144,6 +144,41 @@ async function fetchHumePredictions(jobId: string): Promise<HumeEmotionEntry[]> 
   }
 }
 
+async function storeEmotionTimelines(
+  supabase: SupabaseClient,
+  conversationId: string,
+  emotions: HumeEmotionEntry[]
+): Promise<void> {
+  if (emotions.length === 0) return;
+
+  await supabase
+    .from('emotion_timelines')
+    .delete()
+    .eq('conversation_id', conversationId);
+
+  const records = emotions.map(e => ({
+    conversation_id: conversationId,
+    model_type: e.model_type,
+    start_timestamp_ms: e.start_timestamp_ms,
+    end_timestamp_ms: e.end_timestamp_ms,
+    emotions: e.emotions,
+    top_emotion_name: e.top_emotion_name || null,
+    top_emotion_score: e.top_emotion_score || null,
+    face_bounding_box: e.face_bounding_box || null
+  }));
+
+  for (let i = 0; i < records.length; i += 500) {
+    const batch = records.slice(i, i + 500);
+    const { error } = await supabase
+      .from('emotion_timelines')
+      .insert(batch);
+
+    if (error) {
+      console.error(`[TimelineBuilder:${conversationId}] Timeline insert error: ${error.message}`);
+    }
+  }
+}
+
 // Filler words to detect (case-insensitive)
 const FILLER_WORDS = ['um', 'uh', 'like', 'you know', 'so', 'basically'];
 const FILLER_REGEX = new RegExp(`\\b(${FILLER_WORDS.join('|')})\\b`, 'gi');
@@ -222,6 +257,9 @@ export async function buildTimeline(options: BuildTimelineOptions): Promise<Time
       if (humeJobId) {
         console.log(`[TimelineBuilder:${conversationId}] No DB data, fetching from Hume API (job: ${humeJobId})...`);
         emotions = await fetchHumePredictions(humeJobId);
+        if (emotions.length > 0) {
+          await storeEmotionTimelines(supabase, conversationId, emotions);
+        }
         console.log(`[TimelineBuilder:${conversationId}] Fetched ${emotions.length} entries from Hume API`);
       } else {
         console.log(`[TimelineBuilder:${conversationId}] No hume_job_id found, skipping emotion data`);

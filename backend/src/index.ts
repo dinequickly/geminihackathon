@@ -2235,6 +2235,8 @@ app.get('/api/conversations/:conversationId/emotions/timeline', async (req, res)
     const { conversationId } = req.params;
     const { start_ms, end_ms, models } = req.query;
 
+    await ensureEmotionTimelines(conversationId);
+
     let query = supabase
       .from('emotion_timelines')
       .select('*')
@@ -2284,6 +2286,8 @@ app.get('/api/conversations/:conversationId/emotions/at', async (req, res) => {
     if (!time_ms) {
       return res.status(400).json({ error: 'time_ms query parameter required' });
     }
+
+    await ensureEmotionTimelines(conversationId);
 
     const timeMs = parseInt(time_ms as string);
 
@@ -2484,6 +2488,8 @@ app.get('/api/conversations/:conversationId/emotions/distribution', async (req, 
     const { bucket_size_ms = '1000', model = 'face' } = req.query;
 
     const bucketSize = parseInt(bucket_size_ms as string);
+
+    await ensureEmotionTimelines(conversationId);
 
     const { data, error } = await supabase
       .from('emotion_timelines')
@@ -2730,80 +2736,142 @@ app.post('/api/webhooks/hume-results', async (req, res) => {
       return res.status(400).json({ error: 'hume_job_id and predictions required' });
     }
 
-    console.log(`[Hume] Received results for job ${hume_job_id}`);
+    const result = await processHumeResults({
+      hume_job_id,
+      predictions,
+      conversation_id,
+      triggerTimelineBuilder: true
+    });
 
-    // Find conversation by hume_job_id in expression_progress
-    let convId = conversation_id;
-    if (!convId) {
-      const { data: conversations } = await supabase
-        .from('conversations')
-        .select('id, expression_progress')
-        .not('expression_progress', 'is', null);
+    res.json({ status: 'success', conversation_id: result.conversation_id });
+  } catch (error: any) {
+    console.error('Hume results webhook error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-      const conv = conversations?.find((c: any) => c.expression_progress?.hume_job_id === hume_job_id);
-      if (conv) {
-        convId = conv.id;
-      }
+// Manual endpoint to fetch Hume predictions using stored job_id and store results
+app.post('/api/conversations/:conversationId/hume/fetch-and-store', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    if (!HUME_API_KEY) {
+      return res.status(400).json({ error: 'HUME_API_KEY not configured' });
     }
 
-    if (!convId) {
-      console.error(`[Hume] No conversation found for job ${hume_job_id}`);
-      return res.status(404).json({ error: 'Conversation not found for job_id' });
-    }
-
-    console.log(`[Hume] Processing results for conversation ${convId}`);
-
-    const results: HumeExpressionResult = {};
-    const progress: any = { models_analyzed: [] };
-
-    // Process predictions
-    if (predictions?.[0]?.results?.predictions?.[0]) {
-      const pred = predictions[0].results.predictions[0];
-
-      // Face emotions
-      if (pred.models?.face?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
-        results.face = getTopEmotions(pred.models.face.grouped_predictions[0].predictions[0].emotions);
-        progress.models_analyzed.push('face');
-        console.log(`[${convId}] Face analysis complete: ${results.face.length} emotions`);
-      }
-
-      // Prosody emotions
-      if (pred.models?.prosody?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
-        results.prosody = getTopEmotions(pred.models.prosody.grouped_predictions[0].predictions[0].emotions);
-        progress.models_analyzed.push('prosody');
-        console.log(`[${convId}] Prosody analysis complete: ${results.prosody.length} emotions`);
-      }
-
-      // Store granular timeline data for video scrubbing
-      try {
-        const timelineCounts = await storeEmotionTimelines(convId, predictions);
-        console.log(`[${convId}] Timeline stored: ${timelineCounts.face} face, ${timelineCounts.prosody} prosody frames`);
-      } catch (tlErr: any) {
-        console.error(`[${convId}] Timeline storage failed:`, tlErr.message);
-      }
-    }
-
-    // Update conversation with results
-    progress.status = 'completed';
-    progress.completed_at = new Date().toISOString();
-    progress.video_completed_at = new Date().toISOString();
-
-    const updateData: any = {
-      expression_progress: progress
-    };
-
-    if (Object.keys(results).length > 0) {
-      updateData.expression_analysis = results;
-      updateData.expression_analyzed_at = progress.completed_at;
-    }
-
-    await supabase
+    const { data: conv, error } = await supabase
       .from('conversations')
-      .update(updateData)
-      .eq('id', convId);
+      .select('expression_progress')
+      .eq('id', conversationId)
+      .single();
 
-    console.log(`[${convId}] Hume results stored successfully`);
+    if (error || !conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
 
+    const jobId = (conv.expression_progress as any)?.hume_job_id as string | undefined;
+    if (!jobId) {
+      return res.status(404).json({ error: 'No hume_job_id stored for conversation' });
+    }
+
+    const predictions = await fetchHumePredictions(jobId);
+    const result = await processHumeResults({
+      hume_job_id: jobId,
+      predictions,
+      conversation_id: conversationId,
+      triggerTimelineBuilder: true
+    });
+
+    res.json({ status: 'success', conversation_id: result.conversation_id });
+  } catch (error: any) {
+    console.error('Hume fetch-and-store error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function processHumeResults(args: {
+  hume_job_id: string;
+  predictions: any;
+  conversation_id?: string;
+  triggerTimelineBuilder?: boolean;
+}): Promise<{ conversation_id: string }> {
+  const { hume_job_id, predictions, conversation_id, triggerTimelineBuilder = true } = args;
+
+  console.log(`[Hume] Received results for job ${hume_job_id}`);
+
+  // Find conversation by hume_job_id in expression_progress
+  let convId = conversation_id;
+  if (!convId) {
+    const { data: conversations } = await supabase
+      .from('conversations')
+      .select('id, expression_progress')
+      .not('expression_progress', 'is', null);
+
+    const conv = conversations?.find((c: any) => c.expression_progress?.hume_job_id === hume_job_id);
+    if (conv) {
+      convId = conv.id;
+    }
+  }
+
+  if (!convId) {
+    console.error(`[Hume] No conversation found for job ${hume_job_id}`);
+    throw new Error('Conversation not found for job_id');
+  }
+
+  console.log(`[Hume] Processing results for conversation ${convId}`);
+
+  const results: HumeExpressionResult = {};
+  const progress: any = { models_analyzed: [] };
+
+  // Process predictions
+  if (predictions?.[0]?.results?.predictions?.[0]) {
+    const pred = predictions[0].results.predictions[0];
+
+    // Face emotions
+    if (pred.models?.face?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+      results.face = getTopEmotions(pred.models.face.grouped_predictions[0].predictions[0].emotions);
+      progress.models_analyzed.push('face');
+      console.log(`[${convId}] Face analysis complete: ${results.face.length} emotions`);
+    }
+
+    // Prosody emotions
+    if (pred.models?.prosody?.grouped_predictions?.[0]?.predictions?.[0]?.emotions) {
+      results.prosody = getTopEmotions(pred.models.prosody.grouped_predictions[0].predictions[0].emotions);
+      progress.models_analyzed.push('prosody');
+      console.log(`[${convId}] Prosody analysis complete: ${results.prosody.length} emotions`);
+    }
+
+    // Store granular timeline data for video scrubbing
+    try {
+      const timelineCounts = await storeEmotionTimelines(convId, predictions);
+      console.log(`[${convId}] Timeline stored: ${timelineCounts.face} face, ${timelineCounts.prosody} prosody frames`);
+    } catch (tlErr: any) {
+      console.error(`[${convId}] Timeline storage failed:`, tlErr.message);
+    }
+  }
+
+  // Update conversation with results
+  progress.status = 'completed';
+  progress.completed_at = new Date().toISOString();
+  progress.video_completed_at = new Date().toISOString();
+
+  const updateData: any = {
+    expression_progress: progress
+  };
+
+  if (Object.keys(results).length > 0) {
+    updateData.expression_analysis = results;
+    updateData.expression_analyzed_at = progress.completed_at;
+  }
+
+  await supabase
+    .from('conversations')
+    .update(updateData)
+    .eq('id', convId);
+
+  console.log(`[${convId}] Hume results stored successfully`);
+
+  if (triggerTimelineBuilder) {
     // Trigger timeline builder (async, don't wait)
     buildTimeline({ conversationId: convId, sendToWebhook: true })
       .then(result => {
@@ -2812,13 +2880,46 @@ app.post('/api/webhooks/hume-results', async (req, res) => {
       .catch(err => {
         console.error(`[${convId}] Timeline build failed: ${err.message}`);
       });
-
-    res.json({ status: 'success', conversation_id: convId });
-  } catch (error: any) {
-    console.error('Hume results webhook error:', error);
-    res.status(500).json({ error: error.message });
   }
-});
+
+  return { conversation_id: convId };
+}
+
+async function ensureEmotionTimelines(conversationId: string): Promise<void> {
+  try {
+    const { count, error: countError } = await supabase
+      .from('emotion_timelines')
+      .select('id', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId);
+
+    if (countError && !countError.message.includes('schema cache')) {
+      throw countError;
+    }
+
+    if (count && count > 0) return;
+
+    const { data: conv, error: convError } = await supabase
+      .from('conversations')
+      .select('expression_progress')
+      .eq('id', conversationId)
+      .single();
+
+    if (convError || !conv) return;
+
+    const jobId = (conv.expression_progress as any)?.hume_job_id as string | undefined;
+    if (!jobId) return;
+
+    const predictions = await fetchHumePredictions(jobId);
+    await processHumeResults({
+      hume_job_id: jobId,
+      predictions,
+      conversation_id: conversationId,
+      triggerTimelineBuilder: false
+    });
+  } catch (err: any) {
+    console.error(`[${conversationId}] ensureEmotionTimelines failed:`, err.message);
+  }
+}
 
 // Manual endpoint to fetch Hume predictions by Job ID
 app.get('/api/hume/jobs/:jobId/predictions', async (req, res) => {
@@ -2831,24 +2932,62 @@ app.get('/api/hume/jobs/:jobId/predictions', async (req, res) => {
 
     console.log(`Fetching Hume predictions for job: ${jobId}`);
 
-    const response = await fetch(`https://api.hume.ai/v0/batch/jobs/${jobId}/predictions`, {
-      headers: {
-        'X-Hume-Api-Key': HUME_API_KEY
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).json({ error: errorText });
-    }
-
-    const data = await response.json();
+    const data = await fetchHumePredictions(jobId);
     res.json(data);
   } catch (error: any) {
     console.error('Hume fetch error:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
+// Manual endpoint to fetch Hume predictions by conversation (fallback to stored job_id)
+app.get('/api/conversations/:conversationId/hume/predictions', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    if (!HUME_API_KEY) {
+      return res.status(400).json({ error: 'HUME_API_KEY not configured' });
+    }
+
+    const { data: conv, error } = await supabase
+      .from('conversations')
+      .select('expression_progress')
+      .eq('id', conversationId)
+      .single();
+
+    if (error || !conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const jobId = (conv.expression_progress as any)?.hume_job_id as string | undefined;
+    if (!jobId) {
+      return res.status(404).json({ error: 'No hume_job_id stored for conversation' });
+    }
+
+    console.log(`Fetching Hume predictions for conversation ${conversationId} (job ${jobId})`);
+
+    const data = await fetchHumePredictions(jobId);
+    res.json(data);
+  } catch (error: any) {
+    console.error('Hume fetch error (conversation fallback):', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function fetchHumePredictions(jobId: string): Promise<any> {
+  const response = await fetch(`https://api.hume.ai/v0/batch/jobs/${jobId}/predictions`, {
+    headers: {
+      'X-Hume-Api-Key': HUME_API_KEY
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText);
+  }
+
+  return response.json();
+}
 
 // ============================================
 // TIMELINE BUILDER
