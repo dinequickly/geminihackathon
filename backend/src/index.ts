@@ -2074,16 +2074,14 @@ app.get('/api/conversations/:conversationId/aristotle', async (req, res) => {
     if (!data) {
       return res.json({
         conversation_id: conversationId,
-        analysis: null,
-        status: 'pending'
+        analysis: null
       });
     }
 
     res.json({
       conversation_id: conversationId,
-      analysis: data.analysis,
-      created_at: data.created_at,
-      status: 'ready'
+      ...data.analysis,
+      created_at: data.created_at
     });
   } catch (error: any) {
     console.error('Get Aristotle analysis error:', error);
@@ -2109,16 +2107,14 @@ app.get('/api/conversations/:conversationId/plato', async (req, res) => {
     if (!data) {
       return res.json({
         conversation_id: conversationId,
-        analysis: null,
-        status: 'pending'
+        analysis: null
       });
     }
 
     res.json({
       conversation_id: conversationId,
-      analysis: data.analysis,
-      created_at: data.created_at,
-      status: 'ready'
+      ...data.analysis,
+      created_at: data.created_at
     });
   } catch (error: any) {
     console.error('Get Plato analysis error:', error);
@@ -2132,7 +2128,7 @@ app.get('/api/conversations/:conversationId/socrates', async (req, res) => {
     const { conversationId } = req.params;
 
     const { data, error } = await supabase
-      .from('plato_analysis')
+      .from('socrates_analysis')
       .select('*')
       .eq('conversation_id', conversationId)
       .single();
@@ -2144,16 +2140,14 @@ app.get('/api/conversations/:conversationId/socrates', async (req, res) => {
     if (!data) {
       return res.json({
         conversation_id: conversationId,
-        analysis: null,
-        status: 'pending'
+        analysis: null
       });
     }
 
     res.json({
       conversation_id: conversationId,
-      analysis: data.analysis,
-      created_at: data.created_at,
-      status: 'ready'
+      ...data.analysis,
+      created_at: data.created_at
     });
   } catch (error: any) {
     console.error('Get Socrates analysis error:', error);
@@ -2161,13 +2155,13 @@ app.get('/api/conversations/:conversationId/socrates', async (req, res) => {
   }
 });
 
-// Get Zeno analysis (Executive Presence) - reads from plato_analysis table
+// Get Zeno analysis (Executive Presence)
 app.get('/api/conversations/:conversationId/zeno', async (req, res) => {
   try {
     const { conversationId } = req.params;
 
     const { data, error } = await supabase
-      .from('plato_analysis')
+      .from('zeno_analysis')
       .select('*')
       .eq('conversation_id', conversationId)
       .single();
@@ -2179,16 +2173,14 @@ app.get('/api/conversations/:conversationId/zeno', async (req, res) => {
     if (!data) {
       return res.json({
         conversation_id: conversationId,
-        analysis: null,
-        status: 'pending'
+        analysis: null
       });
     }
 
     res.json({
       conversation_id: conversationId,
-      analysis: data.analysis,
-      created_at: data.created_at,
-      status: 'ready'
+      ...data.analysis,
+      created_at: data.created_at
     });
   } catch (error: any) {
     console.error('Get Zeno analysis error:', error);
@@ -2201,33 +2193,31 @@ app.get('/api/conversations/:conversationId/philosophical-analysis', async (req,
   try {
     const { conversationId } = req.params;
 
-    const [aristotleResult, platoResult] = await Promise.all([
+    const [aristotleResult, platoResult, socratesResult, zenoResult] = await Promise.all([
       supabase.from('aristotle_analysis').select('*').eq('conversation_id', conversationId).single(),
-      supabase.from('plato_analysis').select('*').eq('conversation_id', conversationId).single()
+      supabase.from('plato_analysis').select('*').eq('conversation_id', conversationId).single(),
+      supabase.from('socrates_analysis').select('*').eq('conversation_id', conversationId).single(),
+      supabase.from('zeno_analysis').select('*').eq('conversation_id', conversationId).single()
     ]);
 
     res.json({
       conversation_id: conversationId,
       aristotle: aristotleResult.data ? {
-        analysis: aristotleResult.data.analysis,
-        created_at: aristotleResult.data.created_at,
-        status: 'ready'
-      } : { analysis: null, status: 'pending' },
+        ...aristotleResult.data.analysis,
+        created_at: aristotleResult.data.created_at
+      } : null,
       plato: platoResult.data ? {
-        analysis: platoResult.data.analysis,
-        created_at: platoResult.data.created_at,
-        status: 'ready'
-      } : { analysis: null, status: 'pending' },
-      socrates: platoResult.data ? {
-        analysis: platoResult.data.analysis,
-        created_at: platoResult.data.created_at,
-        status: 'ready'
-      } : { analysis: null, status: 'pending' },
-      zeno: platoResult.data ? {
-        analysis: platoResult.data.analysis,
-        created_at: platoResult.data.created_at,
-        status: 'ready'
-      } : { analysis: null, status: 'pending' }
+        ...platoResult.data.analysis,
+        created_at: platoResult.data.created_at
+      } : null,
+      socrates: socratesResult.data ? {
+        ...socratesResult.data.analysis,
+        created_at: socratesResult.data.created_at
+      } : null,
+      zeno: zenoResult.data ? {
+        ...zenoResult.data.analysis,
+        created_at: zenoResult.data.created_at
+      } : null
     });
   } catch (error: any) {
     console.error('Get philosophical analysis error:', error);
