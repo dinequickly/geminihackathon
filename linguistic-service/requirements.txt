@@ -1,0 +1,10 @@
+fastapi>=0.104.0
+uvicorn>=0.24.0
+spacy>=3.7.0
+textstat>=0.7.3
+numpy>=1.24.0
+pydantic>=2.0.0
+
+# Install spaCy model after: python -m spacy download en_core_web_sm
+# COAST: pip install git+https://github.com/katrinortmann/COAST.git
+# LingFeat: pip install lingfeat (optional - large download)

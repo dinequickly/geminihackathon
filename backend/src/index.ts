@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import Stripe from 'stripe';
 import Groq from 'groq-sdk';
 import { runFullAnalysis } from './analysis/orchestrator.js';
+import { buildTimeline } from './analysis/timelineBuilder.js';
 import { trackEvent } from './posthog.js';
 import { streamComponentGeneration, streamPersonalityGeneration } from './lib/anthropic.js';
 import { generateCatalogPrompt, validateUITree } from './lib/catalog.js';
@@ -2656,6 +2657,15 @@ app.post('/api/webhooks/hume-results', async (req, res) => {
 
     console.log(`[${convId}] Hume results stored successfully`);
 
+    // Trigger timeline builder (async, don't wait)
+    buildTimeline({ conversationId: convId, sendToWebhook: true })
+      .then(result => {
+        console.log(`[${convId}] Timeline built: ${result.total_entries} entries`);
+      })
+      .catch(err => {
+        console.error(`[${convId}] Timeline build failed: ${err.message}`);
+      });
+
     res.json({ status: 'success', conversation_id: convId });
   } catch (error: any) {
     console.error('Hume results webhook error:', error);
@@ -2689,6 +2699,65 @@ app.get('/api/hume/jobs/:jobId/predictions', async (req, res) => {
     res.json(data);
   } catch (error: any) {
     console.error('Hume fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// TIMELINE BUILDER
+// ============================================
+
+// Manual endpoint to trigger timeline build
+app.post('/api/conversations/:id/timeline/build', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sendToWebhook = true, runLinguisticAnalysis = true } = req.body;
+
+    console.log(`[${id}] Manual timeline build triggered`);
+
+    const result = await buildTimeline({
+      conversationId: id,
+      sendToWebhook,
+      runLinguisticAnalysis
+    });
+
+    res.json({
+      success: true,
+      conversation_id: id,
+      timeline_entries: result.total_entries,
+      duration_seconds: result.duration_seconds,
+      summary: result.summary,
+      metadata: result.metadata,
+      timeline: result.timeline
+    });
+  } catch (error: any) {
+    console.error('Timeline build error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get timeline for a conversation (if previously built)
+app.get('/api/conversations/:id/timeline', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // For now, build timeline on demand
+    // In future, could cache results in database
+    const result = await buildTimeline({
+      conversationId: id,
+      sendToWebhook: false, // Don't send to webhook on GET
+      runLinguisticAnalysis: false // Skip linguistic analysis for faster response
+    });
+
+    res.json({
+      success: true,
+      conversation_id: id,
+      timeline: result.timeline,
+      summary: result.summary,
+      metadata: result.metadata
+    });
+  } catch (error: any) {
+    console.error('Timeline fetch error:', error);
     res.status(500).json({ error: error.message });
   }
 });
