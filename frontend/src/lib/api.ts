@@ -1015,10 +1015,10 @@ class ApiClient {
 
   async getAllPhilosophicalAnalyses(conversationId: string): Promise<{
     conversation_id: string;
-    aristotle: { analysis: AristotleAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
-    plato: { analysis: PlatoAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
-    socrates: { analysis: SocratesAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
-    zeno: { analysis: ZenoAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
+    aristotle: (AristotleAnalysis & { created_at: string }) | null;
+    plato: (PlatoAnalysis & { created_at: string }) | null;
+    socrates: (SocratesAnalysis & { created_at: string }) | null;
+    zeno: (ZenoAnalysis & { created_at: string }) | null;
   }> {
     return this.request(`/api/conversations/${conversationId}/philosophical-analysis`);
   }

@@ -82,17 +82,17 @@ export default function Results() {
     setPhilosophicalLoading(true);
     try {
       const data = await api.getAllPhilosophicalAnalyses(conversationId);
-      if (data.aristotle.status === 'ready' && data.aristotle.analysis) {
-        setAristotleAnalysis(data.aristotle.analysis);
+      if (data.aristotle) {
+        setAristotleAnalysis(data.aristotle);
       }
-      if (data.plato.status === 'ready' && data.plato.analysis) {
-        setPlatoAnalysis(data.plato.analysis);
+      if (data.plato) {
+        setPlatoAnalysis(data.plato);
       }
-      if (data.socrates.status === 'ready' && data.socrates.analysis) {
-        setSocratesAnalysis(data.socrates.analysis);
+      if (data.socrates) {
+        setSocratesAnalysis(data.socrates);
       }
-      if (data.zeno.status === 'ready' && data.zeno.analysis) {
-        setZenoAnalysis(data.zeno.analysis);
+      if (data.zeno) {
+        setZenoAnalysis(data.zeno);
       }
     } catch (err) {
       console.error('Failed to load philosophical analyses:', err);
