@@ -20,7 +20,7 @@ interface ZenoAnalysisProps {
     onTimeClick?: (timestamp: number) => void;
 }
 
-export function ZenoAnalysis({ analysis, onTimeClick }: ZenoAnalysisProps) {
+export function ZenoAnalysis({ analysis }: ZenoAnalysisProps) {
     const [expandedSections, setExpandedSections] = useState<Set<string>>(
         new Set(['metrics', 'comparison', 'feedback'])
     );

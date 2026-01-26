@@ -3,7 +3,6 @@ import {
   Brain,
   HelpCircle,
   TrendingUp,
-  TrendingDown,
   AlertCircle,
   MessageCircle,
   ChevronDown,
