@@ -11,6 +11,7 @@ interface Message {
 
 interface UseElevenLabsOptions {
   signedUrl: string;
+  dynamicVariables?: Record<string, string | number | boolean>;
   onMessage?: (message: Message) => void;
   onStatusChange?: (status: ConnectionStatus) => void;
   onConversationEnd?: (conversationId: string) => void;
@@ -18,7 +19,7 @@ interface UseElevenLabsOptions {
 }
 
 export function useElevenLabs(options: UseElevenLabsOptions) {
-  const { signedUrl, onMessage, onStatusChange, onConversationEnd, onError } = options;
+  const { signedUrl, dynamicVariables, onMessage, onStatusChange, onConversationEnd, onError } = options;
 
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,8 +39,8 @@ export function useElevenLabs(options: UseElevenLabsOptions) {
     updateStatus('connecting');
 
     try {
-      // Initialize conversation
-      const conversation = await Conversation.startSession({
+      // Build session config with dynamic variables for personalization
+      const sessionConfig: any = {
         signedUrl,
         onConnect: () => {
           updateStatus('connected');
@@ -70,7 +71,15 @@ export function useElevenLabs(options: UseElevenLabsOptions) {
              onMessage?.(newMessage);
           }
         }
-      });
+      };
+
+      // Add dynamic variables if provided (for user context like resume, job description, etc.)
+      if (dynamicVariables && Object.keys(dynamicVariables).length > 0) {
+        sessionConfig.dynamicVariables = dynamicVariables;
+        console.log('Starting ElevenLabs session with dynamic variables:', Object.keys(dynamicVariables));
+      }
+
+      const conversation = await Conversation.startSession(sessionConfig);
 
       conversationRef.current = conversation;
       

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Mic,
   MicOff,
@@ -15,6 +15,24 @@ import { useElevenLabs, ConnectionStatus } from '../hooks/useElevenLabs';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { posthog } from '../lib/posthog';
 
+// Type for navigation state from InterviewSetup
+interface InterviewNavigationState {
+  conversationId: string;
+  signedUrl: string;
+  userData: {
+    formatted_resume: string;
+    job_description: string;
+    job_title: string;
+    company_name: string;
+    name: string;
+  };
+  interviewConfig: {
+    original_intent: string;
+    configuration: Record<string, any>;
+    personality: string;
+  } | null;
+}
+
 interface InterviewProps {
   userId: string;
 }
@@ -27,14 +45,53 @@ interface Message {
 
 export default function Interview({ userId }: InterviewProps) {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Session state
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  // Get navigation state from InterviewSetup (if coming from there)
+  const navState = location.state as InterviewNavigationState | null;
+
+  // Session state - initialize from navigation state if available
+  const [conversationId, setConversationId] = useState<string | null>(navState?.conversationId || null);
+  const [signedUrl, setSignedUrl] = useState<string | null>(navState?.signedUrl || null);
+  const [isInitializing, setIsInitializing] = useState(!navState); // Not initializing if we have nav state
   const [error, setError] = useState<string | null>(null);
   const [isEnding, setIsEnding] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Store user data and interview config for dynamic variables
+  const [userData, setUserData] = useState(navState?.userData || null);
+  const [interviewConfig, setInterviewConfig] = useState(navState?.interviewConfig || null);
+
+  // Build dynamic variables for ElevenLabs from user data and interview config
+  const dynamicVariables = useMemo(() => {
+    if (!userData && !interviewConfig) return undefined;
+
+    const vars: Record<string, string | number | boolean> = {};
+
+    // Add user data
+    if (userData) {
+      if (userData.formatted_resume) vars.formatted_resume = userData.formatted_resume;
+      if (userData.job_description) vars.job_description = userData.job_description;
+      if (userData.job_title) vars.job_title = userData.job_title;
+      if (userData.company_name) vars.company_name = userData.company_name;
+      if (userData.name) vars.user_name = userData.name;
+    }
+
+    // Add interview config
+    if (interviewConfig) {
+      if (interviewConfig.personality) vars.interview_personality = interviewConfig.personality;
+      if (interviewConfig.original_intent) vars.original_intent = interviewConfig.original_intent;
+      if (interviewConfig.configuration) {
+        const config = interviewConfig.configuration;
+        if (config.choice_1) vars.interview_focus_1 = config.choice_1;
+        if (config.choice_2) vars.interview_focus_2 = config.choice_2;
+        if (config.duration) vars.interview_duration = config.duration;
+        if (config.slider_1) vars.difficulty_level = config.slider_1;
+      }
+    }
+
+    return Object.keys(vars).length > 0 ? vars : undefined;
+  }, [userData, interviewConfig]);
 
   // UI state
   const [isMuted, setIsMuted] = useState(false);
@@ -83,7 +140,7 @@ export default function Interview({ userId }: InterviewProps) {
     }
   }, [conversationId]);
 
-  // ElevenLabs hook
+  // ElevenLabs hook with dynamic variables for personalization
   const {
     status: elStatus,
     isAgentSpeaking,
@@ -91,6 +148,7 @@ export default function Interview({ userId }: InterviewProps) {
     disconnect: disconnectElevenLabs
   } = useElevenLabs({
     signedUrl: signedUrl || '',
+    dynamicVariables,
     onMessage: handleMessage,
     onStatusChange: handleStatusChange,
     onConversationEnd: handleConversationEnd,
@@ -155,10 +213,21 @@ export default function Interview({ userId }: InterviewProps) {
       // Start camera first
       await startCamera();
 
-      // Get interview session from backend
-      const session = await api.startInterview(userId);
-      setConversationId(session.conversation_id);
-      setSignedUrl(session.signed_url);
+      // Check if we already have session data from navigation state (coming from InterviewSetup)
+      if (navState?.conversationId && navState?.signedUrl) {
+        // We already have everything from InterviewSetup - no need to call API again
+        console.log('Using session from navigation state:', navState.conversationId);
+        // State is already initialized from navState, just start recording
+      } else {
+        // Direct navigation to /interview without going through setup
+        // Need to call API to create a new interview session
+        console.log('No navigation state - creating new interview session');
+        const session = await api.startInterview(userId);
+        setConversationId(session.conversation_id);
+        setSignedUrl(session.signed_url);
+        setUserData(session.user_data);
+        setInterviewConfig(session.interview_config);
+      }
 
       // Start recording
       await startRecording();

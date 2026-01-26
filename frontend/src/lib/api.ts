@@ -287,6 +287,14 @@ class ApiClient {
     conversation_id: string;
     agent_id: string;
     signed_url: string;
+    user_data: {
+      formatted_resume: string;
+      job_description: string;
+      job_title: string;
+      company_name: string;
+      name: string;
+    };
+    interview_config: any | null;
   }> {
     return this.request('/api/interviews/start', {
       method: 'POST',

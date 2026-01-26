@@ -221,20 +221,29 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         personality: personality
       };
 
-      // Start ElevenLabs interview
-      await api.startInterview(
+      // Start ElevenLabs interview and get session data
+      const session = await api.startInterview(
         userId,
         fullConfig
       );
 
+      // Build navigation state with all data needed for Interview page
+      // This prevents Interview.tsx from calling startInterview again
+      const navigationState = {
+        conversationId: session.conversation_id,
+        signedUrl: session.signed_url,
+        userData: session.user_data,
+        interviewConfig: session.interview_config
+      };
+
       // Navigate to the appropriate interview page based on type
       // 'veritas' is the frontend branding for the 'tavus' backend implementation
       if (interviewType === 'veritas' || interviewType === 'tavus') {
-        navigate('/live-avatar-interview');
+        navigate('/live-avatar-interview', { state: navigationState });
       } else {
-        navigate('/interview');
+        navigate('/interview', { state: navigationState });
       }
-      
+
     } catch (err: any) {
       console.error('Failed to start:', err);
       setError(err.message || 'Failed to start interview session.');

@@ -748,7 +748,16 @@ app.post('/api/interviews/start', async (req, res) => {
     res.json({
       conversation_id: conversation.id,
       agent_id: ELEVENLABS_AGENT_ID,
-      signed_url: elData.signed_url
+      signed_url: elData.signed_url,
+      // Return user data and config for ElevenLabs dynamic variables
+      user_data: {
+        formatted_resume: user.formatted_resume || '',
+        job_description: user.job_description || '',
+        job_title: user.job_title || '',
+        company_name: user.company_name || '',
+        name: user.name || ''
+      },
+      interview_config: interview_config || null
     });
   } catch (error: any) {
     console.error('Start interview error:', error);
