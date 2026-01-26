@@ -132,50 +132,18 @@ export async function runFullAnalysis(conversationId: string): Promise<AnalysisR
       }
     };
 
-    // 5. Save to Database
-    // First, check if analysis already exists
-    const { data: existingAnalysis } = await supabase
-      .from('emotion_analysis')
-      .select('id')
-      .eq('conversation_id', conversationId)
-      .single();
+    // 5. Save to Database (using new aristotle_analysis table)
+    console.log(`[${conversationId}] Saving analysis to aristotle_analysis...`);
 
-    let analysisError;
-    if (existingAnalysis) {
-      // Update existing analysis
-      const { error } = await supabase
-        .from('emotion_analysis')
-        .update({
-          overall_score: overallScore,
-          overall_level: overallLevel,
-          speaking_pace_wpm: analysisResult.speaking_pace_wpm,
-          filler_word_count: analysisResult.filler_word_count,
-          technical_score: communicationAnalysis.score,
-          eq_score: emotionalAnalysis.score,
-          presence_score: presenceAnalysis.score,
-          // Store all agent results in full_analysis_json
-          full_analysis_json: analysisResult
-        })
-        .eq('conversation_id', conversationId);
-      analysisError = error;
-    } else {
-      // Insert new analysis
-      const { error } = await supabase
-        .from('emotion_analysis')
-        .insert({
-          conversation_id: conversationId,
-          overall_score: overallScore,
-          overall_level: overallLevel,
-          speaking_pace_wpm: analysisResult.speaking_pace_wpm,
-          filler_word_count: analysisResult.filler_word_count,
-          technical_score: communicationAnalysis.score,
-          eq_score: emotionalAnalysis.score,
-          presence_score: presenceAnalysis.score,
-          // Store all agent results in full_analysis_json
-          full_analysis_json: analysisResult
-        });
-      analysisError = error;
-    }
+    // Upsert to aristotle_analysis table
+    const { error: analysisError } = await supabase
+      .from('aristotle_analysis')
+      .upsert({
+        conversation_id: conversationId,
+        analysis: analysisResult  // Store entire analysis result in jsonb column
+      }, {
+        onConflict: 'conversation_id'
+      });
 
     if (analysisError) {
         console.error(`[${conversationId}] Error saving analysis:`, analysisError);

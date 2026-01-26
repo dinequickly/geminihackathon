@@ -985,7 +985,7 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
       .from('conversations')
       .select(`
         *,
-        emotion_analysis!emotion_analysis_conversation_id_fkey (overall_score, overall_level)
+        aristotle_analysis (id, analysis)
       `)
       .eq('user_id', req.params.userId)
       .order('created_at', { ascending: false });
@@ -993,7 +993,7 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
     if (error) throw error;
 
     const conversations = (data || []).map(conv => {
-      const analysis = conv.emotion_analysis?.[0];
+      const analysis = conv.aristotle_analysis?.[0];
 
       // Check if conversation is stuck in completed state with transcript
       // Status should be: in_progress -> completed -> analyzing -> analyzed
@@ -1023,10 +1023,10 @@ app.get('/api/conversations/user/:userId', async (req, res) => {
 
       return {
         ...conv,
-        analysis: undefined,
+        aristotle_analysis: undefined,
         has_analysis: !!analysis,
-        overall_score: analysis?.overall_score,
-        overall_level: analysis?.overall_level
+        overall_score: analysis?.analysis?.communication_analysis?.score || null,
+        overall_level: analysis?.analysis?.communication_analysis?.level || null
       };
     });
 
@@ -1047,7 +1047,7 @@ app.get('/api/conversations/:conversationId', async (req, res) => {
     if (convError) throw convError;
 
     const { data: analysis } = await supabase
-      .from('emotion_analysis')
+      .from('aristotle_analysis')
       .select('*')
       .eq('conversation_id', req.params.conversationId)
       .single();
@@ -1076,16 +1076,8 @@ app.get('/api/conversations/:conversationId', async (req, res) => {
       });
     }
 
-    // Merge full_analysis_json into analysis response for richer data
-    let mergedAnalysis = analysis;
-    if (analysis?.full_analysis_json) {
-      mergedAnalysis = {
-        ...analysis,
-        ...analysis.full_analysis_json,
-      };
-    }
-
-    res.json({ conversation, analysis: mergedAnalysis || null });
+    // Return the analysis data directly from the jsonb column
+    res.json({ conversation, analysis: analysis?.analysis || null });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -1102,8 +1094,8 @@ app.get('/api/conversations/:conversationId/status', async (req, res) => {
     if (convError) throw convError;
 
     const { data: analysis } = await supabase
-      .from('emotion_analysis')
-      .select('id, overall_score')
+      .from('aristotle_analysis')
+      .select('id, analysis')
       .eq('conversation_id', req.params.conversationId)
       .single();
 
@@ -1111,7 +1103,7 @@ app.get('/api/conversations/:conversationId/status', async (req, res) => {
       conversation_id: conv.id,
       status: conv.status,
       has_analysis: !!analysis,
-      overall_score: analysis?.overall_score
+      overall_score: analysis?.analysis?.communication_analysis?.score || null
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -2693,39 +2685,11 @@ app.post('/api/webhooks/analysis-complete', async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // Prepare analysis data
-    const analysisData: any = {
-      conversation_id,
-      user_id: conv.user_id,
-      full_analysis_json: analysis,
-      overall_score: analysis.overall_score,
-      overall_level: analysis.overall_level,
-      overall_summary: analysis.overall_summary,
-      technical_score: analysis.technical_score,
-      technical_feedback: analysis.technical_feedback,
-      eq_score: analysis.eq_score,
-      eq_feedback: analysis.eq_feedback,
-      presence_score: analysis.presence_score,
-      presence_feedback: analysis.presence_feedback,
-      culture_fit_score: analysis.culture_fit_score,
-      culture_fit_feedback: analysis.culture_fit_feedback,
-      authenticity_score: analysis.authenticity_score,
-      authenticity_feedback: analysis.authenticity_feedback,
-      filler_word_count: analysis.filler_word_count,
-      filler_words: analysis.filler_words,
-      speaking_pace_wpm: analysis.speaking_pace_wpm,
-      confidence_score: analysis.confidence_score,
-      top_improvements: analysis.top_improvements,
-      instant_rewrites: analysis.instant_rewrites,
-      question_breakdown: analysis.question_breakdown
-    };
-
-    // Upsert analysis
-    const { error: analysisError } = await supabase
-      .from('emotion_analysis')
-      .upsert(analysisData, { onConflict: 'conversation_id' });
-
-    if (analysisError) throw analysisError;
+    // NOTE: emotion_analysis table no longer exists. Analysis is now stored in
+    // philosophical analysis tables (aristotle_analysis, plato_analysis, etc.)
+    // This webhook may be legacy and unused.
+    console.log('Analysis complete webhook received but emotion_analysis table removed.');
+    console.log('Consider using the new philosophical analysis endpoints instead.');
 
     // Update conversation status
     await supabase
