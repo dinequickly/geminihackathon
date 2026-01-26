@@ -840,7 +840,7 @@ class ApiClient {
     // Calling n8n webhook directly for dynamic questions as per requirements
     // Webhook URL: https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b
     const N8N_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/c79bfc8c-4bcc-42e0-b0f2-3f5b680ebd4b';
-    
+
     try {
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
@@ -862,12 +862,12 @@ class ApiClient {
       // Ensure we return an array of questions
       return Array.isArray(data.questions) ? data.questions : (Array.isArray(data) ? data : []);
     } catch (error) {
-        console.error('N8n webhook error:', error);
-        // Fallback questions for testing/offline
-        return [
-            { id: 'q1', text: 'Do you want to focus on specific technical frameworks?', type: 'yes_no' },
-            { id: 'q2', text: 'What is your preferred level of difficulty?', type: 'choice', options: ['Junior', 'Mid-Level', 'Senior'] }
-        ];
+      console.error('N8n webhook error:', error);
+      // Fallback questions for testing/offline
+      return [
+        { id: 'q1', text: 'Do you want to focus on specific technical frameworks?', type: 'yes_no' },
+        { id: 'q2', text: 'What is your preferred level of difficulty?', type: 'choice', options: ['Junior', 'Mid-Level', 'Senior'] }
+      ];
     }
   }
 
@@ -922,9 +922,9 @@ class ApiClient {
 
   async streamPersonality(intent: string, onChunk: (text: string) => void): Promise<void> {
     const response = await fetch(withApiBase('/api/ai/personality'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intent })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intent })
     });
 
     const reader = response.body?.getReader();
@@ -932,17 +932,17 @@ class ApiClient {
     const decoder = new TextDecoder();
 
     while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        onChunk(decoder.decode(value, { stream: true }));
+      const { done, value } = await reader.read();
+      if (done) break;
+      onChunk(decoder.decode(value, { stream: true }));
     }
   }
 
   async streamPersonalityRewrite(currentPersonality: string, instruction: string, onChunk: (text: string) => void): Promise<void> {
     const response = await fetch(withApiBase('/api/ai/rewrite-personality'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ current_personality: currentPersonality, instruction })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current_personality: currentPersonality, instruction })
     });
 
     const reader = response.body?.getReader();
@@ -950,9 +950,9 @@ class ApiClient {
     const decoder = new TextDecoder();
 
     while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        onChunk(decoder.decode(value, { stream: true }));
+      const { done, value } = await reader.read();
+      if (done) break;
+      onChunk(decoder.decode(value, { stream: true }));
     }
   }
 
@@ -975,6 +975,225 @@ class ApiClient {
       throw new Error(`Failed to generate interview configuration: ${e.message}`);
     });
   }
+
+  // Philosophical Analysis Endpoints (Aristotle, Plato, etc.)
+  async getAristotleAnalysis(conversationId: string): Promise<{
+    conversation_id: string;
+    analysis: AristotleAnalysis | null;
+    created_at?: string;
+    status: 'ready' | 'pending';
+  }> {
+    return this.request(`/api/conversations/${conversationId}/aristotle`);
+  }
+
+  async getPlatoAnalysis(conversationId: string): Promise<{
+    conversation_id: string;
+    analysis: PlatoAnalysis | null;
+    created_at?: string;
+    status: 'ready' | 'pending';
+  }> {
+    return this.request(`/api/conversations/${conversationId}/plato`);
+  }
+
+  async getSocratesAnalysis(conversationId: string): Promise<{
+    conversation_id: string;
+    analysis: SocratesAnalysis | null;
+    created_at?: string;
+    status: 'ready' | 'pending';
+  }> {
+    return this.request(`/api/conversations/${conversationId}/socrates`);
+  }
+
+  async getZenoAnalysis(conversationId: string): Promise<{
+    conversation_id: string;
+    analysis: ZenoAnalysis | null;
+    created_at?: string;
+    status: 'ready' | 'pending';
+  }> {
+    return this.request(`/api/conversations/${conversationId}/zeno`);
+  }
+
+  async getAllPhilosophicalAnalyses(conversationId: string): Promise<{
+    conversation_id: string;
+    aristotle: { analysis: AristotleAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
+    plato: { analysis: PlatoAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
+    socrates: { analysis: SocratesAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
+    zeno: { analysis: ZenoAnalysis | null; created_at?: string; status: 'ready' | 'pending' };
+  }> {
+    return this.request(`/api/conversations/${conversationId}/philosophical-analysis`);
+  }
+}
+
+// Philosophical Analysis Types (Aristotle, Plato, etc.)
+export interface AristotleAnalysis {
+  communication_analysis: {
+    score: number; // 0-5 scale
+    metrics: {
+      speaking_pace_wpm: number;
+      filler_word_count: number;
+      filler_words: Array<{ word: string; count: number; timestamps: number[] }>;
+      avg_sentence_length: number;
+      vocabulary_richness: number;
+      technical_clarity_score: number;
+      transition_quality: number;
+      hedging_language_count: number;
+    };
+    patterns: {
+      hesitation_triggers: string[];
+      confidence_peaks: string[];
+      rambling_moments: Array<{ timestamp: number; duration: number; reason: string }>;
+    };
+    feedback: {
+      strengths: string[];
+      areas_for_improvement: string[];
+      specific_examples: Array<{ timestamp: number; text: string; issue: string; improvement: string }>;
+    };
+    instant_rewrites: Array<{ original: string; improved: string; why: string; timestamp: number }>;
+  };
+}
+
+export interface PlatoAnalysis {
+  emotional_analysis: {
+    score: number; // 0-10 scale
+    emotional_arc: Array<{
+      timestamp: number;
+      emotions: {
+        calm: number;
+        confident: number;
+        confused: number;
+        engaged: number;
+        anxious: number;
+        enthusiastic: number;
+      };
+      dominant_emotion: string;
+      trigger?: string;
+    }>;
+    regulation_metrics: {
+      stress_recovery_time_avg: number;
+      emotional_range: number;
+      authenticity_score: number;
+      self_awareness_score: number;
+    };
+    key_moments: Array<{
+      timestamp: number;
+      type: string;
+      description: string;
+      emotion_state: string;
+      recommendation: string;
+    }>;
+    patterns: {
+      stress_triggers: string[];
+      recovery_strategies: string[];
+      authenticity_markers: string[];
+      performed_moments: Array<{ timestamp: number; reason: string }>;
+    };
+    feedback: {
+      strengths: string[];
+      growth_areas: string[];
+      coaching_insights: string[];
+    };
+  };
+}
+
+export interface SocratesAnalysis {
+  strategic_analysis: {
+    score: number; // 0-5 scale
+    thinking_patterns: {
+      depth_score: number;
+      curiosity_score: number;
+      ambiguity_handling: number;
+      strategic_framing: number;
+      authenticity_vs_rehearsed: number;
+    };
+    question_analysis: {
+      questions_asked: Array<{
+        question: string;
+        timestamp: number;
+        quality_score: number;
+        type: string;
+        why_it_matters: string;
+      }>;
+      question_quality_avg: number;
+      missed_opportunities: Array<{
+        timestamp: number;
+        context: string;
+        what_to_ask: string;
+        why: string;
+      }>;
+    };
+    response_framework_analysis: {
+      uses_structured_frameworks: boolean;
+      answer_completeness: number;
+      storytelling_quality: number;
+      metric_usage: number;
+      connects_to_business_impact: boolean;
+    };
+    intellectual_signals: {
+      admits_knowledge_gaps: boolean;
+      challenges_assumptions: boolean;
+      shows_meta_awareness: boolean;
+      demonstrates_learning_agility: boolean;
+    };
+    comparison: {
+      good_vs_great_analysis: Array<{
+        your_approach: string;
+        great_approach: string;
+        gap: string;
+        how_to_bridge: string;
+      }>;
+    };
+    feedback: {
+      intellectual_strengths: string[];
+      thinking_blindspots: string[];
+      framework_recommendations: string[];
+      advanced_strategies: string[];
+    };
+  };
+}
+
+export interface ZenoAnalysis {
+  presence_analysis: {
+    score: number; // 0-100 scale
+    visual_metrics: {
+      eye_contact_score: number;
+      posture_score: number;
+      gesture_effectiveness: number;
+      facial_expressiveness: number;
+      energy_level: number;
+    };
+    micro_expressions: Array<{
+      timestamp: number;
+      expression: string;
+      significance: string;
+    }>;
+    body_language_patterns: {
+      consistency_score: number;
+      nervous_habits: string[];
+      power_poses: string[];
+      defensive_moments: string[];
+    };
+    executive_presence_factors: {
+      gravitas: number;
+      confidence_without_arrogance: number;
+      intellectual_honesty: number;
+      composure_under_pressure: number;
+    };
+    comparison_to_top_performers: {
+      overall_delta: number;
+      specific_gaps: Array<{
+        area: string;
+        your_score: number;
+        top_10_avg: number;
+        improvement: string;
+      }>;
+    };
+    feedback: {
+      what_works: string[];
+      what_needs_work: string[];
+      quick_wins: string[];
+      advanced_techniques: string[];
+    };
+  };
 }
 
 // Emotion timeline types

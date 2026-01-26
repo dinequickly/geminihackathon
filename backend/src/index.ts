@@ -2060,6 +2060,190 @@ app.post('/api/conversations/:conversationId/retry-analysis', async (req, res) =
 });
 
 // ============================================
+// PHILOSOPHICAL ANALYSIS ENDPOINTS
+// (Aristotle, Plato, and future analysis types)
+// ============================================
+
+// Get Aristotle analysis (Communication/Rhetoric)
+app.get('/api/conversations/:conversationId/aristotle', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data, error } = await supabase
+      .from('aristotle_analysis')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    if (!data) {
+      return res.json({
+        conversation_id: conversationId,
+        analysis: null,
+        status: 'pending'
+      });
+    }
+
+    res.json({
+      conversation_id: conversationId,
+      analysis: data.analysis,
+      created_at: data.created_at,
+      status: 'ready'
+    });
+  } catch (error: any) {
+    console.error('Get Aristotle analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get Plato analysis (Emotional Intelligence)
+app.get('/api/conversations/:conversationId/plato', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data, error } = await supabase
+      .from('plato_analysis')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    if (!data) {
+      return res.json({
+        conversation_id: conversationId,
+        analysis: null,
+        status: 'pending'
+      });
+    }
+
+    res.json({
+      conversation_id: conversationId,
+      analysis: data.analysis,
+      created_at: data.created_at,
+      status: 'ready'
+    });
+  } catch (error: any) {
+    console.error('Get Plato analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get Socrates analysis (Strategic Thinking) - reads from plato_analysis table
+app.get('/api/conversations/:conversationId/socrates', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data, error } = await supabase
+      .from('plato_analysis')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    if (!data) {
+      return res.json({
+        conversation_id: conversationId,
+        analysis: null,
+        status: 'pending'
+      });
+    }
+
+    res.json({
+      conversation_id: conversationId,
+      analysis: data.analysis,
+      created_at: data.created_at,
+      status: 'ready'
+    });
+  } catch (error: any) {
+    console.error('Get Socrates analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get Zeno analysis (Executive Presence) - reads from plato_analysis table
+app.get('/api/conversations/:conversationId/zeno', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data, error } = await supabase
+      .from('plato_analysis')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    if (!data) {
+      return res.json({
+        conversation_id: conversationId,
+        analysis: null,
+        status: 'pending'
+      });
+    }
+
+    res.json({
+      conversation_id: conversationId,
+      analysis: data.analysis,
+      created_at: data.created_at,
+      status: 'ready'
+    });
+  } catch (error: any) {
+    console.error('Get Zeno analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all philosophical analyses for a conversation
+app.get('/api/conversations/:conversationId/philosophical-analysis', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const [aristotleResult, platoResult] = await Promise.all([
+      supabase.from('aristotle_analysis').select('*').eq('conversation_id', conversationId).single(),
+      supabase.from('plato_analysis').select('*').eq('conversation_id', conversationId).single()
+    ]);
+
+    res.json({
+      conversation_id: conversationId,
+      aristotle: aristotleResult.data ? {
+        analysis: aristotleResult.data.analysis,
+        created_at: aristotleResult.data.created_at,
+        status: 'ready'
+      } : { analysis: null, status: 'pending' },
+      plato: platoResult.data ? {
+        analysis: platoResult.data.analysis,
+        created_at: platoResult.data.created_at,
+        status: 'ready'
+      } : { analysis: null, status: 'pending' },
+      socrates: platoResult.data ? {
+        analysis: platoResult.data.analysis,
+        created_at: platoResult.data.created_at,
+        status: 'ready'
+      } : { analysis: null, status: 'pending' },
+      zeno: platoResult.data ? {
+        analysis: platoResult.data.analysis,
+        created_at: platoResult.data.created_at,
+        status: 'ready'
+      } : { analysis: null, status: 'pending' }
+    });
+  } catch (error: any) {
+    console.error('Get philosophical analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
 // EMOTION TIMELINE QUERIES
 // ============================================
 
