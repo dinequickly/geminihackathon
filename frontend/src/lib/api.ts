@@ -535,6 +535,13 @@ class ApiClient {
     return this.request(`/api/hume/jobs/${jobId}/predictions`);
   }
 
+  async getHumePredictionsByConversation(conversationId: string): Promise<{
+    predictions: any;
+    conversation_id: string;
+  }> {
+    return this.request(`/api/conversations/${conversationId}/hume/predictions`);
+  }
+
   private async getEmotionTimelineFromHume(
     conversationId: string,
     jobId: string,

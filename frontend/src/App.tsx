@@ -4,6 +4,8 @@ import LandingPage from './pages/LandingPage';
 import Onboarding from './pages/Onboarding';
 import Interview from './pages/Interview';
 import Results from './pages/Results';
+import Results2 from './pages/Results2';
+import ComponentCollection from './pages/ComponentCollection';
 import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import InterviewSettings from './pages/InterviewSettings';
@@ -68,6 +70,10 @@ function App() {
             element={<DesignSystem />}
           />
           <Route
+            path="/components"
+            element={<ComponentCollection />}
+          />
+          <Route
             path="/clean"
             element={<CleanDesign userId={userId} />}
           />
@@ -104,6 +110,10 @@ function App() {
           <Route
             path="/results/:conversationId"
             element={<Results />}
+          />
+          <Route
+            path="/results2/:conversationId"
+            element={<Results2 />}
           />
           <Route
             path="/chat/:chatId"
