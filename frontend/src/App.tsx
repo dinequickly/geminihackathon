@@ -49,7 +49,7 @@ function App() {
     UserContext.setUserId = setUserId;
   }, [userId]);
 
-  const allowMonitor = userId === '21557fe2-d7c9-492c-b99c-6e4b0d3c2044';
+  const allowMonitor = userId === '21557fe2-d7c9-492c-b99c-6e4b0d3c2044' || userId === 'c315372a-da40-4586-9451-44ceaaca15a7';
 
   return (
     <BrowserRouter>

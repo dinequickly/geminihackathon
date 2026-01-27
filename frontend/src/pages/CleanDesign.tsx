@@ -17,7 +17,7 @@ import {
 import { api, Analysis, Conversation, AristotleAnalysis, PlatoAnalysis, SocratesAnalysis, ZenoAnalysis, TranscriptHighlight } from '../lib/api';
 import { VideoEmotionPlayer } from '../components';
 
-const ALLOWED_USER_IDS = new Set(['21557fe2-d7c9-492c-b99c-6e4b0d3c2044']);
+const ALLOWED_USER_IDS = new Set(['21557fe2-d7c9-492c-b99c-6e4b0d3c2044', 'c315372a-da40-4586-9451-44ceaaca15a7']);
 
 // === UTILITY FUNCTIONS ===
 const formatDuration = (seconds?: number) => {
