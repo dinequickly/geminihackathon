@@ -234,37 +234,45 @@ function DimensionCard({
 
   const colors = accentColors[accent];
 
-  if (!hasData) return null;
-
   return (
     <InsightCard accent={accent} className="h-full">
       <div className="flex items-start justify-between mb-4">
         <div className={`p-2.5 rounded-lg ${colors.bg} ${colors.text}`}>
           {icon}
         </div>
-        <div className={`text-right`}>
-          <p className={`text-2xl font-bold ${colors.text}`}>{score.toFixed(1)}</p>
-          <p className="text-xs text-warmGray-400">/ 10</p>
-        </div>
+        {hasData ? (
+          <div className={`text-right`}>
+            <p className={`text-2xl font-bold ${colors.text}`}>{score!.toFixed(1)}</p>
+            <p className="text-xs text-warmGray-400">/ 10</p>
+          </div>
+        ) : (
+          <div className="text-right">
+            <p className="text-sm text-warmGray-400">No data</p>
+          </div>
+        )}
       </div>
-      
+
       <h3 className="font-semibold text-warmGray-800 mb-2">{title}</h3>
-      
-      {feedback && (
+
+      {feedback ? (
         <p className="text-sm text-warmGray-600 leading-relaxed line-clamp-3">
           {feedback}
         </p>
+      ) : (
+        <p className="text-sm text-warmGray-400 italic">Analysis pending...</p>
       )}
 
       {/* Score Bar */}
-      <div className="mt-4">
-        <div className="h-2 bg-warmGray-100 rounded-full overflow-hidden">
-          <div 
-            className={`h-full rounded-full transition-all duration-1000 ${colors.bg.replace('bg-', 'bg-').replace('50', '400')}`}
-            style={{ width: `${(score / 10) * 100}%` }}
-          />
+      {hasData && (
+        <div className="mt-4">
+          <div className="h-2 bg-warmGray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ${colors.bg.replace('bg-', 'bg-').replace('50', '400')}`}
+              style={{ width: `${(score! / 10) * 100}%` }}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </InsightCard>
   );
 }
@@ -585,6 +593,19 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-6 pb-24">
+        {/* Debug Info */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">Debug: Data Status</h3>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p>Conversation: {conversation ? '✅' : '❌'}</p>
+            <p>Analysis (emotion_analysis): {analysis ? '✅' : '❌'}</p>
+            <p>Aristotle: {aristotle ? '✅' : '❌'}</p>
+            <p>Plato: {plato ? '✅' : '❌'}</p>
+            <p>Socrates: {socrates ? '✅' : '❌'}</p>
+            <p>Transcript: {transcript ? '✅' : '❌'}</p>
+          </div>
+        </div>
+
         {/* Session Header */}
         <SessionHeader conversation={conversation} analysis={analysis} />
 
