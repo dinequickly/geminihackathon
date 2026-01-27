@@ -1,15 +1,19 @@
 // Mouse tracking for floating elements
 let mouseX = 0;
 let mouseY = 0;
+let targetMouseX = 0;
+let targetMouseY = 0;
 
-document.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX / window.innerWidth;
-  mouseY = e.clientY / window.innerHeight;
-
-  updateFloatingElements();
-});
+// Smooth mouse following using lerp
+function lerp(start, end, factor) {
+  return start + (end - start) * factor;
+}
 
 function updateFloatingElements() {
+  // Smooth interpolation for mouse movement
+  mouseX = lerp(mouseX, targetMouseX, 0.1);
+  mouseY = lerp(mouseY, targetMouseY, 0.1);
+
   const floatingElements = document.querySelectorAll('.floating-element');
 
   floatingElements.forEach((element, index) => {
@@ -19,29 +23,48 @@ function updateFloatingElements() {
 
     element.style.transform = `translate(${x}px, ${y}px)`;
   });
+
+  requestAnimationFrame(updateFloatingElements);
 }
 
-// Intersection Observer for scroll animations
+document.addEventListener('mousemove', (e) => {
+  targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+  targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+// Start the animation loop
+requestAnimationFrame(updateFloatingElements);
+
+// Intersection Observer for scroll animations - more reliable and performant
 const observerOptions = {
   threshold: 0.1,
-  rootMargin: '0px 0px -100px 0px'
+  rootMargin: '0px 0px -50px 0px'
 };
 
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      entry.target.style.opacity = '1';
-      entry.target.style.transform = 'translateY(0)';
+      entry.target.classList.add('is-visible');
+      // Unobserve after animation to save resources
+      observer.unobserve(entry.target);
     }
   });
 }, observerOptions);
 
-// Observe all feature cards
-document.querySelectorAll('.feature-card').forEach(card => {
-  observer.observe(card);
-});
+// Observe all feature cards once DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.feature-card').forEach(card => {
+      observer.observe(card);
+    });
+  });
+} else {
+  document.querySelectorAll('.feature-card').forEach(card => {
+    observer.observe(card);
+  });
+}
 
-// Smooth scroll polyfill
+// Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -55,23 +78,34 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// Add parallax effect to orbs on scroll
+// Parallax effect for orbs on scroll - using requestAnimationFrame for smoothness
 let scrollY = 0;
-
-window.addEventListener('scroll', () => {
-  scrollY = window.scrollY;
-  updateOrbPositions();
-});
+let targetScrollY = 0;
+let ticking = false;
 
 function updateOrbPositions() {
   const orbs = document.querySelectorAll('.orb');
-
+  
   orbs.forEach((orb, index) => {
-    const speed = (index + 1) * 0.05;
+    const speed = (index + 1) * 0.08;
     const yPos = scrollY * speed;
     orb.style.transform = `translateY(${yPos}px)`;
   });
+  
+  ticking = false;
 }
+
+window.addEventListener('scroll', () => {
+  targetScrollY = window.scrollY;
+  
+  if (!ticking) {
+    requestAnimationFrame(() => {
+      scrollY = targetScrollY;
+      updateOrbPositions();
+    });
+    ticking = true;
+  }
+}, { passive: true });
 
 // Add hover effect to feature cards
 const featureCards = document.querySelectorAll('.feature-card');
@@ -135,36 +169,9 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Add loading animation
+// Fade in page on load
 window.addEventListener('load', () => {
-  document.body.style.opacity = '0';
-  setTimeout(() => {
-    document.body.style.transition = 'opacity 0.5s ease';
-    document.body.style.opacity = '1';
-  }, 100);
+  document.body.style.opacity = '1';
 });
-
-// Performance optimization: throttle mouse move events
-function throttle(func, delay) {
-  let lastCall = 0;
-  return function(...args) {
-    const now = new Date().getTime();
-    if (now - lastCall < delay) {
-      return;
-    }
-    lastCall = now;
-    return func(...args);
-  };
-}
-
-// Apply throttling to mouse move
-const throttledMouseMove = throttle((e) => {
-  mouseX = e.clientX / window.innerWidth;
-  mouseY = e.clientY / window.innerHeight;
-  updateFloatingElements();
-}, 50);
-
-document.removeEventListener('mousemove', throttledMouseMove);
-document.addEventListener('mousemove', throttledMouseMove);
 
 console.log('✨ InterviewPro landing page loaded!');

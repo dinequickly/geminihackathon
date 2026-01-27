@@ -25,6 +25,10 @@
   --gray-900: #111827;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background: #ffffff;
@@ -54,6 +58,8 @@ body {
   border-radius: 50%;
   filter: blur(120px);
   opacity: 0.3;
+  will-change: transform;
+  pointer-events: none;
 }
 
 .orb-1 {
@@ -311,6 +317,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px rgba(147, 197, 253, 0.2);
   pointer-events: none;
+  will-change: transform;
 }
 
 .floating-1 {
@@ -351,7 +358,7 @@ body {
 }
 
 .section-header {
-  text-center;
+  text-align: center;
   margin-bottom: 5rem;
 }
 
@@ -397,10 +404,17 @@ body {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(147, 197, 253, 0.1);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  animation: fade-in-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   opacity: 0;
+  transform: translateY(30px);
+  will-change: transform, opacity;
+}
+
+.feature-card.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .feature-card:hover {

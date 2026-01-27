@@ -12,6 +12,7 @@ import FlashcardPractice from './pages/FlashcardPractice';
 import LiveAvatarInterview from './pages/LiveAvatarInterview';
 import DesignSystem from './pages/DesignSystem';
 import MonitorTables from './pages/MonitorTables';
+import CleanDesign from './pages/CleanDesign';
 import { initPostHog, posthog } from './lib/posthog';
 
 import InterviewSetup from './pages/InterviewSetup';
@@ -66,6 +67,10 @@ function App() {
           <Route
             path="/design-system"
             element={<DesignSystem />}
+          />
+          <Route
+            path="/clean"
+            element={<CleanDesign />}
           />
           <Route
             path="/"
@@ -132,7 +137,7 @@ function App() {
           <Route
             path="/monitor/:conversationId"
             element={
-              allowMonitor ? <MonitorTables userId={userId} /> : <Navigate to="/dashboard" replace />
+              allowMonitor ? <CleanDesign userId={userId} /> : <Navigate to="/dashboard" replace />
             }
           />
         </Routes>

@@ -60,11 +60,11 @@ export function LiquidGlass({
   const getIntensityClasses = () => {
     switch (intensity) {
       case "subtle":
-        return "backdrop-blur-sm bg-white/5 border-white/10"
+        return "backdrop-blur-sm bg-parchment-100/30 border-warmGray-200/20"
       case "strong":
-        return "backdrop-blur-3xl bg-white/20 border-white/30"
+        return "backdrop-blur-xl bg-parchment-50/50 border-warmGray-300/40"
       default:
-        return "backdrop-blur-xl bg-white/10 border-white/20"
+        return "backdrop-blur-md bg-parchment-50/40 border-warmGray-200/30"
     }
   }
 
@@ -140,12 +140,12 @@ export function LiquidGlass({
       setTimeout(() => {
         setIsJiggling(false)
         setWobbleOffset({ x: 0, y: 0 })
-      }, 1800)
+      }, 400)
     } else if (variant === "button" && isPressed) {
       setIsPressed(false)
       setWobbleOffset({ x: 0, y: 0 })
       setIsJiggling(true)
-      setTimeout(() => setIsJiggling(false), 1800)
+      setTimeout(() => setIsJiggling(false), 400)
     }
   }, [isDragging, dragOffset, onDragEnd, variant, isPressed])
 
@@ -234,24 +234,24 @@ export function LiquidGlass({
       setTimeout(() => {
         setIsJiggling(false)
         setWobbleOffset({ x: 0, y: 0 })
-      }, 1800)
+      }, 400)
     } else if (variant === "button" && isPressed) {
       setIsPressed(false)
       setWobbleOffset({ x: 0, y: 0 })
       setIsJiggling(true)
-      setTimeout(() => setIsJiggling(false), 1800)
+      setTimeout(() => setIsJiggling(false), 400)
     }
   }, [isDragging, dragOffset, onDragEnd, variant, isPressed])
 
   const transformStyle = isJiggling
     ? ({
-        "--wobble-start-x": `${wobbleOffset.x}px`,
-        "--wobble-start-y": `${wobbleOffset.y}px`,
-      } as React.CSSProperties)
+      "--wobble-start-x": `${wobbleOffset.x}px`,
+      "--wobble-start-y": `${wobbleOffset.y}px`,
+    } as React.CSSProperties)
     : {
-        transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) ${isDragging ? "scale(1.02)" : ""}`,
-        transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
-      }
+      transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) ${isDragging ? "scale(1.02)" : ""}`,
+      transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
+    }
 
   return (
     <div
@@ -285,13 +285,13 @@ export function LiquidGlass({
           style={{
             left: cursorPos.x,
             top: cursorPos.y,
-            width: "80px",
-            height: "80px",
+            width: "60px",
+            height: "60px",
             background:
-              "radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%)",
+              "radial-gradient(circle, rgba(253, 250, 245, 0.08) 0%, rgba(253, 250, 245, 0.02) 50%, transparent 100%)",
             borderRadius: "50%",
             transform: "translate(-50%, -50%)",
-            filter: "blur(10px)",
+            filter: "blur(8px)",
             zIndex: 2,
           }}
         />
@@ -307,16 +307,16 @@ export function LiquidGlass({
             width: "4px",
             height: "4px",
             borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.4)",
+            background: "rgba(200, 180, 160, 0.25)",
             transform: "translate(-50%, -50%)",
-            animation: "liquidRipple 0.6s ease-out forwards",
+            animation: "liquidRipple 0.5s ease-out forwards",
           }}
         />
       ))}
 
       <div className="relative z-10">{children}</div>
 
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none z-5" />
+      <div className="absolute inset-0 bg-gradient-to-br from-parchment-50/5 via-transparent to-transparent pointer-events-none z-5" />
     </div>
   )
 }
