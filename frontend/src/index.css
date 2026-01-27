@@ -5,19 +5,19 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --liquid-glass-bg: rgba(255, 255, 255, 0.1);
-  --liquid-glass-border: rgba(255, 255, 255, 0.2);
-  --liquid-glass-shadow: rgba(0, 0, 0, 0.1);
-  --liquid-ripple-color: rgba(255, 255, 255, 0.3);
+  --background: #FAF6F0;
+  --foreground: #3D3229;
+  --liquid-glass-bg: rgba(253, 252, 250, 0.7);
+  --liquid-glass-border: rgba(232, 223, 212, 0.6);
+  --liquid-glass-shadow: rgba(92, 64, 48, 0.08);
+  --liquid-ripple-color: rgba(253, 249, 243, 0.4);
   --liquid-flow-duration: 0.8s;
   --liquid-bounce-duration: 0.6s;
 }
 
 body {
   font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
-  @apply bg-cream-100 text-gray-900 antialiased;
+  @apply bg-parchment-100 text-warmGray-800 antialiased;
 }
 
 /* Custom scrollbar */

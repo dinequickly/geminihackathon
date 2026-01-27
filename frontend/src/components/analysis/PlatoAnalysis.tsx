@@ -41,17 +41,17 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
   const emo = analysis.emotional_analysis;
   const score = emo.score;
 
-  // Score color based on 0-10 scale
+  // Score color based on 0-10 scale - using Plato's warm palette
   const getScoreColor = (s: number) => {
-    if (s >= 8) return 'text-green-600';
-    if (s >= 6) return 'text-yellow-600';
-    return 'text-red-600';
+    if (s >= 8) return 'text-plato-700';
+    if (s >= 6) return 'text-plato-500';
+    return 'text-warmGray-600';
   };
 
   const getScoreBg = (s: number) => {
-    if (s >= 8) return 'bg-green-50 border-green-200';
-    if (s >= 6) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+    if (s >= 8) return 'bg-plato-50 border-plato-200';
+    if (s >= 6) return 'bg-plato-100 border-plato-300';
+    return 'bg-warmGray-100 border-warmGray-300';
   };
 
   const formatTimestamp = (seconds: number) => {
@@ -94,14 +94,14 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-plato-200 flex items-center justify-center">
               <span className="text-2xl">🧠</span>
             </div>
             <div>
-              <h2 className="font-sans font-semibold text-2xl tracking-tight text-black">
+              <h2 className="font-sans font-semibold text-2xl tracking-tight text-warmGray-900">
                 Plato Analysis
               </h2>
-              <p className="text-sm text-gray-500">Emotional Intelligence & Self-Awareness</p>
+              <p className="text-sm text-warmGray-500">Emotional Intelligence & Self-Awareness</p>
             </div>
           </div>
         </div>
@@ -109,7 +109,7 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
           <div className={`font-mono text-4xl font-bold ${getScoreColor(score)}`}>
             {score.toFixed(1)}
           </div>
-          <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">/ 10.0</div>
+          <div className="text-xs text-warmGray-500 uppercase tracking-wider mt-1">/ 10.0</div>
         </div>
       </div>
 
@@ -147,19 +147,19 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
 
       {/* Emotional Arc Timeline */}
       {emo.emotional_arc.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-parchment-50 rounded-2xl border border-plato-200/60 overflow-hidden">
           <button
             onClick={() => toggleSection('arc')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-plato-50/50 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
-              <span className="font-semibold text-gray-900">Emotional Arc</span>
+              <TrendingUp className="w-5 h-5 text-plato-600" />
+              <span className="font-semibold text-warmGray-800">Emotional Arc</span>
             </div>
             {expandedSections.has('arc') ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
+              <ChevronUp className="w-5 h-5 text-warmGray-400" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
+              <ChevronDown className="w-5 h-5 text-warmGray-400" />
             )}
           </button>
 
@@ -183,11 +183,11 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
                 {emo.emotional_arc.map((point, idx) => (
                   <div
                     key={idx}
-                    className="bg-gray-50 rounded-xl p-4 border border-gray-100 cursor-pointer hover:border-purple-200 transition-colors"
+                    className="bg-parchment-100 rounded-xl p-4 border border-plato-200/70 cursor-pointer hover:border-plato-300 transition-colors"
                     onClick={() => onTimeClick?.(point.timestamp)}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="font-mono text-sm text-gray-500">
+                      <span className="font-mono text-sm text-warmGray-500">
                         {formatTimestamp(point.timestamp)}
                       </span>
                       <span
@@ -220,8 +220,8 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
                     </div>
 
                     {point.trigger && (
-                      <p className="text-sm text-gray-600 border-t border-gray-200 pt-3 mt-2">
-                        <span className="font-medium text-gray-700">Trigger: </span>
+                      <p className="text-sm text-warmGray-600 border-t border-plato-200 pt-3 mt-2">
+                        <span className="font-medium text-warmGray-700">Trigger: </span>
                         {point.trigger}
                       </p>
                     )}
@@ -235,22 +235,22 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
 
       {/* Key Moments */}
       {emo.key_moments.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-parchment-50 rounded-2xl border border-plato-200/60 overflow-hidden">
           <button
             onClick={() => toggleSection('moments')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-plato-50/50 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <Lightbulb className="w-5 h-5 text-amber-600" />
-              <span className="font-semibold text-gray-900">Key Emotional Moments</span>
-              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">
+              <Lightbulb className="w-5 h-5 text-plato-600" />
+              <span className="font-semibold text-warmGray-800">Key Emotional Moments</span>
+              <span className="bg-plato-200 text-plato-700 text-xs px-2 py-0.5 rounded-full">
                 {emo.key_moments.length}
               </span>
             </div>
             {expandedSections.has('moments') ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
+              <ChevronUp className="w-5 h-5 text-warmGray-400" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
+              <ChevronDown className="w-5 h-5 text-warmGray-400" />
             )}
           </button>
 
@@ -268,23 +268,23 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="font-mono text-xs text-gray-500">
+                        <span className="font-mono text-xs text-warmGray-500">
                           {formatTimestamp(moment.timestamp)}
                         </span>
-                        <span className="text-xs font-semibold text-gray-700 bg-white/60 px-2 py-0.5 rounded">
+                        <span className="text-xs font-semibold text-warmGray-700 bg-parchment-50/60 px-2 py-0.5 rounded">
                           {moment.type}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-800 mb-3">{moment.description}</p>
+                      <p className="text-sm text-warmGray-800 mb-3">{moment.description}</p>
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs text-gray-500">Emotion State:</span>
-                        <span className="text-xs font-medium text-gray-700">{moment.emotion_state}</span>
+                        <span className="text-xs text-warmGray-500">Emotion State:</span>
+                        <span className="text-xs font-medium text-warmGray-700">{moment.emotion_state}</span>
                       </div>
-                      <div className="bg-white/70 rounded-lg p-3 border border-gray-200/50">
-                        <span className="text-xs font-mono uppercase text-purple-600 block mb-1">
+                      <div className="bg-parchment-50/70 rounded-lg p-3 border border-plato-200/50">
+                        <span className="text-xs font-mono uppercase text-plato-600 block mb-1">
                           Recommendation
                         </span>
-                        <p className="text-sm text-gray-700">{moment.recommendation}</p>
+                        <p className="text-sm text-warmGray-700">{moment.recommendation}</p>
                       </div>
                     </div>
                   </div>
@@ -330,24 +330,24 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
 
       {/* Performed Moments */}
       {emo.patterns.performed_moments.length > 0 && (
-        <div className="bg-amber-50/50 rounded-2xl border border-amber-100 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-600" />
+        <div className="bg-aristotle-100/40 rounded-2xl border border-aristotle-200 p-6">
+          <h3 className="font-semibold text-warmGray-800 mb-4 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-aristotle-600" />
             Performed Moments (Less Authentic)
           </h3>
           <div className="space-y-3">
             {emo.patterns.performed_moments.map((pm, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-lg p-4 border border-amber-200 cursor-pointer hover:border-amber-300 transition-colors"
+                className="bg-parchment-50 rounded-lg p-4 border border-aristotle-200 cursor-pointer hover:border-aristotle-300 transition-colors"
                 onClick={() => onTimeClick?.(pm.timestamp)}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="font-mono text-sm text-amber-600">
+                  <span className="font-mono text-sm text-aristotle-600">
                     {formatTimestamp(pm.timestamp)}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700">{pm.reason}</p>
+                <p className="text-sm text-warmGray-700">{pm.reason}</p>
               </div>
             ))}
           </div>
@@ -355,19 +355,19 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
       )}
 
       {/* Feedback Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-parchment-50 rounded-2xl border border-plato-200/60 overflow-hidden">
         <button
           onClick={() => toggleSection('feedback')}
-          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          className="w-full px-6 py-4 flex items-center justify-between hover:bg-plato-50/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <Lightbulb className="w-5 h-5 text-blue-600" />
-            <span className="font-semibold text-gray-900">Plato's Insights</span>
+            <Lightbulb className="w-5 h-5 text-plato-600" />
+            <span className="font-semibold text-warmGray-800">Plato's Insights</span>
           </div>
           {expandedSections.has('feedback') ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
+            <ChevronUp className="w-5 h-5 text-warmGray-400" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-warmGray-400" />
           )}
         </button>
 
@@ -375,13 +375,13 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
           <div className="px-6 pb-6 space-y-6">
             {/* Strengths */}
             <div>
-              <h4 className="text-sm font-mono uppercase tracking-wider text-green-600 mb-3">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-plato-600 mb-3">
                 Emotional Strengths
               </h4>
               <ul className="space-y-2">
                 {emo.feedback.strengths.map((s, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="text-green-500 mt-1">✓</span>
+                  <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
+                    <span className="text-plato-500 mt-1">✓</span>
                     <span>{s}</span>
                   </li>
                 ))}
@@ -390,13 +390,13 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
 
             {/* Growth Areas */}
             <div>
-              <h4 className="text-sm font-mono uppercase tracking-wider text-amber-600 mb-3">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-aristotle-600 mb-3">
                 Growth Areas
               </h4>
               <ul className="space-y-2">
                 {emo.feedback.growth_areas.map((a, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="text-amber-500 mt-1">→</span>
+                  <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
+                    <span className="text-aristotle-500 mt-1">→</span>
                     <span>{a}</span>
                   </li>
                 ))}
@@ -405,13 +405,13 @@ export function PlatoAnalysis({ analysis, duration: _duration = 120, onTimeClick
 
             {/* Coaching Insights */}
             {emo.feedback.coaching_insights.length > 0 && (
-              <div className="bg-purple-50/50 rounded-xl p-5 border border-purple-100">
-                <h4 className="text-sm font-mono uppercase tracking-wider text-purple-600 mb-3 flex items-center gap-2">
+              <div className="bg-plato-50/50 rounded-xl p-5 border border-plato-200">
+                <h4 className="text-sm font-mono uppercase tracking-wider text-plato-600 mb-3 flex items-center gap-2">
                   <span>🧠</span> Coaching Insights
                 </h4>
                 <ul className="space-y-3">
                   {emo.feedback.coaching_insights.map((insight, idx) => (
-                    <li key={idx} className="text-sm text-gray-700 leading-relaxed">
+                    <li key={idx} className="text-sm text-warmGray-700 leading-relaxed">
                       {insight}
                     </li>
                   ))}
@@ -440,23 +440,23 @@ function RegulationMetric({
   status: 'excellent' | 'good' | 'warning';
 }) {
   const statusColors = {
-    excellent: 'bg-green-50 border-green-100 text-green-600',
-    good: 'bg-blue-50 border-blue-100 text-blue-600',
-    warning: 'bg-amber-50 border-amber-100 text-amber-600'
+    excellent: 'bg-plato-50 border-plato-200 text-plato-600',
+    good: 'bg-socrates-50 border-socrates-200 text-socrates-600',
+    warning: 'bg-aristotle-50 border-aristotle-200 text-aristotle-600'
   };
 
   const valueColors = {
-    excellent: 'text-green-700',
-    good: 'text-blue-700',
-    warning: 'text-amber-700'
+    excellent: 'text-plato-700',
+    good: 'text-socrates-700',
+    warning: 'text-aristotle-700'
   };
 
   return (
     <div className={`rounded-xl p-4 border ${statusColors[status]}`}>
       <div className="mb-2">{icon}</div>
       <div className={`font-mono text-2xl font-bold ${valueColors[status]}`}>{value}</div>
-      <div className="text-sm font-medium text-gray-900 mt-1">{label}</div>
-      <div className="text-xs text-gray-500">{description}</div>
+      <div className="text-sm font-medium text-warmGray-800 mt-1">{label}</div>
+      <div className="text-xs text-warmGray-500">{description}</div>
     </div>
   );
 }
@@ -473,23 +473,23 @@ function PatternCard({
   color: 'red' | 'green' | 'purple';
 }) {
   const colorClasses = {
-    red: 'bg-red-50/50 border-red-100',
-    green: 'bg-green-50/50 border-green-100',
-    purple: 'bg-purple-50/50 border-purple-100'
+    red: 'bg-aristotle-50/50 border-aristotle-200',
+    green: 'bg-zeno-50/50 border-zeno-200',
+    purple: 'bg-plato-50/50 border-plato-200'
   };
 
   return (
     <div className={`rounded-2xl border p-6 ${colorClasses[color]}`}>
-      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <h3 className="font-semibold text-warmGray-800 mb-4 flex items-center gap-2">
         {icon}
         {title}
       </h3>
       <ul className="space-y-2">
         {items.map((item, idx) => (
-          <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+          <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
             <span className={
-              color === 'green' ? 'text-green-500' :
-              color === 'purple' ? 'text-purple-500' : 'text-red-500'
+              color === 'green' ? 'text-zeno-500' :
+                color === 'purple' ? 'text-plato-500' : 'text-aristotle-500'
             }>•</span>
             <span>{item}</span>
           </li>

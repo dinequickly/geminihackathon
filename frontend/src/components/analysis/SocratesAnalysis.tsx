@@ -40,17 +40,17 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
   const strat = analysis.strategic_analysis;
   const score = strat.score;
 
-  // Score color based on 0-5 scale
+  // Score color based on 0-5 scale - using Socrates' cool palette
   const getScoreColor = (s: number) => {
-    if (s >= 4) return 'text-green-600';
-    if (s >= 3) return 'text-yellow-600';
-    return 'text-red-600';
+    if (s >= 4) return 'text-socrates-700';
+    if (s >= 3) return 'text-socrates-500';
+    return 'text-warmGray-600';
   };
 
   const getScoreBg = (s: number) => {
-    if (s >= 4) return 'bg-green-50 border-green-200';
-    if (s >= 3) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+    if (s >= 4) return 'bg-socrates-50 border-socrates-200';
+    if (s >= 3) return 'bg-socrates-100 border-socrates-300';
+    return 'bg-warmGray-100 border-warmGray-300';
   };
 
   const formatTimestamp = (seconds: number) => {
@@ -84,14 +84,14 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-socrates-200 flex items-center justify-center">
               <span className="text-2xl">🏛️</span>
             </div>
             <div>
-              <h2 className="font-sans font-semibold text-2xl tracking-tight text-black">
+              <h2 className="font-sans font-semibold text-2xl tracking-tight text-warmGray-900">
                 Socrates Analysis
               </h2>
-              <p className="text-sm text-gray-500">Strategic Thinking & Dialectical Inquiry</p>
+              <p className="text-sm text-warmGray-500">Strategic Thinking & Dialectical Inquiry</p>
             </div>
           </div>
         </div>
@@ -99,7 +99,7 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
           <div className={`font-mono text-4xl font-bold ${getScoreColor(score)}`}>
             {score.toFixed(1)}
           </div>
-          <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">/ 5.0</div>
+          <div className="text-xs text-warmGray-500 uppercase tracking-wider mt-1">/ 5.0</div>
         </div>
       </div>
 
@@ -133,22 +133,22 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
       </div>
 
       {/* Question Analysis Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-parchment-50 rounded-2xl border border-socrates-200/60 overflow-hidden">
         <button
           onClick={() => toggleSection('questions')}
-          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          className="w-full px-6 py-4 flex items-center justify-between hover:bg-socrates-50/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <HelpCircle className="w-5 h-5 text-teal-600" />
-            <span className="font-semibold text-gray-900">Question Analysis</span>
-            <span className="bg-teal-100 text-teal-700 text-xs px-2 py-0.5 rounded-full">
+            <HelpCircle className="w-5 h-5 text-socrates-600" />
+            <span className="font-semibold text-warmGray-800">Question Analysis</span>
+            <span className="bg-socrates-200 text-socrates-700 text-xs px-2 py-0.5 rounded-full">
               Avg: {strat.question_analysis.question_quality_avg.toFixed(1)}/5
             </span>
           </div>
           {expandedSections.has('questions') ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
+            <ChevronUp className="w-5 h-5 text-warmGray-400" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-warmGray-400" />
           )}
         </button>
 
@@ -156,7 +156,7 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
           <div className="px-6 pb-6 space-y-6">
             {/* Questions Asked */}
             <div>
-              <h4 className="text-sm font-mono uppercase tracking-wider text-teal-600 mb-4">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-socrates-600 mb-4">
                 Questions You Asked
               </h4>
               <div className="space-y-4">
@@ -165,11 +165,11 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
                   return (
                     <div
                       key={idx}
-                      className="bg-gray-50 rounded-xl p-5 border border-gray-100 cursor-pointer hover:border-teal-200 transition-colors"
+                      className="bg-parchment-100 rounded-xl p-5 border border-socrates-200/70 cursor-pointer hover:border-socrates-300 transition-colors"
                       onClick={() => onTimeClick?.(q.timestamp)}
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="font-mono text-xs text-gray-500">
+                        <span className="font-mono text-xs text-warmGray-500">
                           {formatTimestamp(q.timestamp)}
                         </span>
                         <span
@@ -182,12 +182,12 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
                           {qualityInfo.label} ({q.quality_score}/5)
                         </span>
                       </div>
-                      <p className="text-sm text-gray-800 font-medium mb-3">"{q.question}"</p>
-                      <div className="bg-teal-50/50 rounded-lg p-3 border border-teal-100">
-                        <span className="text-xs font-mono uppercase text-teal-600 block mb-1">
+                      <p className="text-sm text-warmGray-800 font-medium mb-3">"{q.question}"</p>
+                      <div className="bg-socrates-50/50 rounded-lg p-3 border border-socrates-200">
+                        <span className="text-xs font-mono uppercase text-socrates-600 block mb-1">
                           Why This Matters
                         </span>
-                        <p className="text-sm text-gray-700">{q.why_it_matters}</p>
+                        <p className="text-sm text-warmGray-700">{q.why_it_matters}</p>
                       </div>
                     </div>
                   );
@@ -198,7 +198,7 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
             {/* Missed Opportunities */}
             {strat.question_analysis.missed_opportunities.length > 0 && (
               <div>
-                <h4 className="text-sm font-mono uppercase tracking-wider text-amber-600 mb-4 flex items-center gap-2">
+                <h4 className="text-sm font-mono uppercase tracking-wider text-aristotle-600 mb-4 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
                   Missed Opportunities
                 </h4>
@@ -206,29 +206,29 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
                   {strat.question_analysis.missed_opportunities.map((mo, idx) => (
                     <div
                       key={idx}
-                      className="bg-amber-50/50 rounded-xl p-5 border border-amber-200 cursor-pointer hover:border-amber-300 transition-colors"
+                      className="bg-aristotle-50/50 rounded-xl p-5 border border-aristotle-200 cursor-pointer hover:border-aristotle-300 transition-colors"
                       onClick={() => onTimeClick?.(mo.timestamp)}
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="font-mono text-xs text-amber-600">
+                        <span className="font-mono text-xs text-aristotle-600">
                           {formatTimestamp(mo.timestamp)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        <span className="font-medium text-gray-700">Context: </span>
+                      <p className="text-sm text-warmGray-600 mb-3">
+                        <span className="font-medium text-warmGray-700">Context: </span>
                         {mo.context}
                       </p>
-                      <div className="bg-white rounded-lg p-4 border border-amber-200 mb-3">
-                        <span className="text-xs font-mono uppercase text-amber-700 block mb-2">
+                      <div className="bg-parchment-50 rounded-lg p-4 border border-aristotle-200 mb-3">
+                        <span className="text-xs font-mono uppercase text-aristotle-700 block mb-2">
                           What You Could Have Asked
                         </span>
-                        <p className="text-sm text-gray-800 italic">"{mo.what_to_ask}"</p>
+                        <p className="text-sm text-warmGray-800 italic">"{mo.what_to_ask}"</p>
                       </div>
-                      <div className="bg-teal-50/50 rounded-lg p-3 border border-teal-100">
-                        <span className="text-xs font-mono uppercase text-teal-600 block mb-1">
+                      <div className="bg-socrates-50/50 rounded-lg p-3 border border-socrates-200">
+                        <span className="text-xs font-mono uppercase text-socrates-600 block mb-1">
                           Why
                         </span>
-                        <p className="text-sm text-gray-700">{mo.why}</p>
+                        <p className="text-sm text-warmGray-700">{mo.why}</p>
                       </div>
                     </div>
                   ))}
@@ -240,19 +240,19 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
       </div>
 
       {/* Response Framework Analysis */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-parchment-50 rounded-2xl border border-socrates-200/60 overflow-hidden">
         <button
           onClick={() => toggleSection('patterns')}
-          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          className="w-full px-6 py-4 flex items-center justify-between hover:bg-socrates-50/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <BookOpen className="w-5 h-5 text-blue-600" />
-            <span className="font-semibold text-gray-900">Response Framework & Intellectual Signals</span>
+            <BookOpen className="w-5 h-5 text-socrates-600" />
+            <span className="font-semibold text-warmGray-800">Response Framework & Intellectual Signals</span>
           </div>
           {expandedSections.has('patterns') ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
+            <ChevronUp className="w-5 h-5 text-warmGray-400" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-warmGray-400" />
           )}
         </button>
 
@@ -284,7 +284,7 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
 
             {/* Intellectual Signals */}
             <div>
-              <h4 className="text-sm font-mono uppercase tracking-wider text-purple-600 mb-4">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-socrates-600 mb-4">
                 Intellectual Signals
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -312,56 +312,56 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
 
       {/* Good vs Great Comparison */}
       {strat.comparison.good_vs_great_analysis.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-parchment-50 rounded-2xl border border-socrates-200/60 overflow-hidden">
           <button
             onClick={() => toggleSection('comparison')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-socrates-50/50 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
-              <span className="font-semibold text-gray-900">Good vs Great: Close the Gap</span>
+              <TrendingUp className="w-5 h-5 text-socrates-600" />
+              <span className="font-semibold text-warmGray-800">Good vs Great: Close the Gap</span>
             </div>
             {expandedSections.has('comparison') ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
+              <ChevronUp className="w-5 h-5 text-warmGray-400" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
+              <ChevronDown className="w-5 h-5 text-warmGray-400" />
             )}
           </button>
 
           {expandedSections.has('comparison') && (
             <div className="px-6 pb-6 space-y-6">
               {strat.comparison.good_vs_great_analysis.map((comp, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
+                <div key={idx} className="border border-warmGray-200 rounded-xl overflow-hidden">
                   {/* Your Approach */}
-                  <div className="bg-amber-50 p-4 border-b border-gray-200">
-                    <span className="text-xs font-mono uppercase text-amber-600 block mb-2">
+                  <div className="bg-aristotle-50 p-4 border-b border-warmGray-200">
+                    <span className="text-xs font-mono uppercase text-aristotle-600 block mb-2">
                       Your Approach
                     </span>
-                    <p className="text-sm text-gray-700">{comp.your_approach}</p>
+                    <p className="text-sm text-warmGray-700">{comp.your_approach}</p>
                   </div>
 
                   {/* Great Approach */}
-                  <div className="bg-green-50 p-4 border-b border-gray-200">
-                    <span className="text-xs font-mono uppercase text-green-600 block mb-2">
+                  <div className="bg-zeno-50 p-4 border-b border-warmGray-200">
+                    <span className="text-xs font-mono uppercase text-zeno-600 block mb-2">
                       Great Approach
                     </span>
-                    <p className="text-sm text-gray-700">{comp.great_approach}</p>
+                    <p className="text-sm text-warmGray-700">{comp.great_approach}</p>
                   </div>
 
                   {/* The Gap */}
-                  <div className="bg-red-50/50 p-4 border-b border-gray-200">
-                    <span className="text-xs font-mono uppercase text-red-600 block mb-2">
+                  <div className="bg-plato-50/50 p-4 border-b border-warmGray-200">
+                    <span className="text-xs font-mono uppercase text-plato-600 block mb-2">
                       The Gap
                     </span>
-                    <p className="text-sm text-gray-700">{comp.gap}</p>
+                    <p className="text-sm text-warmGray-700">{comp.gap}</p>
                   </div>
 
                   {/* How to Bridge */}
-                  <div className="bg-indigo-50 p-4">
-                    <span className="text-xs font-mono uppercase text-indigo-600 block mb-2">
+                  <div className="bg-socrates-50 p-4">
+                    <span className="text-xs font-mono uppercase text-socrates-600 block mb-2">
                       How to Bridge
                     </span>
-                    <p className="text-sm text-gray-700">{comp.how_to_bridge}</p>
+                    <p className="text-sm text-warmGray-700">{comp.how_to_bridge}</p>
                   </div>
                 </div>
               ))}
@@ -371,19 +371,19 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
       )}
 
       {/* Feedback & Recommendations */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-parchment-50 rounded-2xl border border-socrates-200/60 overflow-hidden">
         <button
           onClick={() => toggleSection('recommendations')}
-          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          className="w-full px-6 py-4 flex items-center justify-between hover:bg-socrates-50/50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <MessageCircle className="w-5 h-5 text-teal-600" />
-            <span className="font-semibold text-gray-900">Socratic Insights & Recommendations</span>
+            <MessageCircle className="w-5 h-5 text-socrates-600" />
+            <span className="font-semibold text-warmGray-800">Socratic Insights & Recommendations</span>
           </div>
           {expandedSections.has('recommendations') ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
+            <ChevronUp className="w-5 h-5 text-warmGray-400" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-warmGray-400" />
           )}
         </button>
 
@@ -391,13 +391,13 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
           <div className="px-6 pb-6 space-y-6">
             {/* Intellectual Strengths */}
             <div>
-              <h4 className="text-sm font-mono uppercase tracking-wider text-green-600 mb-3">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-socrates-600 mb-3">
                 Intellectual Strengths
               </h4>
               <ul className="space-y-2">
                 {strat.feedback.intellectual_strengths.map((s, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="text-green-500 mt-1">✓</span>
+                  <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
+                    <span className="text-socrates-500 mt-1">✓</span>
                     <span>{s}</span>
                   </li>
                 ))}
@@ -406,13 +406,13 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
 
             {/* Thinking Blindspots */}
             <div>
-              <h4 className="text-sm font-mono uppercase tracking-wider text-amber-600 mb-3">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-aristotle-600 mb-3">
                 Thinking Blindspots
               </h4>
               <ul className="space-y-2">
                 {strat.feedback.thinking_blindspots.map((b, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="text-amber-500 mt-1">⚠</span>
+                  <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
+                    <span className="text-aristotle-500 mt-1">⚠</span>
                     <span>{b}</span>
                   </li>
                 ))}
@@ -420,15 +420,15 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
             </div>
 
             {/* Framework Recommendations */}
-            <div className="bg-teal-50/50 rounded-xl p-5 border border-teal-100">
-              <h4 className="text-sm font-mono uppercase tracking-wider text-teal-600 mb-3 flex items-center gap-2">
+            <div className="bg-socrates-50/50 rounded-xl p-5 border border-socrates-200">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-socrates-600 mb-3 flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 Recommended Frameworks
               </h4>
               <ul className="space-y-3">
                 {strat.feedback.framework_recommendations.map((fr, idx) => (
-                  <li key={idx} className="text-sm text-gray-700 leading-relaxed">
-                    <strong className="text-teal-700">{fr.split(':')[0]}:</strong>
+                  <li key={idx} className="text-sm text-warmGray-700 leading-relaxed">
+                    <strong className="text-socrates-700">{fr.split(':')[0]}:</strong>
                     {fr.includes(':') ? fr.split(':').slice(1).join(':') : fr}
                   </li>
                 ))}
@@ -436,14 +436,14 @@ export function SocratesAnalysis({ analysis, onTimeClick }: SocratesAnalysisProp
             </div>
 
             {/* Advanced Strategies */}
-            <div className="bg-indigo-50/50 rounded-xl p-5 border border-indigo-100">
-              <h4 className="text-sm font-mono uppercase tracking-wider text-indigo-600 mb-3 flex items-center gap-2">
+            <div className="bg-zeno-50/50 rounded-xl p-5 border border-zeno-200">
+              <h4 className="text-sm font-mono uppercase tracking-wider text-zeno-600 mb-3 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
                 Advanced Strategies
               </h4>
               <ul className="space-y-3">
                 {strat.feedback.advanced_strategies.map((as, idx) => (
-                  <li key={idx} className="text-sm text-gray-700 leading-relaxed">
+                  <li key={idx} className="text-sm text-warmGray-700 leading-relaxed">
                     {as}
                   </li>
                 ))}
@@ -467,9 +467,9 @@ function ThinkingPatternMetric({
   icon: React.ReactNode;
 }) {
   const getStatus = (v: number) => {
-    if (v >= 4) return { bg: 'bg-green-50 border-green-100', text: 'text-green-600', value: 'text-green-700' };
-    if (v >= 3) return { bg: 'bg-blue-50 border-blue-100', text: 'text-blue-600', value: 'text-blue-700' };
-    return { bg: 'bg-amber-50 border-amber-100', text: 'text-amber-600', value: 'text-amber-700' };
+    if (v >= 4) return { bg: 'bg-socrates-50 border-socrates-200', text: 'text-socrates-600', value: 'text-socrates-700' };
+    if (v >= 3) return { bg: 'bg-socrates-100 border-socrates-300', text: 'text-socrates-500', value: 'text-socrates-600' };
+    return { bg: 'bg-aristotle-50 border-aristotle-200', text: 'text-aristotle-600', value: 'text-aristotle-700' };
   };
 
   const status = getStatus(value);
@@ -478,7 +478,7 @@ function ThinkingPatternMetric({
     <div className={`rounded-xl p-4 border ${status.bg}`}>
       <div className={`mb-2 ${status.text}`}>{icon}</div>
       <div className={`font-mono text-2xl font-bold ${status.value}`}>{value.toFixed(1)}</div>
-      <div className="text-xs text-gray-600 mt-1">{label}</div>
+      <div className="text-xs text-warmGray-600 mt-1">{label}</div>
     </div>
   );
 }
@@ -494,20 +494,20 @@ function FrameworkMetric({
 }) {
   if (type === 'boolean') {
     return (
-      <div className={`rounded-xl p-4 border ${value ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'}`}>
-        <div className={`font-mono text-xl font-bold ${value ? 'text-green-600' : 'text-gray-400'}`}>
+      <div className={`rounded-xl p-4 border ${value ? 'bg-socrates-50 border-socrates-200' : 'bg-parchment-100 border-warmGray-200'}`}>
+        <div className={`font-mono text-xl font-bold ${value ? 'text-socrates-600' : 'text-warmGray-400'}`}>
           {value ? '✓ Yes' : '✗ No'}
         </div>
-        <div className="text-xs text-gray-600 mt-1">{label}</div>
+        <div className="text-xs text-warmGray-600 mt-1">{label}</div>
       </div>
     );
   }
 
   const numValue = value as number;
   const getStatus = (v: number) => {
-    if (v >= 4) return { bg: 'bg-green-50 border-green-100', value: 'text-green-700' };
-    if (v >= 3) return { bg: 'bg-blue-50 border-blue-100', value: 'text-blue-700' };
-    return { bg: 'bg-amber-50 border-amber-100', value: 'text-amber-700' };
+    if (v >= 4) return { bg: 'bg-socrates-50 border-socrates-200', value: 'text-socrates-700' };
+    if (v >= 3) return { bg: 'bg-socrates-100 border-socrates-300', value: 'text-socrates-600' };
+    return { bg: 'bg-aristotle-50 border-aristotle-200', value: 'text-aristotle-700' };
   };
 
   const status = getStatus(numValue);
@@ -515,7 +515,7 @@ function FrameworkMetric({
   return (
     <div className={`rounded-xl p-4 border ${status.bg}`}>
       <div className={`font-mono text-xl font-bold ${status.value}`}>{numValue.toFixed(1)}/5</div>
-      <div className="text-xs text-gray-600 mt-1">{label}</div>
+      <div className="text-xs text-warmGray-600 mt-1">{label}</div>
     </div>
   );
 }
@@ -528,13 +528,12 @@ function IntellectualSignal({
   present: boolean;
 }) {
   return (
-    <div className={`rounded-lg p-3 border flex items-center gap-2 ${
-      present ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-    }`}>
-      <span className={present ? 'text-green-500' : 'text-gray-400'}>
+    <div className={`rounded-lg p-3 border flex items-center gap-2 ${present ? 'bg-socrates-50 border-socrates-200' : 'bg-parchment-100 border-warmGray-200'
+      }`}>
+      <span className={present ? 'text-socrates-500' : 'text-warmGray-400'}>
         {present ? '✓' : '○'}
       </span>
-      <span className={`text-xs ${present ? 'text-green-700' : 'text-gray-500'}`}>
+      <span className={`text-xs ${present ? 'text-socrates-700' : 'text-warmGray-500'}`}>
         {label}
       </span>
     </div>

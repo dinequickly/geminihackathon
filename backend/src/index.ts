@@ -18,10 +18,19 @@ dotenv.config();
 const app = express();
 
 // CORS configuration
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, X-Requested-With');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  return next();
+});
 app.use(cors({
-  origin: '*', // Allow all origins for now, or specify your frontend URL
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'X-Requested-With']
 }));
 app.options('*', cors()); // Enable pre-flight for all routes
 app.options('/api/ai/dynamic-components', cors());
@@ -1050,7 +1059,9 @@ app.get('/api/conversations/:conversationId', async (req, res) => {
       .from('aristotle_analysis')
       .select('*')
       .eq('conversation_id', req.params.conversationId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     // If conversation is completed with transcript, trigger analysis
     // Status should be: in_progress -> completed -> analyzing -> analyzed
@@ -2065,7 +2076,9 @@ app.get('/api/conversations/:conversationId/aristotle', async (req, res) => {
       .from('aristotle_analysis')
       .select('*')
       .eq('conversation_id', conversationId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       throw error;
@@ -2098,7 +2111,9 @@ app.get('/api/conversations/:conversationId/plato', async (req, res) => {
       .from('plato_analysis')
       .select('*')
       .eq('conversation_id', conversationId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       throw error;
@@ -2131,7 +2146,9 @@ app.get('/api/conversations/:conversationId/socrates', async (req, res) => {
       .from('socrates_analysis')
       .select('*')
       .eq('conversation_id', conversationId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       throw error;
@@ -2164,7 +2181,9 @@ app.get('/api/conversations/:conversationId/zeno', async (req, res) => {
       .from('zeno_analysis')
       .select('*')
       .eq('conversation_id', conversationId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       throw error;
@@ -2194,10 +2213,10 @@ app.get('/api/conversations/:conversationId/philosophical-analysis', async (req,
     const { conversationId } = req.params;
 
     const [aristotleResult, platoResult, socratesResult, zenoResult] = await Promise.all([
-      supabase.from('aristotle_analysis').select('*').eq('conversation_id', conversationId).single(),
-      supabase.from('plato_analysis').select('*').eq('conversation_id', conversationId).single(),
-      supabase.from('socrates_analysis').select('*').eq('conversation_id', conversationId).single(),
-      supabase.from('zeno_analysis').select('*').eq('conversation_id', conversationId).single()
+      supabase.from('aristotle_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('plato_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('socrates_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('zeno_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle()
     ]);
 
     res.json({

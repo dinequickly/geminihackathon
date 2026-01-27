@@ -52,24 +52,24 @@ const flattenObject = (input: unknown, prefix = ''): FlatRow[] => {
 };
 
 const TableSection = ({ title, rows }: { title: string; rows: FlatRow[] }) => (
-  <LiquidGlass className="p-4 border border-emerald-100/70 bg-white/70 backdrop-blur">
+  <LiquidGlass className="p-4 border border-warmGray-200/70 bg-parchment-50/90 backdrop-blur">
     <div className="flex items-center justify-between mb-3">
-      <h3 className="font-mono text-xs uppercase tracking-[0.35em] text-emerald-800">{title}</h3>
-      <span className="text-[10px] font-mono text-emerald-500">{rows.length} rows</span>
+      <h3 className="font-mono text-xs uppercase tracking-[0.35em] text-warmGray-700">{title}</h3>
+      <span className="text-[10px] font-mono text-warmGray-500">{rows.length} rows</span>
     </div>
-    <div className="overflow-auto max-h-[360px] rounded-md border border-emerald-100">
+    <div className="overflow-auto max-h-[360px] rounded-md border border-warmGray-200">
       <table className="w-full text-[12px]">
-        <thead className="bg-emerald-50/80 sticky top-0">
-          <tr className="text-left text-emerald-800">
+        <thead className="bg-parchment-200/80 sticky top-0">
+          <tr className="text-left text-warmGray-700">
             <th className="px-3 py-2 font-mono">Key</th>
             <th className="px-3 py-2 font-mono">Value</th>
           </tr>
         </thead>
         <tbody>
           {rows.map(row => (
-            <tr key={row.key} className="border-t border-emerald-100/70">
-              <td className="px-3 py-2 align-top font-mono text-emerald-900 whitespace-nowrap">{row.key}</td>
-              <td className="px-3 py-2 text-emerald-950 whitespace-pre-wrap break-words">{row.value}</td>
+            <tr key={row.key} className="border-t border-warmGray-200/70">
+              <td className="px-3 py-2 align-top font-mono text-warmGray-800 whitespace-nowrap">{row.key}</td>
+              <td className="px-3 py-2 text-warmGray-900 whitespace-pre-wrap break-words">{row.value}</td>
             </tr>
           ))}
         </tbody>
@@ -187,7 +187,7 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-parchment-100">
         <LoadingSpinner size="lg" color="primary" />
       </div>
     );
@@ -195,28 +195,28 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <LiquidGlass className="p-6 max-w-lg text-center">
-          <p className="text-red-600 font-mono text-sm">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-parchment-100">
+        <LiquidGlass className="p-6 max-w-lg text-center bg-parchment-50/90">
+          <p className="text-plato-700 font-mono text-sm">{error}</p>
         </LiquidGlass>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-cream-100">
+    <div className="min-h-screen relative overflow-hidden bg-parchment-100">
       <LightLeakBackground />
 
       <div className="relative z-10 px-6 py-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-6">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.4em] text-emerald-700">CCTV Monitoring Console</p>
-            <h1 className="text-2xl md:text-3xl font-semibold text-emerald-950 mt-2">All Signals, One Screen</h1>
-            <p className="text-sm text-emerald-700 mt-1">Conversation {conversationId}</p>
+            <p className="font-mono text-xs uppercase tracking-[0.4em] text-warmGray-600">CCTV Monitoring Console</p>
+            <h1 className="text-2xl md:text-3xl font-semibold text-warmGray-800 mt-2">All Signals, One Screen</h1>
+            <p className="text-sm text-warmGray-600 mt-1">Conversation {conversationId}</p>
           </div>
           <div className="mt-4 md:mt-0 text-right">
-            <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-emerald-600">Access</p>
-            <p className="text-sm text-emerald-900 font-semibold">Restricted</p>
+            <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-warmGray-500">Access</p>
+            <p className="text-sm text-warmGray-800 font-semibold">Restricted</p>
           </div>
         </div>
 
@@ -233,10 +233,10 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
           </div>
 
           <div className="space-y-6">
-            <LiquidGlass className="p-4 border border-emerald-100/70 bg-white/70 backdrop-blur">
+            <LiquidGlass className="p-4 border border-warmGray-200/70 bg-parchment-50/90 backdrop-blur">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-mono text-xs uppercase tracking-[0.35em] text-emerald-800">Emotions Feed</h3>
-                <span className="text-[10px] font-mono text-emerald-500">Live View</span>
+                <h3 className="font-mono text-xs uppercase tracking-[0.35em] text-warmGray-700">Emotions Feed</h3>
+                <span className="text-[10px] font-mono text-warmGray-500">Live View</span>
               </div>
               {conversation?.video_url ? (
                 <VideoEmotionPlayer
@@ -246,7 +246,7 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
                   showLiveEmotions
                 />
               ) : (
-                <div className="text-sm text-emerald-700">No video available for this conversation.</div>
+                <div className="text-sm text-warmGray-600">No video available for this conversation.</div>
               )}
             </LiquidGlass>
           </div>
