@@ -1013,12 +1013,22 @@ class ApiClient {
     return this.request(`/api/conversations/${conversationId}/zeno`);
   }
 
+  async getDavinciSynthesis(conversationId: string): Promise<{
+    conversation_id: string;
+    synthesis: DavinciSynthesis | null;
+    created_at?: string;
+    status: 'ready' | 'pending';
+  }> {
+    return this.request(`/api/conversations/${conversationId}/davinci`);
+  }
+
   async getAllPhilosophicalAnalyses(conversationId: string): Promise<{
     conversation_id: string;
     aristotle: (AristotleAnalysis & { created_at: string }) | null;
     plato: (PlatoAnalysis & { created_at: string }) | null;
     socrates: (SocratesAnalysis & { created_at: string }) | null;
     zeno: (ZenoAnalysis & { created_at: string }) | null;
+    davinci: (DavinciSynthesis & { created_at: string }) | null;
   }> {
     return this.request(`/api/conversations/${conversationId}/philosophical-analysis`);
   }
@@ -1193,6 +1203,35 @@ export interface ZenoAnalysis {
       quick_wins: string[];
       advanced_techniques: string[];
     };
+  };
+}
+
+export interface DavinciSynthesis {
+  overall_performance: {
+    score: number; // Overall interview performance score
+    percentile: number;
+    grade: string;
+  };
+  synthesis: {
+    executive_summary: string;
+    key_strengths: string[];
+    critical_weaknesses: string[];
+    interview_readiness: string;
+  };
+  comparative_analysis: {
+    vs_industry_average: string;
+    vs_top_performers: string;
+    trajectory: string;
+  };
+  action_plan: {
+    immediate_priorities: Array<{
+      priority: number;
+      action: string;
+      why: string;
+      how: string;
+    }>;
+    30_day_plan: string[];
+    90_day_milestones: string[];
   };
 }
 

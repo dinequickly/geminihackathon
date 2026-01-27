@@ -14,7 +14,7 @@ import {
   Mic,
   Video
 } from 'lucide-react';
-import { api, Analysis, Conversation, AristotleAnalysis, PlatoAnalysis, SocratesAnalysis, ZenoAnalysis, TranscriptHighlight } from '../lib/api';
+import { api, Analysis, Conversation, AristotleAnalysis, PlatoAnalysis, SocratesAnalysis, ZenoAnalysis, DavinciSynthesis, TranscriptHighlight } from '../lib/api';
 import { VideoEmotionPlayer } from '../components';
 
 const ALLOWED_USER_IDS = new Set(['21557fe2-d7c9-492c-b99c-6e4b0d3c2044', 'c315372a-da40-4586-9451-44ceaaca15a7']);
@@ -433,6 +433,7 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
   const [plato, setPlato] = useState<PlatoAnalysis | null>(null);
   const [socrates, setSocrates] = useState<SocratesAnalysis | null>(null);
   const [_zeno, setZeno] = useState<ZenoAnalysis | null>(null);
+  const [davinci, setDavinci] = useState<DavinciSynthesis | null>(null);
   const [transcript, setTranscript] = useState<any>(null);
   const [_highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -461,7 +462,8 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
             aristotle: philosophers.aristotle,
             plato: philosophers.plato,
             socrates: philosophers.socrates,
-            zeno: philosophers.zeno
+            zeno: philosophers.zeno,
+            davinci: philosophers.davinci
           },
           transcript: transcriptData,
           highlights: highlightsResult.highlights
@@ -473,6 +475,7 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
         setPlato(philosophers.plato);
         setSocrates(philosophers.socrates);
         setZeno(philosophers.zeno);
+        setDavinci(philosophers.davinci);
         setTranscript(transcriptData);
         setHighlights(highlightsResult.highlights || []);
       } catch (err) {

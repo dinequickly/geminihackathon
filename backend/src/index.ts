@@ -2285,16 +2285,52 @@ app.get('/api/conversations/:conversationId/zeno', async (req, res) => {
   }
 });
 
+// Get DaVinci synthesis (Overall synthesis of all analyses)
+app.get('/api/conversations/:conversationId/davinci', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data, error } = await supabase
+      .from('davinci_synthesis')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.json({
+        conversation_id: conversationId,
+        synthesis: null,
+        status: 'pending'
+      });
+    }
+
+    res.json({
+      conversation_id: conversationId,
+      synthesis: data.synthesis,
+      created_at: data.created_at,
+      status: 'ready'
+    });
+  } catch (error: any) {
+    console.error('Get DaVinci synthesis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all philosophical analyses for a conversation
 app.get('/api/conversations/:conversationId/philosophical-analysis', async (req, res) => {
   try {
     const { conversationId } = req.params;
 
-    const [aristotleResult, platoResult, socratesResult, zenoResult] = await Promise.all([
+    const [aristotleResult, platoResult, socratesResult, zenoResult, davinciResult] = await Promise.all([
       supabase.from('aristotle_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('plato_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('socrates_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('zeno_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      supabase.from('zeno_analysis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('davinci_synthesis').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(1).maybeSingle()
     ]);
 
     res.json({
@@ -2314,6 +2350,10 @@ app.get('/api/conversations/:conversationId/philosophical-analysis', async (req,
       zeno: zenoResult.data ? {
         ...zenoResult.data.analysis,
         created_at: zenoResult.data.created_at
+      } : null,
+      davinci: davinciResult.data ? {
+        ...davinciResult.data.synthesis,
+        created_at: davinciResult.data.created_at
       } : null
     });
   } catch (error: any) {
