@@ -454,6 +454,19 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
 
         if (!isMounted) return;
 
+        console.log('📊 Data loaded:', {
+          conversation: convResult.conversation,
+          analysis: convResult.analysis,
+          philosophers: {
+            aristotle: philosophers.aristotle,
+            plato: philosophers.plato,
+            socrates: philosophers.socrates,
+            zeno: philosophers.zeno
+          },
+          transcript: transcriptData,
+          highlights: highlightsResult.highlights
+        });
+
         setConversation(convResult.conversation);
         setAnalysis(convResult.analysis);
         setAristotle(philosophers.aristotle);
@@ -464,6 +477,7 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
         setHighlights(highlightsResult.highlights || []);
       } catch (err) {
         if (!isMounted) return;
+        console.error('❌ Load error:', err);
         setError(err instanceof Error ? err.message : 'Failed to load session data');
       } finally {
         if (isMounted) setIsLoading(false);
