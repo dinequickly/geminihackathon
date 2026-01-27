@@ -1396,6 +1396,84 @@ function getTopEmotions(emotions: HumeEmotion[], limit = 5): HumeEmotion[] {
     .slice(0, limit);
 }
 
+function getTopEmotion(emotions: HumeEmotion[] = []): HumeEmotion | null {
+  if (!emotions.length) return null;
+  return emotions.reduce(
+    (max, e) => (e.score > max.score ? e : max),
+    { name: '', score: 0 } as HumeEmotion
+  );
+}
+
+function parseEmotionDumpToTimeline(dump: any): any[] {
+  if (!dump) return [];
+  let parsed = dump;
+  if (typeof dump === 'string') {
+    try {
+      parsed = JSON.parse(dump);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  const entries: any[] = [];
+  const root = parsed?.[0];
+  const pred = root?.models ? root : root?.results?.predictions?.[0];
+  const models = pred?.models || root?.models;
+  if (!models) return [];
+
+  if (models.face?.grouped_predictions) {
+    for (const group of models.face.grouped_predictions) {
+      for (const p of group.predictions || []) {
+        const topEmotion = getTopEmotion(p.emotions || []);
+        entries.push({
+          model_type: 'face',
+          start_timestamp_ms: Math.round((p.time || 0) * 1000),
+          end_timestamp_ms: Math.round((p.time || 0) * 1000) + 33,
+          emotions: p.emotions || [],
+          top_emotion_name: topEmotion?.name,
+          top_emotion_score: topEmotion?.score,
+          face_bounding_box: p.box || p.bounding_box
+        });
+      }
+    }
+  }
+
+  if (models.prosody?.grouped_predictions) {
+    for (const group of models.prosody.grouped_predictions) {
+      for (const p of group.predictions || []) {
+        const topEmotion = getTopEmotion(p.emotions || []);
+        entries.push({
+          model_type: 'prosody',
+          start_timestamp_ms: Math.round((p.time?.begin || 0) * 1000),
+          end_timestamp_ms: Math.round((p.time?.end || 0) * 1000),
+          emotions: p.emotions || [],
+          top_emotion_name: topEmotion?.name,
+          top_emotion_score: topEmotion?.score
+        });
+      }
+    }
+  }
+
+  if (models.burst?.grouped_predictions) {
+    for (const group of models.burst.grouped_predictions) {
+      for (const p of group.predictions || []) {
+        const topEmotion = getTopEmotion(p.emotions || []);
+        entries.push({
+          model_type: 'burst',
+          start_timestamp_ms: Math.round((p.time?.begin || 0) * 1000),
+          end_timestamp_ms: Math.round((p.time?.end || 0) * 1000),
+          emotions: p.emotions || [],
+          top_emotion_name: topEmotion?.name,
+          top_emotion_score: topEmotion?.score
+        });
+      }
+    }
+  }
+
+  return entries;
+}
+
 // Helper to store granular timeline data from Hume batch response
 async function storeEmotionTimelines(
   conversationId: string,
@@ -2277,6 +2355,43 @@ app.get('/api/conversations/:conversationId/emotions/timeline', async (req, res)
     }
 
     const { data, error } = await query;
+
+    if (error && error.message.includes('column emotion_timelines.model_type')) {
+      const { data: fallbackRows, error: fallbackError } = await supabase
+        .from('emotion_timelines')
+        .select('dump, start_timestamp_ms, end_timestamp_ms, emotions, top_emotion_name, top_emotion_score, face_bounding_box, created_at')
+        .eq('conversation_id', conversationId)
+        .order('start_timestamp_ms', { ascending: true });
+
+      if (fallbackError && !fallbackError.message.includes('schema cache')) throw fallbackError;
+
+      const parsed = (fallbackRows || []).flatMap(row => parseEmotionDumpToTimeline(row.dump));
+
+      let filtered = parsed;
+      if (models) {
+        const modelList = (models as string).split(',');
+        filtered = filtered.filter(item => modelList.includes(item.model_type));
+      }
+      if (start_ms) {
+        const min = parseInt(start_ms as string);
+        filtered = filtered.filter(item => item.start_timestamp_ms >= min);
+      }
+      if (end_ms) {
+        const max = parseInt(end_ms as string);
+        filtered = filtered.filter(item => item.end_timestamp_ms <= max);
+      }
+
+      const grouped: Record<string, any[]> = { face: [], prosody: [], language: [], burst: [] };
+      filtered.forEach(item => {
+        grouped[item.model_type]?.push(item);
+      });
+
+      return res.json({
+        conversation_id: conversationId,
+        total_records: filtered.length,
+        timeline: grouped
+      });
+    }
 
     if (error && !error.message.includes('schema cache')) throw error;
 
