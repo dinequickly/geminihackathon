@@ -433,7 +433,7 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
   const [plato, setPlato] = useState<PlatoAnalysis | null>(null);
   const [socrates, setSocrates] = useState<SocratesAnalysis | null>(null);
   const [_zeno, setZeno] = useState<ZenoAnalysis | null>(null);
-  const [davinci, setDavinci] = useState<DavinciSynthesis | null>(null);
+  const [_davinci, setDavinci] = useState<DavinciSynthesis | null>(null);
   const [transcript, setTranscript] = useState<any>(null);
   const [_highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
   const [isLoading, setIsLoading] = useState(true);

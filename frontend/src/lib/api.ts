@@ -1230,8 +1230,8 @@ export interface DavinciSynthesis {
       why: string;
       how: string;
     }>;
-    30_day_plan: string[];
-    90_day_milestones: string[];
+    thirty_day_plan: string[];
+    ninety_day_milestones: string[];
   };
 }
 
