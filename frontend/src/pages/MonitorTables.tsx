@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import { api, Analysis, Conversation, AristotleAnalysis, PlatoAnalysis, SocratesAnalysis, ZenoAnalysis } from '../lib/api';
+import { api, Analysis, Conversation, AristotleAnalysis, PlatoAnalysis, SocratesAnalysis, ZenoAnalysis, TranscriptHighlight } from '../lib/api';
 import { VideoEmotionPlayer } from '../components';
 import { LightLeakBackground } from '../components/LightLeakBackground';
 import { LiquidGlass } from '../components/LiquidGlass';
@@ -88,6 +88,7 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
   const [socrates, setSocrates] = useState<SocratesAnalysis | null>(null);
   const [zeno, setZeno] = useState<ZenoAnalysis | null>(null);
   const [transcriptRows, setTranscriptRows] = useState<FlatRow[]>([]);
+  const [highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,10 +98,11 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
       if (!conversationId) return;
       setIsLoading(true);
       try {
-        const [convResult, philosophers, transcript] = await Promise.all([
+        const [convResult, philosophers, transcript, highlightsResult] = await Promise.all([
           api.getConversation(conversationId),
           api.getAllPhilosophicalAnalyses(conversationId),
-          api.getAnnotatedTranscript(conversationId)
+          api.getAnnotatedTranscript(conversationId),
+          api.getHighlights(conversationId).catch(() => ({ highlights: [] }))
         ]);
 
         if (!isMounted) return;
@@ -111,6 +113,7 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
         setPlato(philosophers.plato);
         setSocrates(philosophers.socrates);
         setZeno(philosophers.zeno);
+        setHighlights(highlightsResult.highlights || []);
 
         if (transcript.segments && transcript.segments.length > 0) {
           const rows = transcript.segments.map((segment, index) => ({
@@ -177,6 +180,25 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
     return rows.length ? rows : [{ key: 'overview', value: '—' }];
   }, [conversation, analysis]);
 
+  const analysisRows = useMemo(() => {
+    if (!analysis) return [{ key: 'analysis', value: '—' }];
+    return flattenObject(analysis, 'analysis');
+  }, [analysis]);
+
+  const highlightRows = useMemo(() => {
+    if (!highlights.length) return [{ key: 'highlights', value: '—' }];
+    return highlights.map((highlight, index) => ({
+      key: `highlight.${index}`,
+      value: formatValue({
+        id: highlight.id,
+        sentence: highlight.highlighted_sentence,
+        comment: highlight.comment,
+        color: highlight.color,
+        created_at: highlight.created_at
+      })
+    }));
+  }, [highlights]);
+
   if (!userId || !ALLOWED_USER_IDS.has(userId)) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -229,7 +251,9 @@ export default function MonitorTables({ userId }: { userId: string | null }) {
               <TableSection title="Socrates" rows={flattenObject(socrates, 'socrates')} />
               <TableSection title="Zeno" rows={flattenObject(zeno, 'zeno')} />
             </div>
+            <TableSection title="Highlights" rows={highlightRows} />
             <TableSection title="Transcript" rows={transcriptRows} />
+            <TableSection title="Analysis (Full)" rows={analysisRows} />
           </div>
 
           <div className="space-y-6">
