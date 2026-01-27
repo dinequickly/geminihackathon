@@ -1,22 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import { 
-  LineChart, 
-  BarChart3, 
-  MessageSquare, 
-  Brain, 
-  Heart, 
-  Target, 
-  Clock, 
+import {
+  BarChart3,
+  MessageSquare,
+  Brain,
+  Heart,
+  Target,
+  Clock,
   TrendingUp,
   AlertCircle,
   Sparkles,
   ChevronRight,
-  Play,
-  Pause,
   Mic,
-  Video,
-  Activity
+  Video
 } from 'lucide-react';
 import { api, Analysis, Conversation, AristotleAnalysis, PlatoAnalysis, SocratesAnalysis, ZenoAnalysis, TranscriptHighlight } from '../lib/api';
 import { VideoEmotionPlayer } from '../components';
@@ -228,7 +224,6 @@ function DimensionCard({
   accent?: 'aristotle' | 'plato' | 'socrates' | 'zeno';
 }) {
   const hasData = score !== undefined;
-  const scoreLevel = hasData ? getScoreLevel(score, 10) : null;
 
   const accentColors = {
     aristotle: { bg: 'bg-aristotle-50', border: 'border-aristotle-200', text: 'text-aristotle-700' },
@@ -437,9 +432,9 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
   const [aristotle, setAristotle] = useState<AristotleAnalysis | null>(null);
   const [plato, setPlato] = useState<PlatoAnalysis | null>(null);
   const [socrates, setSocrates] = useState<SocratesAnalysis | null>(null);
-  const [zeno, setZeno] = useState<ZenoAnalysis | null>(null);
+  const [_zeno, setZeno] = useState<ZenoAnalysis | null>(null);
   const [transcript, setTranscript] = useState<any>(null);
-  const [highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
+  const [_highlights, setHighlights] = useState<TranscriptHighlight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'transcript' | 'insights'>('overview');
@@ -484,19 +479,16 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
     return {
       aristotle: {
         score: aristotle?.communication_analysis?.score,
-        summary: aristotle?.communication_analysis?.feedback?.summary,
         strengths: aristotle?.communication_analysis?.feedback?.strengths || [],
         improvements: aristotle?.communication_analysis?.feedback?.areas_for_improvement || []
       },
       plato: {
         score: plato?.emotional_analysis?.score,
-        summary: plato?.emotional_analysis?.feedback?.summary,
         strengths: plato?.emotional_analysis?.feedback?.strengths || [],
         growthAreas: plato?.emotional_analysis?.feedback?.growth_areas || []
       },
       socrates: {
         score: socrates?.strategic_analysis?.score,
-        summary: socrates?.strategic_analysis?.feedback?.summary,
         strengths: socrates?.strategic_analysis?.feedback?.intellectual_strengths || [],
         blindspots: socrates?.strategic_analysis?.feedback?.thinking_blindspots || []
       }
@@ -633,28 +625,25 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
                   AI Analysis
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <PhilosopherInsight 
+                  <PhilosopherInsight
                     name="Aristotle"
                     emoji="🎭"
                     accent="aristotle"
                     score={philosopherInsights.aristotle.score}
-                    summary={philosopherInsights.aristotle.summary}
                     insights={philosopherInsights.aristotle.strengths}
                   />
-                  <PhilosopherInsight 
+                  <PhilosopherInsight
                     name="Plato"
                     emoji="🧠"
                     accent="plato"
                     score={philosopherInsights.plato.score}
-                    summary={philosopherInsights.plato.summary}
                     insights={philosopherInsights.plato.strengths}
                   />
-                  <PhilosopherInsight 
+                  <PhilosopherInsight
                     name="Socrates"
                     emoji="🏛️"
                     accent="socrates"
                     score={philosopherInsights.socrates.score}
-                    summary={philosopherInsights.socrates.summary}
                     insights={philosopherInsights.socrates.strengths}
                   />
                 </div>
@@ -715,22 +704,19 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
               {/* Detailed Philosophical Analysis */}
               <InsightCard accent="aristotle">
                 <h3 className="font-semibold text-warmGray-800 mb-4">Aristotle: Communication Analysis</h3>
-                {philosopherInsights.aristotle.summary ? (
+                {philosopherInsights.aristotle.improvements.length > 0 ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-warmGray-600">{philosopherInsights.aristotle.summary}</p>
-                    {philosopherInsights.aristotle.improvements.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-warmGray-500 uppercase mb-2">Areas for Improvement</p>
-                        <ul className="space-y-2">
-                          {philosopherInsights.aristotle.improvements.map((item, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
-                              <span className="text-aristotle-500">→</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs font-semibold text-warmGray-500 uppercase mb-2">Areas for Improvement</p>
+                      <ul className="space-y-2">
+                        {philosopherInsights.aristotle.improvements.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
+                            <span className="text-aristotle-500">→</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-warmGray-500">Analysis pending...</p>
@@ -739,22 +725,19 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
 
               <InsightCard accent="plato">
                 <h3 className="font-semibold text-warmGray-800 mb-4">Plato: Emotional Intelligence</h3>
-                {philosopherInsights.plato.summary ? (
+                {philosopherInsights.plato.growthAreas.length > 0 ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-warmGray-600">{philosopherInsights.plato.summary}</p>
-                    {philosopherInsights.plato.growthAreas.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-warmGray-500 uppercase mb-2">Growth Areas</p>
-                        <ul className="space-y-2">
-                          {philosopherInsights.plato.growthAreas.map((item, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
-                              <span className="text-plato-500">→</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs font-semibold text-warmGray-500 uppercase mb-2">Growth Areas</p>
+                      <ul className="space-y-2">
+                        {philosopherInsights.plato.growthAreas.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
+                            <span className="text-plato-500">→</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-warmGray-500">Analysis pending...</p>
@@ -763,22 +746,19 @@ export default function CleanDesign({ userId }: { userId: string | null }) {
 
               <InsightCard accent="socrates">
                 <h3 className="font-semibold text-warmGray-800 mb-4">Socrates: Strategic Thinking</h3>
-                {philosopherInsights.socrates.summary ? (
+                {philosopherInsights.socrates.blindspots.length > 0 ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-warmGray-600">{philosopherInsights.socrates.summary}</p>
-                    {philosopherInsights.socrates.blindspots.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-warmGray-500 uppercase mb-2">Thinking Blindspots</p>
-                        <ul className="space-y-2">
-                          {philosopherInsights.socrates.blindspots.map((item, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
-                              <span className="text-socrates-500">⚠</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs font-semibold text-warmGray-500 uppercase mb-2">Thinking Blindspots</p>
+                      <ul className="space-y-2">
+                        {philosopherInsights.socrates.blindspots.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-warmGray-700">
+                            <span className="text-socrates-500">⚠</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-warmGray-500">Analysis pending...</p>

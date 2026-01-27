@@ -11,7 +11,6 @@ import PackDetails from './pages/PackDetails';
 import FlashcardPractice from './pages/FlashcardPractice';
 import LiveAvatarInterview from './pages/LiveAvatarInterview';
 import DesignSystem from './pages/DesignSystem';
-import MonitorTables from './pages/MonitorTables';
 import CleanDesign from './pages/CleanDesign';
 import { initPostHog, posthog } from './lib/posthog';
 
@@ -70,7 +69,7 @@ function App() {
           />
           <Route
             path="/clean"
-            element={<CleanDesign />}
+            element={<CleanDesign userId={userId} />}
           />
           <Route
             path="/"
