@@ -44,6 +44,13 @@ interface TranscriptItem {
   time_in_call_secs?: number;
 }
 
+const PHILOSOPHER_IMAGES: Record<string, { src: string; name: string; color: string }> = {
+  aristotle: { src: '/philosophers/aristotle.png', name: 'Aristotle', color: 'bg-amber-100 border-amber-300' },
+  plato: { src: '/philosophers/plato.png', name: 'Plato', color: 'bg-purple-100 border-purple-300' },
+  socrates: { src: '/philosophers/socrates.png', name: 'Socrates', color: 'bg-teal-100 border-teal-300' },
+  zeno: { src: '/philosophers/zeno.png', name: 'Zeno', color: 'bg-indigo-100 border-indigo-300' },
+};
+
 const formatTime = (ms: number): string => {
   if (!ms || !isFinite(ms) || isNaN(ms)) return '0:00';
   const totalSeconds = Math.floor(ms / 1000);
@@ -93,6 +100,11 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
   const [shownHighlightIds, setShownHighlightIds] = useState<Set<string>>(new Set());
   const [_transcriptJson, setTranscriptJson] = useState<TranscriptItem[]>([]);
   const [highlightTimestamps, setHighlightTimestamps] = useState<Map<string, number>>(new Map());
+
+  // Refs for emotion persistence
+  const lastFaceEmotion = useRef<EmotionSnapshot | undefined>(undefined);
+  const prosodyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastProsodyUpdateMs = useRef<number>(0);
 
   // Load emotion timeline data, highlights, and transcript
   useEffect(() => {
@@ -179,22 +191,60 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
       }
     }
 
-    const updatedEmotions: CurrentEmotions = {
-      face: faceEmotion ? {
+    // Face emotion: persist until new data arrives (never clear)
+    let faceSnapshot: EmotionSnapshot | undefined;
+    if (faceEmotion) {
+      faceSnapshot = {
         name: faceEmotion.top_emotion_name,
         score: faceEmotion.top_emotion_score,
         allEmotions: faceEmotion.emotions.slice(0, 5)
-      } : undefined,
-      prosody: prosodyEmotion ? {
+      };
+      lastFaceEmotion.current = faceSnapshot;
+    } else {
+      // Keep showing the last face emotion
+      faceSnapshot = lastFaceEmotion.current;
+    }
+
+    // Prosody emotion: clear after 1.8s of inactivity
+    let prosodySnapshot: EmotionSnapshot | undefined;
+    if (prosodyEmotion) {
+      prosodySnapshot = {
         name: prosodyEmotion.top_emotion_name,
         score: prosodyEmotion.top_emotion_score,
         allEmotions: prosodyEmotion.emotions.slice(0, 5)
-      } : undefined
+      };
+      lastProsodyUpdateMs.current = timeMs;
+
+      // Clear any existing timeout
+      if (prosodyTimeoutRef.current) {
+        clearTimeout(prosodyTimeoutRef.current);
+      }
+
+      // Set timeout to clear prosody after 1.8s
+      prosodyTimeoutRef.current = setTimeout(() => {
+        setCurrentEmotions(prev => ({ ...prev, prosody: undefined }));
+      }, 1800);
+    } else {
+      // Check if we're past the 1.8s inactivity threshold
+      const timeSinceLastProsody = timeMs - lastProsodyUpdateMs.current;
+      if (timeSinceLastProsody < 1800) {
+        // Keep the current prosody (will be handled by state)
+        prosodySnapshot = undefined; // Don't update, keep current state
+      }
+    }
+
+    const updatedEmotions: CurrentEmotions = {
+      face: faceSnapshot,
+      prosody: prosodySnapshot !== undefined ? prosodySnapshot : undefined
     };
 
-    setCurrentEmotions(updatedEmotions);
-    onEmotionUpdate?.({ timeMs, emotions: updatedEmotions });
+    // Only update if we have new face data or prosody data
+    setCurrentEmotions(prev => ({
+      face: updatedEmotions.face ?? prev.face,
+      prosody: prosodyEmotion ? updatedEmotions.prosody : prev.prosody
+    }));
 
+    onEmotionUpdate?.({ timeMs, emotions: updatedEmotions });
     onTimeUpdate?.(timeMs);
 
     // Check for highlights at current time
@@ -533,13 +583,28 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-soft-lg p-8 max-w-lg w-full mx-4 animate-scale-in">
             <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="inline-block px-3 py-1 bg-sunshine-100 text-sunshine-700 rounded-full text-xs font-bold uppercase tracking-wide mb-3">
-                  AI Highlight
+              <div className="flex-1 flex items-start gap-4">
+                {activeHighlight.commenter && PHILOSOPHER_IMAGES[activeHighlight.commenter] && (
+                  <img
+                    src={PHILOSOPHER_IMAGES[activeHighlight.commenter].src}
+                    alt={PHILOSOPHER_IMAGES[activeHighlight.commenter].name}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+                  />
+                )}
+                <div>
+                  <div className={`inline-block px-3 py-1 ${
+                    activeHighlight.commenter && PHILOSOPHER_IMAGES[activeHighlight.commenter]
+                      ? PHILOSOPHER_IMAGES[activeHighlight.commenter].color
+                      : 'bg-sunshine-100 text-sunshine-700'
+                  } rounded-full text-xs font-bold uppercase tracking-wide mb-3`}>
+                    {activeHighlight.commenter && PHILOSOPHER_IMAGES[activeHighlight.commenter]
+                      ? PHILOSOPHER_IMAGES[activeHighlight.commenter].name
+                      : 'AI Highlight'}
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                    "{activeHighlight.highlighted_sentence}"
+                  </h3>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 leading-tight">
-                  "{activeHighlight.highlighted_sentence}"
-                </h3>
               </div>
               <button
                 onClick={closeHighlight}
@@ -550,7 +615,11 @@ const VideoEmotionPlayer = forwardRef<VideoEmotionPlayerRef, VideoEmotionPlayerP
             </div>
 
             {activeHighlight.comment && (
-              <div className="mt-4 p-4 bg-sky-50 border-2 border-sky-200 rounded-2xl">
+              <div className={`mt-4 p-4 ${
+                activeHighlight.commenter && PHILOSOPHER_IMAGES[activeHighlight.commenter]
+                  ? PHILOSOPHER_IMAGES[activeHighlight.commenter].color
+                  : 'bg-sky-50 border-sky-200'
+              } border-2 rounded-2xl`}>
                 <p className="text-sm text-gray-700 leading-relaxed font-medium">
                   {activeHighlight.comment}
                 </p>

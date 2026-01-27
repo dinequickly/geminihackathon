@@ -42,6 +42,7 @@ export interface TranscriptHighlight {
   comment: string | null;
   color: 'yellow' | 'green' | 'blue' | 'pink' | 'orange';
   created_at: string;
+  commenter?: 'aristotle' | 'plato' | 'socrates' | 'zeno' | null;
 }
 
 export interface Analysis {

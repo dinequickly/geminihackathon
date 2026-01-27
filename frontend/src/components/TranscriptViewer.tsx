@@ -44,6 +44,13 @@ const HIGHLIGHT_COLORS = {
   orange: { bg: 'bg-primary-100', border: 'border-primary-300', text: 'text-primary-800', light: 'bg-primary-50' },
 };
 
+const PHILOSOPHER_IMAGES: Record<string, { src: string; name: string; color: string }> = {
+  aristotle: { src: '/philosophers/aristotle.png', name: 'Aristotle', color: 'bg-amber-100 border-amber-300' },
+  plato: { src: '/philosophers/plato.png', name: 'Plato', color: 'bg-purple-100 border-purple-300' },
+  socrates: { src: '/philosophers/socrates.png', name: 'Socrates', color: 'bg-teal-100 border-teal-300' },
+  zeno: { src: '/philosophers/zeno.png', name: 'Zeno', color: 'bg-indigo-100 border-indigo-300' },
+};
+
 const formatTimestamp = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
@@ -386,9 +393,21 @@ export default function TranscriptViewer({
                 >
                   {highlight && <HighlightTooltip highlight={highlight} colors={highlightColors} />}
 
-                  {/* Message content */}
+                  {/* Message content with philosopher indicator */}
                   {hasMessage && (
-                    <p className="text-gray-900 leading-relaxed">{item.message}</p>
+                    <div className="flex items-start gap-3">
+                      <p className="text-gray-900 leading-relaxed flex-1">{item.message}</p>
+                      {highlight?.commenter && PHILOSOPHER_IMAGES[highlight.commenter] && (
+                        <div className="flex-shrink-0 mt-1">
+                          <img
+                            src={PHILOSOPHER_IMAGES[highlight.commenter].src}
+                            alt={PHILOSOPHER_IMAGES[highlight.commenter].name}
+                            className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-md"
+                            title={`${PHILOSOPHER_IMAGES[highlight.commenter].name}'s feedback`}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {/* Emotion indicators (subtle, inline) */}
@@ -417,19 +436,40 @@ export default function TranscriptViewer({
     </div>
   );
 
-  // Highlight tooltip component
-  const HighlightTooltip = ({ highlight, colors }: { highlight: TranscriptHighlight; colors: any }) => (
-    <div className={`absolute -top-2 -translate-y-full left-0 mb-2 p-3 rounded-xl bg-white border ${colors.border} shadow-lg z-10 whitespace-normal w-max max-w-sm opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-300`}>
-      {highlight.comment && (
-        <p className="text-sm text-gray-700 leading-relaxed">
-          {highlight.comment}
-        </p>
-      )}
-      {!highlight.comment && (
-        <p className="text-sm text-gray-600">Highlighted</p>
-      )}
-    </div>
-  );
+  // Highlight tooltip component with philosopher avatar
+  const HighlightTooltip = ({ highlight, colors }: { highlight: TranscriptHighlight; colors: any }) => {
+    const philosopher = highlight.commenter ? PHILOSOPHER_IMAGES[highlight.commenter] : null;
+
+    return (
+      <div className={`absolute -top-2 -translate-y-full left-0 mb-2 p-3 rounded-xl bg-white border ${philosopher ? philosopher.color : colors.border} shadow-lg z-10 whitespace-normal w-max max-w-sm opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-300`}>
+        <div className="flex items-start gap-3">
+          {philosopher && (
+            <div className="flex-shrink-0">
+              <img
+                src={philosopher.src}
+                alt={philosopher.name}
+                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+              />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            {philosopher && (
+              <div className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-1">
+                {philosopher.name}
+              </div>
+            )}
+            {highlight.comment ? (
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {highlight.comment}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-600">Highlighted</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="overflow-hidden h-full flex flex-col bg-white">
