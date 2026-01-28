@@ -153,55 +153,55 @@ export function AristotleTranscriptViewer({
   }
 
   return (
-    <div className="h-full flex flex-col bg-parchment-50">
-      {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-aristotle-200/60 bg-white/80 backdrop-blur-sm">
+    <div className="h-full flex flex-col bg-parchment-50 text-base">
+      {/* Header - Smaller */}
+      <div className="flex-shrink-0 px-4 py-2 border-b border-aristotle-200/60 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-aristotle-100 flex items-center justify-center">
-              <span className="text-xl">🎭</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-aristotle-100 flex items-center justify-center">
+              <span className="text-lg">🎭</span>
             </div>
             <div>
-              <h3 className="font-semibold text-warmGray-900">Aristotle's Transcript Analysis</h3>
-              <p className="text-xs text-warmGray-500">Rhetoric annotations & insights</p>
+              <h3 className="font-semibold text-warmGray-900 text-sm">Aristotle's Transcript</h3>
+              <p className="text-xs text-warmGray-500">Rhetoric annotations</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
               {comm.metrics.filler_word_count} fillers
             </span>
-            <span className="px-2 py-1 rounded-full bg-aristotle-100 text-aristotle-700 border border-aristotle-200">
+            <span className="px-2 py-0.5 rounded-full bg-aristotle-100 text-aristotle-700 border border-aristotle-200">
               {comm.instant_rewrites.length} rewrites
             </span>
           </div>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex-shrink-0 px-6 py-3 bg-aristotle-50/50 border-b border-aristotle-200/40">
-        <div className="flex items-center gap-4 text-xs">
+      {/* Legend - Smaller */}
+      <div className="flex-shrink-0 px-4 py-2 bg-aristotle-50/50 border-b border-aristotle-200/40">
+        <div className="flex items-center gap-3 text-xs">
           <span className="text-warmGray-500 font-medium">Annotations:</span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-            <span className="text-warmGray-600">Filler words</span>
+            <span className="text-warmGray-600">Fillers</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-aristotle-500"></span>
-            <span className="text-warmGray-600">Rewrite available</span>
+            <span className="text-warmGray-600">Rewrites</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-plato-400"></span>
             <span className="text-warmGray-600">Rambling</span>
           </div>
         </div>
       </div>
 
-      {/* Transcript with Annotations */}
+      {/* Transcript with Annotations - Smaller spacing, bigger text */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto p-6"
+        className="flex-1 overflow-y-auto p-3"
       >
-        <div className="space-y-4 max-w-3xl mx-auto">
+        <div className="space-y-2 max-w-3xl mx-auto">
           {transcript.map((item, index) => {
             const isUser = item.role === 'user';
             const isActive = index === activeIndex;
@@ -218,12 +218,12 @@ export function AristotleTranscriptViewer({
               <div
                 key={index}
                 ref={isActive ? activeSegmentRef : null}
-                className={`transition-all duration-200 ${isActive ? 'scale-[1.02]' : ''}`}
+                className={`transition-all duration-200 ${isActive ? 'scale-[1.01]' : ''}`}
               >
-                <div className="flex gap-4 group">
+                <div className="flex gap-3 group">
                   {/* Left side - role and timestamp */}
-                  <div className="flex-shrink-0 w-20 pt-1">
-                    <div className={`text-xs uppercase tracking-wide font-medium ${
+                  <div className="flex-shrink-0 w-16 pt-0.5">
+                    <div className={`text-xs uppercase tracking-wide font-semibold ${
                       isUser ? 'text-warmGray-900' : 'text-warmGray-500'
                     }`}>
                       {isUser ? 'You' : 'Interviewer'}
@@ -231,7 +231,7 @@ export function AristotleTranscriptViewer({
                     {item.time_in_call_secs !== undefined && (
                       <button
                         onClick={() => handleTimeClick(item.time_in_call_secs || 0)}
-                        className="text-xs text-warmGray-400 mt-1 hover:text-aristotle-600 transition-colors flex items-center gap-1"
+                        className="text-xs text-warmGray-500 mt-0.5 hover:text-aristotle-600 transition-colors flex items-center gap-1"
                       >
                         <Clock className="w-3 h-3" />
                         {formatTimestamp(item.time_in_call_secs)}
@@ -242,9 +242,9 @@ export function AristotleTranscriptViewer({
                   {/* Right side - message with annotations */}
                   <div className="flex-1">
                     <div
-                      className={`rounded-xl p-4 transition-all duration-200 border-l-4 ${
+                      className={`rounded-lg p-2.5 transition-all duration-200 border-l-3 text-base ${
                         isActive
-                          ? 'bg-white border-aristotle-400 shadow-md'
+                          ? 'bg-white border-aristotle-400 shadow-sm'
                           : hasAnnotation
                           ? 'bg-white/80 border-aristotle-300'
                           : 'bg-white/50 border-transparent hover:bg-white/80'
@@ -252,36 +252,36 @@ export function AristotleTranscriptViewer({
                     >
                       {/* Annotation indicators in margin */}
                       {hasAnnotation && (
-                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-aristotle-100">
+                        <div className="flex items-center gap-1.5 mb-1.5 pb-1.5 border-b border-aristotle-100">
                           {fillerWords.length > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs">
-                              <MessageSquare className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px]">
+                              <MessageSquare className="w-2.5 h-2.5" />
                               {fillerWords.length} filler{fillerWords.length > 1 ? 's' : ''}
                             </span>
                           )}
                           {rewrite && (
                             <button
                               onClick={() => setExpandedRewrite(expandedRewrite === index ? null : index)}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-aristotle-100 text-aristotle-700 text-xs hover:bg-aristotle-200 transition-colors"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-aristotle-100 text-aristotle-700 text-[10px] hover:bg-aristotle-200 transition-colors"
                             >
-                              <Sparkles className="w-3 h-3" />
-                              Rewrite available
-                              <ChevronRight className={`w-3 h-3 transition-transform ${expandedRewrite === index ? 'rotate-90' : ''}`} />
+                              <Sparkles className="w-2.5 h-2.5" />
+                              Rewrite
+                              <ChevronRight className={`w-2.5 h-2.5 transition-transform ${expandedRewrite === index ? 'rotate-90' : ''}`} />
                             </button>
                           )}
                           {rambling && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-plato-100 text-plato-700 text-xs">
-                              <Clock className="w-3 h-3" />
-                              Rambling ({rambling.duration}s)
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-plato-100 text-plato-700 text-[10px]">
+                              <Clock className="w-2.5 h-2.5" />
+                              Ramble ({rambling.duration}s)
                             </span>
                           )}
                         </div>
                       )}
 
-                      {/* Message content with inline filler word highlighting */}
+                      {/* Message content with inline filler word highlighting - BIGGER TEXT */}
                       <div className="relative">
                         {isUser && fillerWords.length > 0 ? (
-                          <p className="text-warmGray-900 leading-relaxed">
+                          <p className="text-warmGray-900 leading-relaxed text-base">
                             {(() => {
                               const parts: React.ReactNode[] = [];
                               let lastIndex = 0;
@@ -301,7 +301,7 @@ export function AristotleTranscriptViewer({
                                 parts.push(
                                   <span
                                     key={`filler-${fwIdx}`}
-                                    className="bg-amber-200/60 text-amber-900 px-0.5 rounded cursor-help hover:bg-amber-300/80 transition-colors"
+                                    className="bg-amber-200/60 text-amber-900 px-0.5 rounded cursor-help hover:bg-amber-300/80 transition-colors font-medium"
                                     title={`Filler word: "${fw.word}"`}
                                   >
                                     {text.substring(fw.index, fw.index + fw.word.length)}
@@ -322,29 +322,29 @@ export function AristotleTranscriptViewer({
                             })()}
                           </p>
                         ) : (
-                          <p className="text-warmGray-900 leading-relaxed">{item.message}</p>
+                          <p className="text-warmGray-900 leading-relaxed text-base">{item.message}</p>
                         )}
                       </div>
 
-                      {/* Expanded Rewrite Section */}
+                      {/* Expanded Rewrite Section - Smaller */}
                       {rewrite && expandedRewrite === index && (
-                        <div className="mt-4 pt-4 border-t border-aristotle-200 space-y-3">
-                          <div className="bg-plato-50/50 rounded-lg p-3 border border-plato-200">
-                            <span className="text-xs font-mono uppercase text-plato-600 block mb-1">
+                        <div className="mt-2 pt-2 border-t border-aristotle-200 space-y-2">
+                          <div className="bg-plato-50/50 rounded p-2 border border-plato-200">
+                            <span className="text-[10px] font-mono uppercase text-plato-600 block mb-1">
                               Original
                             </span>
                             <p className="text-sm text-warmGray-700 italic">"{rewrite.original}"</p>
                           </div>
                           
-                          <div className="bg-aristotle-50 rounded-lg p-3 border border-aristotle-200">
-                            <span className="text-xs font-mono uppercase text-aristotle-600 block mb-1">
+                          <div className="bg-aristotle-50 rounded p-2 border border-aristotle-200">
+                            <span className="text-[10px] font-mono uppercase text-aristotle-600 block mb-1">
                               Aristotle's Rewrite
                             </span>
                             <p className="text-sm text-warmGray-800">"{rewrite.improved}"</p>
                           </div>
                           
-                          <div className="bg-parchment-100/50 rounded-lg p-3 border border-warmGray-200">
-                            <span className="text-xs font-mono uppercase text-warmGray-600 block mb-1">
+                          <div className="bg-parchment-100/50 rounded p-2 border border-warmGray-200">
+                            <span className="text-[10px] font-mono uppercase text-warmGray-600 block mb-1">
                               Why This Works
                             </span>
                             <p className="text-sm text-warmGray-700">{rewrite.why}</p>
@@ -360,10 +360,10 @@ export function AristotleTranscriptViewer({
                         </div>
                       )}
 
-                      {/* Rambling explanation */}
+                      {/* Rambling explanation - Smaller */}
                       {rambling && (
-                        <div className="mt-3 pt-3 border-t border-plato-100">
-                          <p className="text-xs text-plato-600 flex items-start gap-2">
+                        <div className="mt-2 pt-2 border-t border-plato-100">
+                          <p className="text-xs text-plato-600 flex items-start gap-1.5">
                             <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                             <span>{rambling.reason}</span>
                           </p>
@@ -377,17 +377,17 @@ export function AristotleTranscriptViewer({
           })}
         </div>
 
-        {/* Summary at bottom */}
-        <div className="mt-8 pt-6 border-t border-aristotle-200">
-          <div className="bg-white rounded-xl p-4 border border-aristotle-200">
-            <h4 className="font-semibold text-warmGray-800 mb-3 flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-aristotle-600" />
-              Key Patterns Detected
+        {/* Summary at bottom - Smaller */}
+        <div className="mt-4 pt-3 border-t border-aristotle-200">
+          <div className="bg-white rounded-lg p-3 border border-aristotle-200">
+            <h4 className="font-semibold text-warmGray-800 mb-2 flex items-center gap-1.5 text-sm">
+              <RefreshCw className="w-3.5 h-3.5 text-aristotle-600" />
+              Key Patterns
             </h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-warmGray-500">Confidence Peaks:</span>
-                <ul className="mt-1 space-y-1">
+                <ul className="mt-0.5 space-y-0.5">
                   {comm.patterns.confidence_peaks.slice(0, 2).map((peak, i) => (
                     <li key={i} className="text-warmGray-700 flex items-start gap-1">
                       <span className="text-green-500 mt-0.5">★</span>
@@ -398,7 +398,7 @@ export function AristotleTranscriptViewer({
               </div>
               <div>
                 <span className="text-warmGray-500">Hesitation Triggers:</span>
-                <ul className="mt-1 space-y-1">
+                <ul className="mt-0.5 space-y-0.5">
                   {comm.patterns.hesitation_triggers.slice(0, 2).map((trigger, i) => (
                     <li key={i} className="text-warmGray-700 flex items-start gap-1">
                       <span className="text-amber-500 mt-0.5">!</span>
