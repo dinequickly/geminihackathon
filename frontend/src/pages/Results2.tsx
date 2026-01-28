@@ -16,7 +16,7 @@ import { LiquidGlass } from '../components/LiquidGlass';
 import { LightLeakBackground } from '../components/LightLeakBackground';
 import { LoadingSpinner } from '../components/PlayfulUI';
 import {
-  AristotleAnalysis,
+  AristotleAIAnalysis,
   PlatoAnalysis,
   SocratesAnalysis,
   ZenoAnalysis
@@ -343,8 +343,15 @@ export default function Results2() {
 
           {/* Aristotle Analysis View */}
           {analysisView === 'aristotle' && aristotleAnalysis && (
-            <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-white">
-              <AristotleAnalysis analysis={aristotleAnalysis} />
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-parchment-50">
+              <AristotleAIAnalysis 
+                analysis={aristotleAnalysis} 
+                conversationId={conversationId!}
+                onHighlightClick={(timestamp) => {
+                  setCurrentVideoTimeMs(timestamp * 1000);
+                  videoPlayerRef.current?.seekTo(timestamp);
+                }}
+              />
             </div>
           )}
 
