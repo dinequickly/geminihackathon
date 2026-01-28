@@ -118,6 +118,7 @@ export default function Chat() {
     };
     if (reviewPracticeId) {
       payload.review_practice_id = reviewPracticeId;
+      payload.source_conversation_id = reviewPracticeId;
     }
     if (sessionType) {
       payload.type = sessionType;

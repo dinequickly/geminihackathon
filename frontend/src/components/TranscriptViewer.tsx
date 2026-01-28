@@ -214,6 +214,7 @@ export default function TranscriptViewer({
     const payload = {
       id: getActionId(),
       conversation_id: conversationId,
+      source_conversation_id: conversationId,
       highlighted_text: actionHighlight.highlighted_sentence,
       messages: buildTranscriptMessages(),
       type: actionType,
