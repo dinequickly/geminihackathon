@@ -10,7 +10,7 @@ interface ChatMessage {
   createdAt: number;
 }
 
-const CHAT_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/4f8a9cf8-218a-4f77-b43d-af0715dae478';
+const CHAT_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/a0894027-a899-473b-b864-e0a2d18950d3';
 
 const getMessageId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
