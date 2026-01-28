@@ -68,6 +68,19 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  const sessionType = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const typeFromQuery = params.get('type')?.trim() || null;
+    if (typeFromQuery && chatId) {
+      sessionStorage.setItem(`session_type_${chatId}`, typeFromQuery);
+      return typeFromQuery;
+    }
+    if (chatId) {
+      return sessionStorage.getItem(`session_type_${chatId}`) || null;
+    }
+    return null;
+  }, [chatId, location.search]);
+
   const reviewPracticeId = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const fromQuery = params.get('review_practice_id')?.trim() || null;
@@ -105,6 +118,9 @@ export default function Chat() {
     };
     if (reviewPracticeId) {
       payload.review_practice_id = reviewPracticeId;
+    }
+    if (sessionType) {
+      payload.type = sessionType;
     }
     return payload;
   };
