@@ -78,7 +78,7 @@ export default function TranscriptViewer({
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const REVIEW_PRACTICE_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/4f8a9cf8-218a-4f77-b43d-af0715dae478';
+  const REVIEW_PRACTICE_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/a0894027-a899-473b-b864-e0a2d18950d3';
 
   // Load transcript, emotion data, and highlights
   useEffect(() => {
