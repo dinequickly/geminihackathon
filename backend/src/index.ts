@@ -370,16 +370,6 @@ const groq = createOpenAI({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// OpenRouter for Anthropic models (claude-haiku-4.5)
-const openrouter = createOpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-  headers: {
-    'HTTP-Referer': 'https://geminihackathon.vercel.app',
-    'X-Title': 'Veritas Interview Analysis'
-  }
-});
-
 app.post('/api/ai/dynamic-components', async (req, res) => {
   try {
     const { intent, personal_context, mode } = req.body;
@@ -515,14 +505,16 @@ app.post('/api/ai/rewrite-personality', async (req, res) => {
 });
 
 // ============================================
-// ARISTOTLE AI ANALYSIS (Results2)
+// ARISTOTLE AI ANALYSIS (Results2) - Native Anthropic SDK
 // ============================================
+import { generateCompletion } from './lib/anthropic.js';
+
 app.post('/api/ai/aristotle-analysis', async (req, res) => {
   try {
-    const { transcript, transcriptJson, durationSeconds, currentAnalysis } = req.body;
+    const { transcript, transcriptJson, durationSeconds } = req.body;
 
-    if (!process.env.OPENROUTER_API_KEY) {
-      throw new Error('OPENROUTER_API_KEY missing');
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY missing');
     }
 
     console.log('[Aristotle AI] Generating analysis with anthropic/claude-haiku-4.5...');
@@ -558,31 +550,27 @@ app.post('/api/ai/aristotle-analysis', async (req, res) => {
 
 Use Aristotelian rhetorical concepts: Ethos (credibility), Logos (logic), Pathos (emotion), Lexis (word choice), Brevitas (conciseness). Be specific with timestamps and actionable feedback.`;
 
-    const result = await generateText({
-      model: openrouter('anthropic/claude-haiku-4.5'),
-      system: systemPrompt,
-      prompt: `Analyze this interview transcript (${durationSeconds || 60} seconds):
+    const userMessage = `Analyze this interview transcript (${durationSeconds || 60} seconds):
 
 TRANSCRIPT:
 ${transcript || JSON.stringify(transcriptJson, null, 2)}
 
-Provide the analysis as valid JSON only.`,
-      temperature: 0.7
-    });
+Provide the analysis as valid JSON only.`;
+
+    const text = await generateCompletion(systemPrompt, userMessage);
 
     // Clean and parse the response
-    let text = result.text.trim();
-    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    const cleanText = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
 
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(cleanText);
       console.log('[Aristotle AI] Analysis generated successfully');
       res.json(parsed);
     } catch (e: any) {
       console.error('[Aristotle AI] JSON parse error:', e);
       res.status(500).json({ 
         error: 'Failed to parse AI response', 
-        raw: text.substring(0, 500),
+        raw: cleanText.substring(0, 500),
         parseError: e.message 
       });
     }
