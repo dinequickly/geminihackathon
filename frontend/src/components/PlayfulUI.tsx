@@ -285,6 +285,7 @@ interface PlayfulTextareaProps {
   disabled?: boolean;
   rows?: number;
   className?: string;
+  onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>;
 }
 
 export function PlayfulTextarea({
@@ -293,7 +294,8 @@ export function PlayfulTextarea({
   placeholder,
   disabled = false,
   rows = 3,
-  className = ''
+  className = '',
+  onKeyDown
 }: PlayfulTextareaProps) {
   return (
     <textarea
@@ -302,6 +304,7 @@ export function PlayfulTextarea({
       placeholder={placeholder}
       disabled={disabled}
       rows={rows}
+      onKeyDown={onKeyDown}
       className={`
         w-full px-5 py-3 rounded-3xl
         bg-white border-2 border-gray-200

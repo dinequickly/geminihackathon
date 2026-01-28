@@ -124,6 +124,19 @@ export default function Chat() {
     };
   }, [chatId, location.search]);
 
+  const commenter = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const fromQuery = params.get('commenter')?.trim() || null;
+    if (fromQuery && chatId) {
+      sessionStorage.setItem(`commenter_${chatId}`, fromQuery);
+      return fromQuery;
+    }
+    if (chatId) {
+      return sessionStorage.getItem(`commenter_${chatId}`) || null;
+    }
+    return null;
+  }, [chatId, location.search]);
+
   const chatTitle = useMemo(() => {
     if (!chatId) return 'Practice Chat';
     return `Practice Chat • ${chatId.slice(0, 8)}`;
@@ -159,6 +172,10 @@ export default function Chat() {
     }
     if (actionMeta.firstClick !== null) {
       payload.first_click = actionMeta.firstClick;
+    }
+    if (commenter) {
+      payload.commenter = commenter;
+      payload.philosopher = commenter;
     }
     return payload;
   };
@@ -337,7 +354,9 @@ export default function Chat() {
               <Sparkles className="w-5 h-5 text-primary-500" />
               {chatTitle}
             </h1>
-            <p className="text-sm text-gray-600 mt-0.5">Refine this moment with follow-up coaching</p>
+            <p className="text-sm text-gray-600 mt-0.5">
+              {commenter ? `Commented by ${commenter}` : 'Refine this moment with follow-up coaching'}
+            </p>
           </div>
           <PlayfulCharacter emotion="thinking" size={60} />
         </div>
@@ -389,6 +408,12 @@ export default function Chat() {
                   placeholder="Ask a follow-up, or request a redo..."
                   rows={2}
                   disabled={isSending}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
                 />
               </div>
               <PlayfulButton
@@ -402,7 +427,7 @@ export default function Chat() {
               </PlayfulButton>
             </div>
             <p className="text-xs text-gray-400 mt-2 text-center">
-              Press Enter to send • Shift+Enter for new line
+              Enter to send • Shift+Enter for new line
             </p>
           </div>
         </PlayfulCard>

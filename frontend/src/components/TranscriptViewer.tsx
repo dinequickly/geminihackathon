@@ -251,7 +251,7 @@ export default function TranscriptViewer({
       // Generate a chat ID and navigate immediately for snappy UX
       const chatId = payload.id;
       closeActionModal();
-      const query = `?type=${encodeURIComponent(actionType)}&conversation_id=${encodeURIComponent(conversationId)}&source_conversation_id=${encodeURIComponent(conversationId)}&button=${encodeURIComponent(actionType)}&first_click=${encodeURIComponent(String(isFirstClick))}`;
+      const query = `?type=${encodeURIComponent(actionType)}&conversation_id=${encodeURIComponent(conversationId)}&source_conversation_id=${encodeURIComponent(conversationId)}&button=${encodeURIComponent(actionType)}&first_click=${encodeURIComponent(String(isFirstClick))}&commenter=${encodeURIComponent(actionHighlight.commenter || '')}`;
       navigate(`/chat/${chatId}${query}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to send action');
