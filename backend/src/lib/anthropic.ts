@@ -14,7 +14,7 @@ const anthropic = new Anthropic({
 
 // Configuration constants
 export const CLAUDE_CONFIG = {
-  model: 'claude-3-5-haiku-20241022', // Claude Haiku - fast and cost-effective
+  model: 'anthropic/claude-haiku-4.5', // Claude Haiku - fast and cost-effective
   temperature: 0.7, // Balanced between consistency and creativity
   max_tokens: 2048, // Sufficient for component generation
   max_retries: 3, // Retry failed requests
