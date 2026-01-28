@@ -94,6 +94,36 @@ export default function Chat() {
     return null;
   }, [chatId, location.search]);
 
+  const sourceConversationId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const fromQuery = params.get('conversation_id')?.trim() || params.get('source_conversation_id')?.trim() || null;
+    if (fromQuery && chatId) {
+      sessionStorage.setItem(`source_conversation_${chatId}`, fromQuery);
+      return fromQuery;
+    }
+    if (chatId) {
+      return sessionStorage.getItem(`source_conversation_${chatId}`) || null;
+    }
+    return null;
+  }, [chatId, location.search]);
+
+  const actionMeta = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const button = params.get('button')?.trim() || null;
+    const firstClickRaw = params.get('first_click');
+    const firstClick = firstClickRaw === null ? null : firstClickRaw === 'true';
+    if (chatId) {
+      if (button) sessionStorage.setItem(`action_button_${chatId}`, button);
+      if (firstClickRaw !== null) sessionStorage.setItem(`action_first_click_${chatId}`, String(firstClick));
+    }
+    return {
+      button: button || (chatId ? sessionStorage.getItem(`action_button_${chatId}`) : null),
+      firstClick: firstClickRaw !== null
+        ? firstClick
+        : (chatId ? sessionStorage.getItem(`action_first_click_${chatId}`) === 'true' : null)
+    };
+  }, [chatId, location.search]);
+
   const chatTitle = useMemo(() => {
     if (!chatId) return 'Practice Chat';
     return `Practice Chat • ${chatId.slice(0, 8)}`;
@@ -107,7 +137,8 @@ export default function Chat() {
 
   const buildPayload = (content: string, nextMessages: ChatMessage[], isFirstMessage: boolean) => {
     const payload: Record<string, any> = {
-      conversation_id: chatId,
+      conversation_id: sourceConversationId || chatId,
+      source_conversation_id: sourceConversationId || reviewPracticeId || chatId,
       chat_id: chatId,
       message: content,
       first_message: isFirstMessage,
@@ -122,6 +153,12 @@ export default function Chat() {
     }
     if (sessionType) {
       payload.type = sessionType;
+    }
+    if (actionMeta.button) {
+      payload.button_clicked = actionMeta.button;
+    }
+    if (actionMeta.firstClick !== null) {
+      payload.first_click = actionMeta.firstClick;
     }
     return payload;
   };

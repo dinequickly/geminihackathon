@@ -370,6 +370,16 @@ const groq = createOpenAI({
   apiKey: process.env.GROQ_API_KEY,
 });
 
+// OpenRouter for Anthropic models (claude-haiku-4.5)
+const openrouter = createOpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,
+  headers: {
+    'HTTP-Referer': 'https://geminihackathon.vercel.app',
+    'X-Title': 'Veritas Interview Analysis'
+  }
+});
+
 app.post('/api/ai/dynamic-components', async (req, res) => {
   try {
     const { intent, personal_context, mode } = req.body;
@@ -501,6 +511,85 @@ app.post('/api/ai/rewrite-personality', async (req, res) => {
   } catch (error: any) {
     console.error('Personality rewrite error:', error);
     if (!res.headersSent) res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// ARISTOTLE AI ANALYSIS (Results2)
+// ============================================
+app.post('/api/ai/aristotle-analysis', async (req, res) => {
+  try {
+    const { transcript, transcriptJson, durationSeconds, currentAnalysis } = req.body;
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY missing');
+    }
+
+    console.log('[Aristotle AI] Generating analysis with anthropic/claude-haiku-4.5...');
+
+    const systemPrompt = `You are Aristotle, the master of rhetoric and communication analysis. Analyze the interview transcript and provide detailed feedback in this exact JSON format:
+
+{
+  "communication_analysis": {
+    "score": 4.1,
+    "metrics": {
+      "speaking_pace_wpm": 168,
+      "filler_word_count": 14,
+      "filler_words": [{"word": "um", "count": 7, "timestamps": [1.5, 30.2]}, {"word": "so", "count": 5, "timestamps": [5.1, 40.0]}],
+      "avg_sentence_length": 22.1,
+      "vocabulary_richness": 0.66,
+      "technical_clarity_score": 4.2,
+      "transition_quality": 3.4,
+      "hedging_language_count": 3
+    },
+    "patterns": {
+      "hesitation_triggers": ["Transitioning from operational experience to research methodology"],
+      "confidence_peaks": ["Discussing specific implementations of AI models (Ethos)"],
+      "rambling_moments": [{"timestamp": 78, "duration": 18, "reason": "Overly detailed historical context provided"}]
+    },
+    "feedback": {
+      "strengths": ["Strong command of professional terminology (Lexis). Candidate maintains high Ethos through precise vocabulary."],
+      "areas_for_improvement": ["Improve Conciseness (Brevitas): Sentences often become run-on due to excessive reliance on subordinate clauses."],
+      "specific_examples": [{"timestamp": 78.4, "text": "Original text here", "issue": "Excessive clause stacking", "improvement": "Focus on the primary verb and outcome before adding limitations"}]
+    },
+    "instant_rewrites": [{"timestamp": 78.4, "original": "Original text", "improved": "Improved text", "why": "This Aristotelian Rewrite establishes the action in a concise, punchy structure"}]
+  }
+}
+
+Use Aristotelian rhetorical concepts: Ethos (credibility), Logos (logic), Pathos (emotion), Lexis (word choice), Brevitas (conciseness). Be specific with timestamps and actionable feedback.`;
+
+    const result = await generateText({
+      model: openrouter('anthropic/claude-haiku-4.5'),
+      system: systemPrompt,
+      prompt: `Analyze this interview transcript (${durationSeconds || 60} seconds):
+
+TRANSCRIPT:
+${transcript || JSON.stringify(transcriptJson, null, 2)}
+
+Provide the analysis as valid JSON only.`,
+      temperature: 0.7
+    });
+
+    // Clean and parse the response
+    let text = result.text.trim();
+    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+    try {
+      const parsed = JSON.parse(text);
+      console.log('[Aristotle AI] Analysis generated successfully');
+      res.json(parsed);
+    } catch (e: any) {
+      console.error('[Aristotle AI] JSON parse error:', e);
+      res.status(500).json({ 
+        error: 'Failed to parse AI response', 
+        raw: text.substring(0, 500),
+        parseError: e.message 
+      });
+    }
+
+  } catch (error: any) {
+    console.error('[Aristotle AI] Error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

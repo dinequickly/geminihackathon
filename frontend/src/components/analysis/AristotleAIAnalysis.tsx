@@ -333,6 +333,10 @@ export function AristotleAIAnalysis({ analysis, conversationId, onHighlightClick
     if (!conversationId) return;
     
     const chatId = getActionId();
+    const actionType = chatData.type === 'practice' ? 'practice' : 'analyze';
+    const firstClickKey = `action_first_click_${conversationId}_${actionType}`;
+    const isFirstClick = sessionStorage.getItem(firstClickKey) !== 'false';
+    sessionStorage.setItem(firstClickKey, 'false');
     
     // Build the full payload matching TranscriptViewer format
     const highlightedText = chatData.context || chatData.original || chatData.text || '';
@@ -341,9 +345,11 @@ export function AristotleAIAnalysis({ analysis, conversationId, onHighlightClick
       id: chatId,
       conversation_id: conversationId,  // Original conversation ID (results page)
       source_conversation_id: conversationId,
+      button_clicked: actionType,
+      first_click: isFirstClick,
       highlighted_text: highlightedText,
       messages: transcriptMessages,
-      type: chatData.type === 'practice' ? 'practice' : 'analyze',
+      type: actionType,
       highlight_id: chatId,
       highlight_message: highlightedText,
       philosopher: 'aristotle',
@@ -364,7 +370,8 @@ export function AristotleAIAnalysis({ analysis, conversationId, onHighlightClick
     }).catch(err => console.error('Chat webhook error:', err));
     
     // Navigate to chat
-    navigate(`/chat/${chatId}`);
+    const query = `?type=${encodeURIComponent(actionType)}&conversation_id=${encodeURIComponent(conversationId)}&source_conversation_id=${encodeURIComponent(conversationId)}&button=${encodeURIComponent(actionType)}&first_click=${encodeURIComponent(String(isFirstClick))}`;
+    navigate(`/chat/${chatId}${query}`);
   }, [conversationId, transcriptMessages, navigate]);
 
   const generateAnalysis = useCallback(async () => {

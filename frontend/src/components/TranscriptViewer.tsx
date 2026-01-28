@@ -211,10 +211,16 @@ export default function TranscriptViewer({
     setIsSubmittingAction(true);
     setActionError(null);
 
+    const firstClickKey = `action_first_click_${conversationId}_${actionType}`;
+    const isFirstClick = sessionStorage.getItem(firstClickKey) !== 'false';
+    sessionStorage.setItem(firstClickKey, 'false');
+
     const payload = {
       id: getActionId(),
       conversation_id: conversationId,
       source_conversation_id: conversationId,
+      button_clicked: actionType,
+      first_click: isFirstClick,
       highlighted_text: actionHighlight.highlighted_sentence,
       messages: buildTranscriptMessages(),
       type: actionType,
@@ -245,7 +251,7 @@ export default function TranscriptViewer({
       // Generate a chat ID and navigate immediately for snappy UX
       const chatId = payload.id;
       closeActionModal();
-      const query = `?type=${encodeURIComponent(actionType)}`;
+      const query = `?type=${encodeURIComponent(actionType)}&conversation_id=${encodeURIComponent(conversationId)}&source_conversation_id=${encodeURIComponent(conversationId)}&button=${encodeURIComponent(actionType)}&first_click=${encodeURIComponent(String(isFirstClick))}`;
       navigate(`/chat/${chatId}${query}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to send action');
