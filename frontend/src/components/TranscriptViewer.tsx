@@ -241,6 +241,18 @@ export default function TranscriptViewer({
     };
 
     try {
+      sessionStorage.setItem(`chat_seed_${payload.id}`, JSON.stringify({
+        conversation_id: conversationId,
+        source_conversation_id: conversationId,
+        highlight_id: actionHighlight.id,
+        highlighted_sentence: actionHighlight.highlighted_sentence,
+        comment: actionHighlight.comment,
+        color: actionHighlight.color,
+        created_at: actionHighlight.created_at,
+        commenter: actionHighlight.commenter || null,
+        type: actionType
+      }));
+
       // Send webhook without waiting for full response
       fetch(REVIEW_PRACTICE_WEBHOOK_URL, {
         method: 'POST',

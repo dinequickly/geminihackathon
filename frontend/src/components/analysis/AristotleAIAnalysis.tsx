@@ -369,6 +369,17 @@ export function AristotleAIAnalysis({ analysis, conversationId, onHighlightClick
       body: JSON.stringify(payload)
     }).catch(err => console.error('Chat webhook error:', err));
     
+    sessionStorage.setItem(`chat_seed_${chatId}`, JSON.stringify({
+      conversation_id: conversationId,
+      source_conversation_id: conversationId,
+      highlighted_sentence: highlightedText,
+      comment: highlightedText,
+      color: null,
+      created_at: new Date().toISOString(),
+      commenter: 'aristotle',
+      type: actionType
+    }));
+
     // Navigate to chat
     const query = `?type=${encodeURIComponent(actionType)}&conversation_id=${encodeURIComponent(conversationId)}&source_conversation_id=${encodeURIComponent(conversationId)}&button=${encodeURIComponent(actionType)}&first_click=${encodeURIComponent(String(isFirstClick))}&commenter=${encodeURIComponent('aristotle')}`;
     navigate(`/chat/${chatId}${query}`);

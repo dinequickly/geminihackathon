@@ -65,8 +65,11 @@ export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+  const [hasAutoAssistantContent, setHasAutoAssistantContent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const autoSendRef = useRef(false);
 
   const sessionType = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -148,7 +151,12 @@ export default function Chat() {
   }, [messages, isSending]);
 
 
-  const buildPayload = (content: string, nextMessages: ChatMessage[], isFirstMessage: boolean) => {
+  const buildPayload = (
+    content: string,
+    nextMessages: ChatMessage[],
+    isFirstMessage: boolean,
+    extra?: Record<string, any>
+  ) => {
     const payload: Record<string, any> = {
       conversation_id: sourceConversationId || chatId,
       source_conversation_id: sourceConversationId || reviewPracticeId || chatId,
@@ -176,6 +184,9 @@ export default function Chat() {
     if (commenter) {
       payload.commenter = commenter;
       payload.philosopher = commenter;
+    }
+    if (extra) {
+      Object.assign(payload, extra);
     }
     return payload;
   };
@@ -332,6 +343,178 @@ export default function Chat() {
     }
   };
 
+  const streamWebhookResponse = async (payload: Record<string, any>) => {
+    setIsSending(true);
+    setIsAutoGenerating(true);
+    setHasAutoAssistantContent(false);
+    setError(null);
+
+    const assistantId = getMessageId();
+    setMessages(prev => [
+      ...prev,
+      {
+        id: assistantId,
+        role: 'assistant',
+        content: '',
+        createdAt: Date.now()
+      }
+    ]);
+
+    const appendAssistantContent = (chunk: string) => {
+      if (!chunk) return;
+      setHasAutoAssistantContent(true);
+      setMessages(prev => prev.map(message => (
+        message.id === assistantId
+          ? { ...message, content: `${message.content}${chunk}` }
+          : message
+      )));
+    };
+
+    try {
+      const response = await fetch(CHAT_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || `Webhook error (${response.status})`);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      const isEventStream = contentType.includes('text/event-stream');
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body available');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let hasContent = false;
+      let hasStreamTokens = false;
+
+      const appendChunk = (chunk: string, sourceNode?: string) => {
+        if (!chunk) return;
+        if (sourceNode && /AI Agent/i.test(sourceNode)) {
+          hasStreamTokens = true;
+        }
+        hasContent = true;
+        appendAssistantContent(chunk);
+      };
+
+      const handleParsedObject = (parsed: any) => {
+        if (!parsed) return;
+        const nodeName = parsed?.metadata?.nodeName || '';
+        if (hasStreamTokens && /Respond to Webhook/i.test(nodeName)) {
+          return;
+        }
+        const chunk = extractStreamChunk(parsed) || extractAssistantReply(parsed);
+        if (chunk) {
+          appendChunk(chunk, nodeName);
+        }
+      };
+
+      const flushEvent = (eventBlock: string) => {
+        const lines = eventBlock.split('\n');
+        const dataLines = lines
+          .filter(line => line.startsWith('data:'))
+          .map(line => line.slice(5).trimStart());
+        if (!dataLines.length) return;
+        const dataString = dataLines.join('\n');
+        if (dataString === '[DONE]') return;
+        try {
+          const parsed = JSON.parse(dataString);
+          handleParsedObject(parsed);
+        } catch (parseError) {
+          appendChunk(dataString);
+        }
+      };
+
+      const flushJsonLine = (line: string) => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+        try {
+          const parsed = JSON.parse(trimmed);
+          handleParsedObject(parsed);
+        } catch (parseError) {
+          appendChunk(trimmed);
+        }
+      };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        if (isEventStream) {
+          let separatorIndex = buffer.indexOf('\n\n');
+          while (separatorIndex !== -1) {
+            const eventBlock = buffer.slice(0, separatorIndex);
+            buffer = buffer.slice(separatorIndex + 2);
+            flushEvent(eventBlock);
+            separatorIndex = buffer.indexOf('\n\n');
+          }
+        } else {
+          let newlineIndex = buffer.indexOf('\n');
+          while (newlineIndex !== -1) {
+            const line = buffer.slice(0, newlineIndex);
+            buffer = buffer.slice(newlineIndex + 1);
+            flushJsonLine(line);
+            newlineIndex = buffer.indexOf('\n');
+          }
+        }
+      }
+
+      if (buffer) {
+        if (isEventStream) {
+          flushEvent(buffer);
+        } else {
+          flushJsonLine(buffer);
+        }
+      }
+
+      if (!hasContent) {
+        appendChunk('Got it. Want to dig deeper into this turn?');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setIsSending(false);
+      setIsAutoGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!chatId || autoSendRef.current) return;
+    if (messages.length > 0) return;
+    const seedRaw = sessionStorage.getItem(`chat_seed_${chatId}`);
+    if (!seedRaw) return;
+    autoSendRef.current = true;
+    try {
+      const seed = JSON.parse(seedRaw);
+      const highlighted = seed.highlighted_sentence || '';
+      const comment = seed.comment || '';
+      const prompt = highlighted
+        ? `Analyze this highlighted moment: "${highlighted}". ${comment ? `Comment: "${comment}".` : ''}`
+        : 'Analyze the highlighted moment.';
+      const payload = buildPayload(prompt, [], true, {
+        highlighted_text: seed.highlighted_sentence,
+        highlighted_sentence: seed.highlighted_sentence,
+        comment: seed.comment,
+        color: seed.color,
+        created_at: seed.created_at,
+        highlight_id: seed.highlight_id,
+        commenter: seed.commenter,
+        philosopher: seed.commenter ?? commenter,
+        type: seed.type || sessionType
+      });
+      streamWebhookResponse(payload);
+    } catch (err) {
+      console.error('Failed to parse chat seed:', err);
+    }
+  }, [chatId, messages.length, buildPayload, commenter, sessionType]);
+
   return (
     <div className="min-h-screen bg-cream-100 relative">
       {/* Playful background blobs */}
@@ -367,6 +550,12 @@ export default function Chat() {
         <PlayfulCard variant="white" className="flex flex-col h-[75vh] overflow-hidden">
           {/* Messages */}
           <div ref={listRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+            {isAutoGenerating && !hasAutoAssistantContent && (
+              <div className="flex items-center gap-3 text-sm text-gray-500 animate-slide-up">
+                <LoadingSpinner size="sm" color="primary" />
+                <span className="font-medium">Generating response...</span>
+              </div>
+            )}
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full animate-fade-in">
                 <PlayfulCharacter emotion="happy" size={120} className="mb-6" />
