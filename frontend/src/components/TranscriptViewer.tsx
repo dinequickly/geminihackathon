@@ -245,28 +245,34 @@ export default function TranscriptViewer({
         throw new Error(detail || `Webhook error (${response.status})`);
       }
 
-      const raw = await response.text();
-      let data: any = null;
-      try {
-        data = raw ? JSON.parse(raw) : null;
-      } catch (parseError) {
-        data = null;
-      }
+      // Only process response for analyze actions
+      if (actionType === 'analyze') {
+        const raw = await response.text();
+        let data: any = null;
+        try {
+          data = raw ? JSON.parse(raw) : null;
+        } catch (parseError) {
+          data = null;
+        }
 
-      const reviewPracticeId = (
-        data?.review_practice_id ||
-        data?.reviewPracticeId ||
-        data?.review_practice?.id ||
-        data?.id
-      )?.toString().trim();
-      const nextChatId = (reviewPracticeId || data?.chat_id || data?.conversation_id || raw)?.toString().trim();
-      if (!nextChatId) {
-        throw new Error('No conversation id returned from webhook');
-      }
+        const reviewPracticeId = (
+          data?.review_practice_id ||
+          data?.reviewPracticeId ||
+          data?.review_practice?.id ||
+          data?.id
+        )?.toString().trim();
+        const nextChatId = (reviewPracticeId || data?.chat_id || data?.conversation_id || raw)?.toString().trim();
+        if (!nextChatId) {
+          throw new Error('No conversation id returned from webhook');
+        }
 
-      closeActionModal();
-      const query = reviewPracticeId ? `?review_practice_id=${encodeURIComponent(reviewPracticeId)}` : '';
-      navigate(`/chat/${nextChatId}${query}`);
+        closeActionModal();
+        const query = reviewPracticeId ? `?review_practice_id=${encodeURIComponent(reviewPracticeId)}` : '';
+        navigate(`/chat/${nextChatId}${query}`);
+      } else {
+        // For practice action, just close the modal
+        closeActionModal();
+      }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to send action');
       setIsSubmittingAction(false);

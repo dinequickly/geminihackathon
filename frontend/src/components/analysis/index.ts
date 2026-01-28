@@ -9,6 +9,7 @@ export { ComparisonMode } from './ComparisonMode';
 
 // Philosophical Analysis Components
 export { AristotleAnalysis } from './AristotleAnalysis';
+export { AristotleTranscriptViewer } from './AristotleTranscriptViewer';
 export { PlatoAnalysis } from './PlatoAnalysis';
 export { SocratesAnalysis } from './SocratesAnalysis';
 export { ZenoAnalysis } from './ZenoAnalysis';

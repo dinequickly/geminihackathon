@@ -21,6 +21,7 @@ import {
   SocratesAnalysis,
   ZenoAnalysis
 } from '../components/analysis';
+import { AristotleTranscriptViewer } from '../components/analysis/AristotleTranscriptViewer';
 
 type AnalysisView = 'default' | 'aristotle' | 'plato' | 'socrates' | 'zeno';
 
@@ -253,9 +254,27 @@ export default function Results2() {
 
       {/* Main Content - Video Left, Transcript Right */}
       <main className="flex-1 flex min-h-0 relative z-10">
-        {/* Left Panel - Video */}
+        {/* Left Panel - Video or Aristotle Transcript */}
         <div className="w-[45%] flex flex-col border-r border-gray-200/50">
-          {conversationId && conversation?.video_url ? (
+          {analysisView === 'aristotle' && aristotleAnalysis ? (
+            /* Aristotle Transcript View */
+            <div className="flex-1 flex flex-col min-h-0">
+              <AristotleTranscriptViewer
+                conversationId={conversationId}
+                analysis={aristotleAnalysis}
+                currentTimeMs={currentVideoTimeMs}
+                onTimeClick={(timestamp) => {
+                  setCurrentVideoTimeMs(timestamp * 1000);
+                  videoPlayerRef.current?.seekTo(timestamp);
+                }}
+                onSegmentClick={(startTime) => {
+                  setCurrentVideoTimeMs(startTime * 1000);
+                  videoPlayerRef.current?.seekTo(startTime);
+                  videoPlayerRef.current?.pause();
+                }}
+              />
+            </div>
+          ) : conversationId && conversation?.video_url ? (
             <div className="flex-1 flex flex-col">
               <VideoEmotionPlayer
                 ref={videoPlayerRef}
@@ -278,7 +297,7 @@ export default function Results2() {
             </div>
           )}
 
-          {/* Score Summary Below Video */}
+          {/* Score Summary Below Video (only in default view) */}
           {analysisView === 'default' && (
             <div className="flex-shrink-0 p-4 bg-white/80 backdrop-blur-sm border-t border-gray-200/50">
               <div className="flex items-center justify-between mb-3">
