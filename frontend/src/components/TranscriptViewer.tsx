@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, EmotionTimelineItem, TranscriptHighlight } from '../lib/api';
 import { AlertCircle, Highlighter, X } from 'lucide-react';
-import { PlayfulButton, LoadingSpinner } from './PlayfulUI';
+import { LoadingSpinner } from './PlayfulUI';
 
 interface TranscriptViewerProps {
   conversationId: string;
@@ -78,7 +78,7 @@ export default function TranscriptViewer({
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const REVIEW_PRACTICE_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/a0894027-a899-473b-b864-e0a2d18950d3';
+  const REVIEW_PRACTICE_WEBHOOK_URL = 'https://maxipad.app.n8n.cloud/webhook/4f8a9cf8-218a-4f77-b43d-af0715dae478';
 
   // Load transcript, emotion data, and highlights
   useEffect(() => {
@@ -219,6 +219,8 @@ export default function TranscriptViewer({
       type: actionType,
       highlight_id: actionHighlight.id,
       highlight_message: getHighlightMessage(actionHighlight),
+      philosopher: actionHighlight.commenter || null,
+      commenter: actionHighlight.commenter || null,
       emotions_at_time: (() => {
         const timestampMs = getHighlightTimestampMs(actionHighlight);
         const faceSegment = getNearestEmotionSegment(emotionData.face, timestampMs);
@@ -494,20 +496,46 @@ export default function TranscriptViewer({
       {actionHighlight && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onClick={closeActionModal}>
           <div className="bg-white rounded-3xl shadow-soft-lg p-8 max-w-md w-full mx-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <div className="w-10 h-10 rounded-2xl bg-sunshine-100 flex items-center justify-center">
-                  <Highlighter className="w-5 h-5 text-sunshine-600" />
+            {/* Header with philosopher avatar */}
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-4">
+                {actionHighlight.commenter && PHILOSOPHER_IMAGES[actionHighlight.commenter] ? (
+                  <img
+                    src={PHILOSOPHER_IMAGES[actionHighlight.commenter].src}
+                    alt={PHILOSOPHER_IMAGES[actionHighlight.commenter].name}
+                    className="w-16 h-16 rounded-full object-cover border-3 border-white shadow-lg"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-sunshine-100 flex items-center justify-center">
+                    <Highlighter className="w-6 h-6 text-sunshine-600" />
+                  </div>
+                )}
+                <div>
+                  {actionHighlight.commenter && PHILOSOPHER_IMAGES[actionHighlight.commenter] && (
+                    <div className={`inline-block px-3 py-1 ${PHILOSOPHER_IMAGES[actionHighlight.commenter].color} rounded-full text-xs font-bold uppercase tracking-wide mb-1`}>
+                      {PHILOSOPHER_IMAGES[actionHighlight.commenter].name}
+                    </div>
+                  )}
+                  <h3 className="text-lg font-bold text-gray-900">
+                    What would you like to do?
+                  </h3>
                 </div>
-                What would you like to do?
-              </h3>
+              </div>
               <button onClick={closeActionModal} className="p-2 hover:bg-gray-100 rounded-2xl transition-all duration-300 hover:scale-110">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
-            <div className="mb-6 p-4 bg-sunshine-50 border-2 border-sunshine-200 rounded-2xl">
-              <p className="text-sm text-sunshine-900 font-semibold leading-relaxed">"{actionHighlight.highlighted_sentence}"</p>
+            {/* Highlighted sentence */}
+            <div className={`mb-6 p-4 ${
+              actionHighlight.commenter && PHILOSOPHER_IMAGES[actionHighlight.commenter]
+                ? PHILOSOPHER_IMAGES[actionHighlight.commenter].color
+                : 'bg-sunshine-50 border-sunshine-200'
+            } border-2 rounded-2xl`}>
+              <p className="text-sm text-gray-900 font-semibold leading-relaxed">"{actionHighlight.highlighted_sentence}"</p>
+              {actionHighlight.comment && (
+                <p className="text-sm text-gray-600 mt-2 italic">"{actionHighlight.comment}"</p>
+              )}
             </div>
 
             {actionError && (
@@ -517,25 +545,44 @@ export default function TranscriptViewer({
               </div>
             )}
 
+            {/* Action buttons with philosopher image */}
             <div className="flex flex-col gap-3">
-              <PlayfulButton
+              <button
                 onClick={() => sendReviewPracticeAction('practice')}
                 disabled={isSubmittingAction}
-                variant="primary"
-                size="lg"
-                className="w-full"
+                className={`w-full p-4 rounded-2xl border-2 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-4 ${
+                  actionHighlight.commenter && PHILOSOPHER_IMAGES[actionHighlight.commenter]
+                    ? `${PHILOSOPHER_IMAGES[actionHighlight.commenter].color} hover:shadow-lg`
+                    : 'bg-primary-500 text-white border-primary-500 hover:bg-primary-600'
+                }`}
               >
-                Practice this question again
-              </PlayfulButton>
-              <PlayfulButton
+                {actionHighlight.commenter && PHILOSOPHER_IMAGES[actionHighlight.commenter] && (
+                  <img
+                    src={PHILOSOPHER_IMAGES[actionHighlight.commenter].src}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                  />
+                )}
+                <span className="font-semibold text-gray-900">Practice this question again</span>
+              </button>
+              <button
                 onClick={() => sendReviewPracticeAction('analyze')}
                 disabled={isSubmittingAction}
-                variant="secondary"
-                size="lg"
-                className="w-full"
+                className={`w-full p-4 rounded-2xl border-2 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-4 ${
+                  actionHighlight.commenter && PHILOSOPHER_IMAGES[actionHighlight.commenter]
+                    ? `bg-white ${PHILOSOPHER_IMAGES[actionHighlight.commenter].color.replace('bg-', 'border-')} hover:shadow-lg`
+                    : 'bg-white border-gray-200 hover:border-gray-300'
+                }`}
               >
-                Analyze this turn
-              </PlayfulButton>
+                {actionHighlight.commenter && PHILOSOPHER_IMAGES[actionHighlight.commenter] && (
+                  <img
+                    src={PHILOSOPHER_IMAGES[actionHighlight.commenter].src}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                  />
+                )}
+                <span className="font-semibold text-gray-700">Analyze this turn</span>
+              </button>
             </div>
           </div>
         </div>
