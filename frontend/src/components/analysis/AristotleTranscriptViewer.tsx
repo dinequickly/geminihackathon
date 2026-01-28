@@ -17,12 +17,6 @@ interface TranscriptItem {
   time_in_call_secs?: number;
 }
 
-interface Annotation {
-  type: 'filler_word' | 'rambling' | 'rewrite' | 'confidence_peak' | 'hesitation';
-  timestamp: number;
-  data: any;
-}
-
 const formatTimestamp = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
@@ -43,7 +37,6 @@ export function AristotleTranscriptViewer({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRewrite, setExpandedRewrite] = useState<number | null>(null);
-  const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
 
   const comm = analysis.communication_analysis;
 
@@ -85,70 +78,6 @@ export function AristotleTranscriptViewer({
     }
   }, [currentTimeMs]);
 
-  // Build annotations map from analysis data
-  const buildAnnotations = (): Annotation[] => {
-    const annotations: Annotation[] = [];
-
-    // Add filler word annotations
-    comm.metrics.filler_words.forEach(fw => {
-      fw.timestamps.forEach(ts => {
-        annotations.push({
-          type: 'filler_word',
-          timestamp: ts,
-          data: { word: fw.word, count: fw.count }
-        });
-      });
-    });
-
-    // Add rambling moment annotations
-    comm.patterns.rambling_moments.forEach(rm => {
-      annotations.push({
-        type: 'rambling',
-        timestamp: rm.timestamp,
-        data: rm
-      });
-    });
-
-    // Add instant rewrite annotations
-    comm.instant_rewrites.forEach((rw, idx) => {
-      annotations.push({
-        type: 'rewrite',
-        timestamp: rw.timestamp,
-        data: { ...rw, index: idx }
-      });
-    });
-
-    // Add confidence peak annotations (approximate timestamps from description)
-    comm.patterns.confidence_peaks.forEach((peak, idx) => {
-      // Use a placeholder timestamp or infer from context
-      annotations.push({
-        type: 'confidence_peak',
-        timestamp: idx * 30, // Approximate spacing
-        data: { description: peak }
-      });
-    });
-
-    // Add hesitation trigger annotations
-    comm.patterns.hesitation_triggers.forEach((trigger, idx) => {
-      annotations.push({
-        type: 'hesitation',
-        timestamp: idx * 45 + 10, // Approximate spacing
-        data: { description: trigger }
-      });
-    });
-
-    return annotations.sort((a, b) => a.timestamp - b.timestamp);
-  };
-
-  const annotations = buildAnnotations();
-
-  // Find annotations near a specific timestamp
-  const getAnnotationsAtTime = (timeSecs: number, windowSecs: number = 3): Annotation[] => {
-    return annotations.filter(a => 
-      Math.abs(a.timestamp - timeSecs) <= windowSecs
-    );
-  };
-
   // Find active segment based on current time
   const currentTimeSec = currentTimeMs / 1000;
   let activeIndex = -1;
@@ -177,7 +106,7 @@ export function AristotleTranscriptViewer({
   };
 
   // Check if this segment has a rewrite suggestion
-  const getRewriteForSegment = (item: TranscriptItem, index: number): typeof comm.instant_rewrites[0] | null => {
+  const getRewriteForSegment = (item: TranscriptItem, _index: number): typeof comm.instant_rewrites[0] | null => {
     if (!item.message || !item.time_in_call_secs) return null;
     
     return comm.instant_rewrites.find(rw => 

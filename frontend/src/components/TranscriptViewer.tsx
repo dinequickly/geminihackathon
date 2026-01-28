@@ -234,45 +234,18 @@ export default function TranscriptViewer({
     };
 
     try {
-      const response = await fetch(REVIEW_PRACTICE_WEBHOOK_URL, {
+      // Send webhook without waiting for full response
+      fetch(REVIEW_PRACTICE_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      });
+      }).catch(err => console.error('Webhook error:', err));
 
-      if (!response.ok) {
-        const detail = await response.text();
-        throw new Error(detail || `Webhook error (${response.status})`);
-      }
-
-      // Only process response for analyze actions
-      if (actionType === 'analyze') {
-        const raw = await response.text();
-        let data: any = null;
-        try {
-          data = raw ? JSON.parse(raw) : null;
-        } catch (parseError) {
-          data = null;
-        }
-
-        const reviewPracticeId = (
-          data?.review_practice_id ||
-          data?.reviewPracticeId ||
-          data?.review_practice?.id ||
-          data?.id
-        )?.toString().trim();
-        const nextChatId = (reviewPracticeId || data?.chat_id || data?.conversation_id || raw)?.toString().trim();
-        if (!nextChatId) {
-          throw new Error('No conversation id returned from webhook');
-        }
-
-        closeActionModal();
-        const query = reviewPracticeId ? `?review_practice_id=${encodeURIComponent(reviewPracticeId)}` : '';
-        navigate(`/chat/${nextChatId}${query}`);
-      } else {
-        // For practice action, just close the modal
-        closeActionModal();
-      }
+      // Generate a chat ID and navigate immediately for snappy UX
+      const chatId = payload.id;
+      closeActionModal();
+      const query = `?type=${encodeURIComponent(actionType)}`;
+      navigate(`/chat/${chatId}${query}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to send action');
       setIsSubmittingAction(false);

@@ -260,7 +260,7 @@ export default function Results2() {
             /* Aristotle Transcript View */
             <div className="flex-1 flex flex-col min-h-0">
               <AristotleTranscriptViewer
-                conversationId={conversationId}
+                conversationId={conversationId!}
                 analysis={aristotleAnalysis}
                 currentTimeMs={currentVideoTimeMs}
                 onTimeClick={(timestamp) => {
