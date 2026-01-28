@@ -68,11 +68,6 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const actionType = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get('type') as 'practice' | 'analyze' | null;
-  }, [location.search]);
-
   const reviewPracticeId = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const fromQuery = params.get('review_practice_id')?.trim() || null;
@@ -96,18 +91,6 @@ export default function Chat() {
     listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages, isSending]);
 
-  // Auto-trigger initial message for practice/analyze flows
-  useEffect(() => {
-    if (actionType && chatId && messages.length === 0 && !isSending) {
-      const autoMessage = actionType === 'practice'
-        ? 'I want to practice this question again.'
-        : 'Can you analyze this turn?';
-      // Schedule send for next tick to avoid state issues
-      setTimeout(() => {
-        sendMessage(autoMessage);
-      }, 0);
-    }
-  }, [actionType, chatId]);
 
   const buildPayload = (content: string, nextMessages: ChatMessage[], isFirstMessage: boolean) => {
     const payload: Record<string, any> = {
@@ -126,10 +109,9 @@ export default function Chat() {
     return payload;
   };
 
-  const sendMessage = async (overrideMessage?: string) => {
-    const messageContent = overrideMessage || draft.trim();
-    if (!messageContent || isSending || !chatId) return;
-    const trimmed = messageContent;
+  const sendMessage = async () => {
+    if (!draft.trim() || isSending || !chatId) return;
+    const trimmed = draft.trim();
 
     const userMessage: ChatMessage = {
       id: getMessageId(),
@@ -141,9 +123,7 @@ export default function Chat() {
     const nextMessages = [...messages, userMessage];
     const isFirstMessage = messages.length === 0;
     setMessages(nextMessages);
-    if (!overrideMessage) {
-      setDraft('');
-    }
+    setDraft('');
     setIsSending(true);
     setError(null);
 
