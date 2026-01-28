@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AristotleAnalysis as AristotleAnalysisType } from '../../lib/api';
+import { api, AristotleAnalysis as AristotleAnalysisType } from '../../lib/api';
 import { Sparkles, Loader2, RefreshCw, AlertCircle, MessageSquare, Lightbulb, Eye } from 'lucide-react';
 import { LiquidButton } from '../LiquidButton';
 
@@ -8,6 +8,12 @@ interface AristotleAIAnalysisProps {
   analysis: AristotleAnalysisType;
   conversationId?: string;
   onHighlightClick?: (timestamp: number) => void;
+}
+
+interface TranscriptMessage {
+  role: 'assistant' | 'user';
+  content: string;
+  time_in_call_secs?: number;
 }
 
 // Component definition types that the AI can generate
@@ -293,6 +299,34 @@ export function AristotleAIAnalysis({ analysis, conversationId, onHighlightClick
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string>('');
+  const [transcriptMessages, setTranscriptMessages] = useState<TranscriptMessage[]>([]);
+
+  // Load transcript messages for webhook payload
+  useEffect(() => {
+    const loadTranscript = async () => {
+      if (!conversationId) return;
+      try {
+        const data = await api.getAnnotatedTranscript(conversationId);
+        if (data.transcript_json && Array.isArray(data.transcript_json)) {
+          let items = data.transcript_json;
+          if (items.length === 1 && Array.isArray(items[0])) {
+            items = items[0];
+          }
+          const messages: TranscriptMessage[] = items
+            .filter((item: any) => item.message?.trim())
+            .map((item: any) => ({
+              role: (item.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user',
+              content: item.message,
+              time_in_call_secs: item.time_in_call_secs
+            }));
+          setTranscriptMessages(messages);
+        }
+      } catch (err) {
+        console.error('Failed to load transcript for chat:', err);
+      }
+    };
+    loadTranscript();
+  }, [conversationId]);
 
   // Send chat webhook and navigate
   const handleChatRequest = useCallback(async (chatData: any) => {
@@ -300,13 +334,26 @@ export function AristotleAIAnalysis({ analysis, conversationId, onHighlightClick
     
     const chatId = getActionId();
     
+    // Build the full payload matching TranscriptViewer format
+    const highlightedText = chatData.context || chatData.original || chatData.text || '';
+    
     const payload = {
       id: chatId,
-      conversation_id: chatId,
-      source_conversation_id: conversationId, // Original results page conversation
-      chat_type: chatData.type,
-      context: chatData,
-      timestamp: Date.now()
+      conversation_id: conversationId,  // Original conversation ID (results page)
+      source_conversation_id: conversationId,
+      highlighted_text: highlightedText,
+      messages: transcriptMessages,
+      type: chatData.type === 'practice' ? 'practice' : 'analyze',
+      highlight_id: chatId,
+      highlight_message: highlightedText,
+      philosopher: 'aristotle',
+      commenter: 'aristotle',
+      emotions_at_time: {
+        timestamp_ms: chatData.timestamp ? chatData.timestamp * 1000 : Date.now(),
+        face_top5: [],
+        prosody_top5: []
+      },
+      chat_context: chatData
     };
     
     // Send to webhook without waiting
@@ -318,7 +365,7 @@ export function AristotleAIAnalysis({ analysis, conversationId, onHighlightClick
     
     // Navigate to chat
     navigate(`/chat/${chatId}`);
-  }, [conversationId, navigate]);
+  }, [conversationId, transcriptMessages, navigate]);
 
   const generateAnalysis = useCallback(async () => {
     setIsStreaming(true);
