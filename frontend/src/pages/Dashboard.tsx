@@ -187,7 +187,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
                   score={conv.overall_score}
                   onClick={() => {
                      if (['completed', 'analyzing', 'analyzed'].includes(conv.status)) {
-                      navigate(`/results/${conv.id}`);
+                      navigate(`/results2/${conv.id}`);
                     }
                   }}
                 />

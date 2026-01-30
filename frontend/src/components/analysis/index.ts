@@ -12,5 +12,8 @@ export { AristotleAnalysis } from './AristotleAnalysis';
 export { AristotleTranscriptViewer } from './AristotleTranscriptViewer';
 export { AristotleAIAnalysis } from './AristotleAIAnalysis';
 export { PlatoAnalysis } from './PlatoAnalysis';
+export { PlatoAIAnalysis } from './PlatoAIAnalysis';
 export { SocratesAnalysis } from './SocratesAnalysis';
+export { SocratesAIAnalysis } from './SocratesAIAnalysis';
 export { ZenoAnalysis } from './ZenoAnalysis';
+export { ZenoAIAnalysis } from './ZenoAIAnalysis';

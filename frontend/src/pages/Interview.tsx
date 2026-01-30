@@ -282,7 +282,7 @@ export default function Interview({ userId }: InterviewProps) {
       });
 
       // Navigate to results (will show processing state)
-      navigate(`/results/${conversationId}`);
+      navigate(`/results2/${conversationId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to end interview');
       setIsEnding(false);
