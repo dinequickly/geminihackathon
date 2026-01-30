@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, SocratesAnalysis as SocratesAnalysisType } from '../../lib/api';
-import { Sparkles, Loader2, RefreshCw, AlertCircle, MessageSquare, Lightbulb, Eye, HelpCircle, Brain, Target } from 'lucide-react';
+import { Sparkles, Loader2, RefreshCw, AlertCircle, MessageSquare, Lightbulb, Eye, Brain, Target } from 'lucide-react';
 import { LiquidButton } from '../LiquidButton';
 
 interface SocratesAIAnalysisProps {
@@ -94,8 +94,8 @@ const createComponentRegistry = (_navigate: any, _conversationId?: string): Reco
             <Eye className="w-3 h-3" />
             View
           </button>
-          <button 
-            onClick={() => onChat?.({ type: 'question_help', question, type })}
+          <button
+            onClick={() => onChat?.({ type: 'question_help', question, questionType: type })}
             className="text-xs font-semibold text-warmGray-800 hover:text-warmGray-900 flex items-center gap-1 bg-warmGray-200 hover:bg-warmGray-300 px-2 py-1.5 rounded transition-colors"
           >
             <Lightbulb className="w-3 h-3" />
