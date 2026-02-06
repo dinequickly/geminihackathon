@@ -149,6 +149,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const interviewType = searchParams.get('type') || 'elevenlabs'; // Default to elevenlabs
+  const isVeritasComingSoon = interviewType === 'veritas' || interviewType === 'tavus';
 
   // Steps: 1=Intent, 2=DynamicConfiguration
   const [step, setStep] = useState(1);
@@ -164,6 +165,11 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
   // Handlers
 
   const handleIntentSubmit = async () => {
+    if (isVeritasComingSoon) {
+      setError('Veritas video interview is coming soon. Please use Voice AI for now.');
+      return;
+    }
+
     if (intent.length < 10) return;
     setLoading(true);
     setError(null);
@@ -210,6 +216,11 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
   };
 
   const handleStartInterview = async () => {
+    if (isVeritasComingSoon) {
+      setError('Veritas video interview is coming soon. Please use Voice AI for now.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -236,13 +247,7 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
         interviewConfig: session.interview_config
       };
 
-      // Navigate to the appropriate interview page based on type
-      // 'veritas' is the frontend branding for the 'tavus' backend implementation
-      if (interviewType === 'veritas' || interviewType === 'tavus') {
-        navigate('/live-avatar-interview', { state: navigationState });
-      } else {
-        navigate('/interview', { state: navigationState });
-      }
+      navigate('/interview', { state: navigationState });
 
     } catch (err: any) {
       console.error('Failed to start:', err);
@@ -255,7 +260,12 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
   // Render Helpers
 
   const renderStep1 = () => (
-    <div className="space-y-8">
+      <div className="space-y-8">
+      {isVeritasComingSoon && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
+          Veritas video interview is coming soon. This flow is temporarily disabled.
+        </div>
+      )}
       <div>
         <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700 font-mono">
           Step 1
@@ -312,15 +322,15 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
 
       <button
         onClick={handleIntentSubmit}
-        disabled={intent.length < 10 || loading}
+        disabled={intent.length < 10 || loading || isVeritasComingSoon}
         className={`w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition ${
-          intent.length < 10 || loading
+          intent.length < 10 || loading || isVeritasComingSoon
             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
             : 'bg-amber-500 text-white hover:bg-amber-600 shadow-[0_14px_30px_rgba(251,191,36,0.35)]'
         }`}
       >
         {!loading && <Sparkles className="w-4 h-4" />}
-        {loading ? 'Analyzing...' : 'Next'}
+        {isVeritasComingSoon ? 'Coming Soon' : loading ? 'Analyzing...' : 'Next'}
       </button>
     </div>
   );
@@ -434,15 +444,15 @@ export default function InterviewSetup({ userId }: InterviewSetupProps) {
 
         <button
           onClick={handleStartInterview}
-          disabled={loading || dynamicTree.length === 0}
+          disabled={loading || dynamicTree.length === 0 || isVeritasComingSoon}
           className={`w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-sans font-semibold text-lg transition-all duration-300 ${
-            loading || dynamicTree.length === 0
+            loading || dynamicTree.length === 0 || isVeritasComingSoon
               ? 'text-gray-400 cursor-not-allowed border border-gray-200'
               : 'text-black hover:bg-black hover:text-white border border-black'
           }`}
         >
-          {!loading && ((interviewType === 'veritas' || interviewType === 'tavus') ? <Video size={20} /> : <Sparkles size={20} />)}
-          {loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
+          {!loading && (isVeritasComingSoon ? <Video size={20} /> : <Sparkles size={20} />)}
+          {isVeritasComingSoon ? 'Coming Soon' : loading && dynamicTree.length === 0 ? 'Generating...' : 'Start Interview'}
         </button>
       </div>
     );

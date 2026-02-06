@@ -151,11 +151,10 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
           {/* Veritas Video Interview */}
           <LiquidGlass
-            onClick={() => navigate('/interview/setup?type=veritas')}
-            className="p-8 group cursor-pointer hover:!border-gray-400 transition-all relative overflow-hidden"
+            className="p-8 relative overflow-hidden opacity-70 cursor-not-allowed"
           >
-            <div className="absolute bottom-4 right-4 bg-black text-white rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-widest shadow-md">
-              Premium
+            <div className="absolute bottom-4 right-4 bg-gray-900 text-white rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-widest shadow-md">
+              Coming Soon
             </div>
             
             <h3 className="font-sans font-semibold text-2xl text-black mb-2">Veritas Video Interview</h3>
@@ -163,9 +162,8 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
               Practice with a lifelike AI interviewer. Ideal for behavioral questions.
             </p>
             
-            <div className="flex items-center gap-2 text-black font-medium text-sm group-hover:gap-4 transition-all">
-              EXPLORE
-              <ArrowRight className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-gray-500 font-medium text-sm">
+              NOT AVAILABLE YET
             </div>
           </LiquidGlass>
         </div>

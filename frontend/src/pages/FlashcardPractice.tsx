@@ -24,11 +24,13 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
   const navigate = useNavigate();
 
   const [pack, setPack] = useState<InterviewPack | null>(null);
+  const [allQuestions, setAllQuestions] = useState<InterviewQuestion[]>([]);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [markedDifficult, setMarkedDifficult] = useState<Set<string>>(new Set());
   const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [isReviewingDifficult, setIsReviewingDifficult] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
@@ -55,6 +57,7 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
           updated_at: data.pack.updated_at,
         });
 
+        setAllQuestions(data.questions);
         setQuestions(data.questions);
 
         posthog.capture('flashcard_practice_started', {
@@ -119,22 +122,57 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
   };
 
   const handleRestart = () => {
+    const resetQuestions = allQuestions.length > 0 ? allQuestions : questions;
+    setQuestions(resetQuestions);
     setCurrentIndex(0);
     setIsFlipped(false);
     setCompleted(new Set());
+    setMarkedDifficult(new Set());
+    setIsReviewingDifficult(false);
     setShowSummary(false);
   };
 
   const handleReviewDifficult = () => {
-    const difficultQuestions = questions.filter(q => markedDifficult.has(q.id));
+    const difficultQuestions = allQuestions.filter(q => markedDifficult.has(q.id));
     if (difficultQuestions.length > 0) {
       setQuestions(difficultQuestions);
       setMarkedDifficult(new Set());
       setCurrentIndex(0);
       setIsFlipped(false);
       setCompleted(new Set());
+      setIsReviewingDifficult(true);
       setShowSummary(false);
     }
+  };
+
+  const getGuidance = (question: InterviewQuestion | undefined) => {
+    const type = (question?.question_type || '').toLowerCase();
+    const difficulty = question?.difficulty || 'medium';
+    const duration = question?.expected_duration_seconds
+      ? `${Math.max(1, Math.round(question.expected_duration_seconds / 60))} min`
+      : null;
+
+    if (type.includes('behavior')) {
+      return {
+        structure: 'Use STAR: Situation, Task, Action, Result.',
+        keyFocus: 'Be concrete about your personal contribution and measurable impact.',
+        delivery: duration ? `Keep your response to about ${duration}.` : 'Aim for a concise 1-2 minute response.'
+      };
+    }
+
+    if (type.includes('system') || type.includes('technical')) {
+      return {
+        structure: 'Start with requirements, then design, trade-offs, and validation.',
+        keyFocus: 'Call out assumptions, constraints, and why your approach is practical.',
+        delivery: duration ? `Use the first ${duration} to structure, then dive into details.` : 'Outline first, then go deep.'
+      };
+    }
+
+    return {
+      structure: 'Lead with your answer, then support it with one strong example.',
+      keyFocus: `For ${difficulty} questions, keep depth balanced with clarity.`,
+      delivery: duration ? `Target about ${duration} and leave room for follow-up.` : 'Keep it focused and easy to follow.'
+    };
   };
 
   if (loading) {
@@ -220,6 +258,7 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
   // Flashcard Practice View
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const isDifficult = currentQuestion && markedDifficult.has(currentQuestion.id);
+  const guidance = getGuidance(currentQuestion);
 
   return (
     <div className="min-h-screen relative overflow-hidden font-sans selection:bg-pink-100">
@@ -236,7 +275,7 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
            <div className="flex flex-col items-end">
              <span className="font-sans font-semibold text-lg tracking-tight text-black">{pack.name}</span>
              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">
-               Card {currentIndex + 1} / {questions.length}
+               Card {currentIndex + 1} / {questions.length}{isReviewingDifficult ? ' • Difficult Review' : ''}
              </span>
            </div>
         </div>
@@ -304,11 +343,15 @@ export default function FlashcardPractice({ userId: _userId }: FlashcardPractice
                 <div className="flex-1 space-y-6 text-gray-800 text-lg font-light leading-relaxed">
                    <p>
                      <strong className="font-sans font-semibold text-black block mb-2">Structure</strong>
-                     Use the STAR method (Situation, Task, Action, Result) to keep your answer focused.
+                     {guidance.structure}
                    </p>
                    <p>
                      <strong className="font-sans font-semibold text-black block mb-2">Key Focus</strong>
-                     Highlight your specific contribution and the impact on the business or team.
+                     {guidance.keyFocus}
+                   </p>
+                   <p>
+                     <strong className="font-sans font-semibold text-black block mb-2">Delivery</strong>
+                     {guidance.delivery}
                    </p>
                 </div>
                 
