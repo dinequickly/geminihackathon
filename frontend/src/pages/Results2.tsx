@@ -25,6 +25,270 @@ import { AristotleTranscriptViewer } from '../components/analysis/AristotleTrans
 
 type AnalysisView = 'default' | 'aristotle' | 'plato' | 'socrates' | 'zeno';
 
+const DEMO_CONVERSATION_ID = '21557fe2-d7c9-492c-b99c-6e4b0d3c2044';
+
+const DEMO_PLATO_ANALYSIS: PlatoType = {
+  emotional_analysis: {
+    score: 4.1,
+    emotional_arc: [
+      {
+        timestamp: 2,
+        emotions: {
+          calm: 0.56,
+          confident: 0.23,
+          confused: 0.05,
+          engaged: 0.08,
+          anxious: 0.06,
+          enthusiastic: 0.02
+        },
+        dominant_emotion: 'calm',
+        trigger: 'Strong and clear name introduction.'
+      },
+      {
+        timestamp: 10,
+        emotions: {
+          calm: 0.31,
+          confident: 0.16,
+          confused: 0.22,
+          engaged: 0.14,
+          anxious: 0.12,
+          enthusiastic: 0.05
+        },
+        dominant_emotion: 'calm',
+        trigger: 'The lead question started, but was interrupted before a full response.'
+      },
+      {
+        timestamp: 19,
+        emotions: {
+          calm: 0.25,
+          confident: 0.14,
+          confused: 0.24,
+          engaged: 0.12,
+          anxious: 0.18,
+          enthusiastic: 0.07
+        },
+        dominant_emotion: 'confused',
+        trigger: 'Very short acknowledgement ("Yeah.") with no substantive follow-through.'
+      }
+    ],
+    regulation_metrics: {
+      stress_recovery_time_avg: 7.2,
+      emotional_range: 0.38,
+      authenticity_score: 6.2,
+      self_awareness_score: 5.7
+    },
+    key_moments: [
+      {
+        timestamp: 2,
+        type: 'EQ Strength',
+        description: 'Introduced yourself directly and clearly under time pressure.',
+        emotion_state: 'Calm baseline',
+        recommendation: 'Keep this concise confidence, then transition immediately into a concrete example.'
+      },
+      {
+        timestamp: 10,
+        type: 'Authenticity Check',
+        description: 'Question context changed mid-stream, which increased visible uncertainty.',
+        emotion_state: 'Mildly unsettled',
+        recommendation: 'When interrupted, pause and restate the question in your own words before answering.'
+      },
+      {
+        timestamp: 19,
+        type: 'Growth Opportunity',
+        description: 'You acknowledged the prompt but did not provide a structured project example.',
+        emotion_state: 'Hesitant',
+        recommendation: 'Use a 20-second STAR outline as a default when leadership questions begin.'
+      }
+    ],
+    patterns: {
+      stress_triggers: [
+        'Interviewer interruptions and partial prompts',
+        'Ambiguous transition from setup to behavioral question'
+      ],
+      recovery_strategies: [
+        'Use one-line clarification: "Happy to answer with a project example."',
+        'Anchor to a prepared leadership story relevant to analyst work'
+      ],
+      authenticity_markers: [
+        'Natural speaking tone during personal introduction',
+        'No obvious over-scripted language in the captured segment'
+      ],
+      performed_moments: [
+        {
+          timestamp: 28,
+          reason: 'Response initiation without substantive content reduced perceived confidence.'
+        }
+      ]
+    },
+    feedback: {
+      strengths: [
+        'Clear opener with stable tone',
+        'No defensive language despite interruptions'
+      ],
+      growth_areas: [
+        'Convert acknowledgements into direct answers faster',
+        'Show emotional steadiness when prompts are cut off'
+      ],
+      coaching_insights: [
+        'For hedge fund analyst interviews, pre-load two stories: one on ambiguity and one on high-stakes decision support.',
+        'If the interviewer interrupts, treat it as signal to simplify, not abandon, your answer.'
+      ]
+    }
+  }
+};
+
+const DEMO_SOCRATES_ANALYSIS: SocratesType = {
+  strategic_analysis: {
+    score: 2.6,
+    thinking_patterns: {
+      depth_score: 2.4,
+      curiosity_score: 2.1,
+      ambiguity_handling: 2.8,
+      strategic_framing: 2.5,
+      authenticity_vs_rehearsed: 3.4
+    },
+    question_analysis: {
+      questions_asked: [],
+      question_quality_avg: 0,
+      missed_opportunities: [
+        {
+          timestamp: 10,
+          context: 'Prompt requested a leadership example in an ambiguous setting.',
+          what_to_ask: 'Would you like an example from AI integration work, or one focused on cross-functional execution?',
+          why: 'A clarifying fork shows strategic communication and helps tailor signal to evaluator intent.'
+        },
+        {
+          timestamp: 19,
+          context: 'Short acknowledgement ("Yeah.") after interviewer reset the question.',
+          what_to_ask: 'Should I prioritize decision process, team coordination, or measurable outcome in my answer?',
+          why: 'This reframes the moment into an analyst-style approach: define objective, then respond precisely.'
+        }
+      ]
+    },
+    response_framework_analysis: {
+      uses_structured_frameworks: false,
+      answer_completeness: 1.9,
+      storytelling_quality: 1.7,
+      metric_usage: 1.2,
+      connects_to_business_impact: false
+    },
+    intellectual_signals: {
+      admits_knowledge_gaps: false,
+      challenges_assumptions: false,
+      shows_meta_awareness: false,
+      demonstrates_learning_agility: true
+    },
+    comparison: {
+      good_vs_great_analysis: [
+        {
+          your_approach: 'Acknowledged prompt and waited for more direction.',
+          great_approach: 'Initiated a concise structure (Situation, decision, measurable result) and asked one precision clarifier.',
+          gap: 'Insufficient strategic ownership of the response frame.',
+          how_to_bridge: 'Start with a one-sentence thesis: "I will use a project where uncertainty changed our execution plan."'
+        }
+      ]
+    },
+    feedback: {
+      intellectual_strengths: [
+        'Stayed composed while the interviewer message was fragmented',
+        'Did not overclaim experience in the captured segment'
+      ],
+      thinking_blindspots: [
+        'Did not deploy a framework under ambiguity',
+        'Did not convert prompt into a business-impact narrative'
+      ],
+      framework_recommendations: [
+        'STAR: Situation, Task, Action, Result in 60-90 seconds.',
+        'Decision Tree: State options, constraints, and expected upside/downside.',
+        'Analyst Lens: Tie each action to signal quality, risk, and return.'
+      ],
+      advanced_strategies: [
+        'Before answering, state the decision variable you optimized (speed, quality, or risk).',
+        'Close each answer with one quantifiable effect, even if directional (for example, faster cycle time or lower error rate).'
+      ]
+    }
+  }
+};
+
+const DEMO_ZENO_ANALYSIS: ZenoType = {
+  presence_analysis: {
+    score: 5.8,
+    visual_metrics: {
+      eye_contact_score: 64.2,
+      posture_score: 61.7,
+      gesture_effectiveness: 58.9,
+      facial_expressiveness: 55.1,
+      energy_level: 57.8
+    },
+    micro_expressions: [
+      {
+        timestamp: 10,
+        expression: 'Brief brow tension',
+        significance: 'Likely response planning under interrupted prompt.'
+      },
+      {
+        timestamp: 19,
+        expression: 'Short neutral reset',
+        significance: 'Attempt to re-center before answering.'
+      }
+    ],
+    body_language_patterns: {
+      consistency_score: 62,
+      nervous_habits: [
+        'Energy drops during ambiguous transitions',
+        'Reduced expressiveness when the question is restarted'
+      ],
+      power_poses: [
+        'Centered posture during opening identification'
+      ],
+      defensive_moments: [
+        'Compressed delivery immediately before speaking at 19s'
+      ]
+    },
+    executive_presence_factors: {
+      gravitas: 59.4,
+      confidence_without_arrogance: 63.3,
+      intellectual_honesty: 71.5,
+      composure_under_pressure: 57.2
+    },
+    comparison_to_top_performers: {
+      overall_delta: -17.8,
+      specific_gaps: [
+        {
+          area: 'Composure During Interruptions',
+          your_score: 57.2,
+          top_10_avg: 82.4,
+          improvement: 'Slow down first sentence after interruption and restate your answer plan.'
+        },
+        {
+          area: 'Expressive Conviction',
+          your_score: 55.1,
+          top_10_avg: 79.6,
+          improvement: 'Match voice emphasis to key claims and hold eye line on impact statements.'
+        }
+      ]
+    },
+    feedback: {
+      what_works: [
+        'Professional baseline posture',
+        'Calm physical presence in the opening exchange'
+      ],
+      what_needs_work: [
+        'Visible certainty drops when the prompt is incomplete',
+        'Energy and expressiveness dip before substantive response'
+      ],
+      quick_wins: [
+        'Use a 1-second pause, then begin with a structured answer label (for example, "One project that fits this is...").',
+        'Keep shoulders open and maintain stable eye line through your first two sentences.'
+      ],
+      advanced_techniques: [
+        'Practice interruption recovery drills: answer after random cut-ins while preserving pace and tone.',
+        'Train with camera playback and score the first 15 seconds of each answer for conviction and clarity.'
+      ]
+    }
+  }
+};
+
 export default function Results2() {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
@@ -41,6 +305,9 @@ export default function Results2() {
   const [zenoAnalysis, setZenoAnalysis] = useState<ZenoType | null>(null);
   const [philosophicalLoading, setPhilosophicalLoading] = useState(false);
   const videoPlayerRef = useRef<VideoEmotionPlayerRef>(null);
+  const isDemoConversation = conversationId === DEMO_CONVERSATION_ID;
+  const hideVideoInPhilosopherViews =
+    isDemoConversation && (analysisView === 'plato' || analysisView === 'socrates' || analysisView === 'zeno');
 
   useEffect(() => {
     if (conversationId) {
@@ -80,8 +347,19 @@ export default function Results2() {
       if (data.plato) setPlatoAnalysis(data.plato);
       if (data.socrates) setSocratesAnalysis(data.socrates);
       if (data.zeno) setZenoAnalysis(data.zeno);
+
+      if (conversationId === DEMO_CONVERSATION_ID) {
+        setPlatoAnalysis(DEMO_PLATO_ANALYSIS);
+        setSocratesAnalysis(DEMO_SOCRATES_ANALYSIS);
+        setZenoAnalysis(DEMO_ZENO_ANALYSIS);
+      }
     } catch (err) {
       console.error('Failed to load philosophical analyses:', err);
+      if (conversationId === DEMO_CONVERSATION_ID) {
+        setPlatoAnalysis(DEMO_PLATO_ANALYSIS);
+        setSocratesAnalysis(DEMO_SOCRATES_ANALYSIS);
+        setZenoAnalysis(DEMO_ZENO_ANALYSIS);
+      }
     } finally {
       setPhilosophicalLoading(false);
     }
@@ -274,7 +552,7 @@ export default function Results2() {
                 }}
               />
             </div>
-          ) : conversationId && conversation?.video_url ? (
+          ) : !hideVideoInPhilosopherViews && conversationId && conversation?.video_url ? (
             <div className="flex-1 flex flex-col">
               <VideoEmotionPlayer
                 ref={videoPlayerRef}
@@ -285,6 +563,18 @@ export default function Results2() {
                 onTimeUpdate={setCurrentVideoTimeMs}
                 showLiveEmotions={true}
               />
+            </div>
+          ) : hideVideoInPhilosopherViews ? (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="text-center p-8 max-w-sm">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <Eye className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-700 font-medium mb-2">Video hidden in this view</p>
+                <p className="text-sm text-gray-500">
+                  Plato, Socrates, and Zeno tabs are in focused-analysis mode for this demo conversation.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center bg-gray-50">
