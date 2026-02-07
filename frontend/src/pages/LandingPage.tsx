@@ -506,14 +506,16 @@ export default function LandingPage() {
       >
         <section className="w-full px-12 py-16 max-w-6xl mx-auto flex flex-col items-center mt-[100px]">
            <div className="space-y-10 w-full flex flex-col items-center">
-            <div className="rounded-2xl overflow-hidden border border-gray-200/50 shadow-2xl bg-black/5" style={{ width: '850px', height: '650px' }}>
+            <div
+              className="rounded-2xl overflow-hidden border border-gray-200/50 shadow-2xl bg-black/10 w-full max-w-[980px] aspect-video"
+            >
               <video 
                 src="/gemini-hackathon-submission.mp4"
                 autoPlay 
                 loop 
                 muted 
                 playsInline
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
 
