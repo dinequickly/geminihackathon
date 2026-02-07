@@ -508,7 +508,7 @@ export default function LandingPage() {
            <div className="space-y-10 w-full flex flex-col items-center">
             <div className="rounded-2xl overflow-hidden border border-gray-200/50 shadow-2xl bg-black/5" style={{ width: '850px', height: '650px' }}>
               <video 
-                src="https://nlobsjnpcjxfabhnbvza.supabase.co/storage/v1/object/public/interview-videos/interviews/ProductDemo.mp4"
+                src="/gemini-hackathon-submission.mp4"
                 autoPlay 
                 loop 
                 muted 
